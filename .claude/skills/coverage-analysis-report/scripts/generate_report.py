@@ -7,6 +7,8 @@
 
 입력: 고객 보장분석 JSON 데이터
 출력: A4 PDF 리포트
+
+브랜딩: 블레스본부 | 인카금융서비스 VIP총괄 | 본부장 조홍철
 """
 
 import argparse
@@ -33,41 +35,76 @@ from reportlab.platypus import (
 )
 
 # ──────────────────────────────────────────────
-# 색상 정의
+# 색상 정의 (report-style.md 기준)
 # ──────────────────────────────────────────────
 BLESS_ORANGE = colors.HexColor("#FF6B35")
-DEEP_ORANGE = colors.HexColor("#E55A2B")
-DARK_NAVY = colors.HexColor("#2C3E50")
-LIGHT_GRAY = colors.HexColor("#F8F9FA")
-MEDIUM_GRAY = colors.HexColor("#DEE2E6")
-TEXT_GRAY = colors.HexColor("#7F8C8D")
+TEXT_COLOR = colors.HexColor("#2D3748")
+BG_WHITE = colors.HexColor("#FFFFFF")
+ROW_EVEN = colors.HexColor("#F7FAFC")
+GRID_LINE = colors.HexColor("#E2E8F0")
+SUB_TEXT = colors.HexColor("#718096")
 
 RATING_COLORS = {
-    "충분": {"text": colors.HexColor("#2ECC71"), "bg": colors.HexColor("#E8F8F0")},
-    "보통": {"text": colors.HexColor("#F1C40F"), "bg": colors.HexColor("#FEF9E7")},
-    "부족": {"text": colors.HexColor("#FF6B35"), "bg": colors.HexColor("#FFF3ED")},
-    "미가입": {"text": colors.HexColor("#E74C3C"), "bg": colors.HexColor("#FDEDEC")},
+    "충분": {"text": colors.HexColor("#38A169"), "bg": colors.HexColor("#F0FFF4")},
+    "보통": {"text": colors.HexColor("#D69E2E"), "bg": colors.HexColor("#FFFFF0")},
+    "부족": {"text": colors.HexColor("#E53E3E"), "bg": colors.HexColor("#FFF5F5")},
+    "미가입": {"text": colors.HexColor("#A0AEC0"), "bg": colors.HexColor("#F7FAFC")},
 }
 
 PRIORITY_COLORS = {
-    "높음": colors.HexColor("#E74C3C"),
-    "보통": colors.HexColor("#FF6B35"),
-    "낮음": colors.HexColor("#2ECC71"),
+    "높음": colors.HexColor("#E53E3E"),
+    "보통": colors.HexColor("#D69E2E"),
+    "낮음": colors.HexColor("#38A169"),
 }
 
 SCORE_COLORS = [
-    (25, colors.HexColor("#E74C3C")),
-    (50, colors.HexColor("#FF6B35")),
-    (75, colors.HexColor("#F1C40F")),
-    (100, colors.HexColor("#2ECC71")),
+    (25, colors.HexColor("#E53E3E")),
+    (50, colors.HexColor("#DD6B20")),
+    (75, colors.HexColor("#D69E2E")),
+    (100, colors.HexColor("#38A169")),
 ]
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
-MARGIN_TOP = 25 * mm
-MARGIN_BOTTOM = 20 * mm
-MARGIN_LEFT = 20 * mm
-MARGIN_RIGHT = 20 * mm
-CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
+MARGIN = 20 * mm
+CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2
+
+FOOTER_TEXT = "블레스본부 | 인카금융서비스 VIP총괄 | 본부장 조홍철"
+
+
+# ──────────────────────────────────────────────
+# 한글 폰트 탐색
+# ──────────────────────────────────────────────
+def _resolve_font():
+    """시스템에 설치된 한글 폰트를 탐색하여 등록한다. NotoSansCJK 우선."""
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    font_candidates = [
+        # NotoSansCJK 우선 탐색
+        ("NotoSansCJK", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+        ("NotoSansCJK", "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc"),
+        ("NotoSansCJK", "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
+        ("NotoSansCJK", "/usr/share/fonts/OTF/NotoSansCJK-Regular.ttc"),
+        ("NotoSansCJK", "/usr/share/fonts/google-noto-cjk/NotoSansCJKkr-Regular.otf"),
+        ("NotoSansKR", "/usr/share/fonts/truetype/noto/NotoSansKR-Regular.ttf"),
+        ("NotoSansKR", "/usr/share/fonts/noto/NotoSansKR-Regular.ttf"),
+        ("NotoSansKR", "/usr/share/fonts/truetype/noto/NotoSansKR-Regular.otf"),
+        # 나눔고딕 fallback
+        ("NanumGothic", "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"),
+        ("NanumGothic", "/usr/share/fonts/nanum/NanumGothic.ttf"),
+        # Malgun Gothic fallback
+        ("MalgunGothic", "/usr/share/fonts/truetype/malgun/malgun.ttf"),
+        # macOS fallback
+        ("AppleGothic", "/System/Library/Fonts/AppleSDGothicNeo.ttc"),
+    ]
+    for name, path in font_candidates:
+        if Path(path).exists():
+            try:
+                pdfmetrics.registerFont(TTFont(name, path))
+                return name
+            except Exception:
+                continue
+    return "Helvetica"
 
 
 # ──────────────────────────────────────────────
@@ -76,8 +113,6 @@ CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
 def get_styles():
     """PDF에 사용할 ParagraphStyle 딕셔너리를 반환한다."""
     base = getSampleStyleSheet()
-    # reportlab 기본 한글 폰트 fallback 처리
-    # 시스템에 나눔고딕이 있으면 사용, 없으면 Helvetica fallback
     font_name = _resolve_font()
 
     styles = {
@@ -85,40 +120,40 @@ def get_styles():
             "cover_title",
             parent=base["Normal"],
             fontName=font_name,
-            fontSize=28,
-            leading=36,
+            fontSize=24,
+            leading=32,
             alignment=TA_CENTER,
-            textColor=DARK_NAVY,
+            textColor=TEXT_COLOR,
             spaceAfter=12,
         ),
         "cover_sub": ParagraphStyle(
             "cover_sub",
             parent=base["Normal"],
             fontName=font_name,
-            fontSize=14,
-            leading=20,
+            fontSize=12,
+            leading=18,
             alignment=TA_CENTER,
-            textColor=DARK_NAVY,
+            textColor=TEXT_COLOR,
         ),
         "section_title": ParagraphStyle(
             "section_title",
             parent=base["Normal"],
             fontName=font_name,
-            fontSize=16,
-            leading=22,
+            fontSize=14,
+            leading=20,
             textColor=BLESS_ORANGE,
-            spaceBefore=16,
-            spaceAfter=10,
+            spaceBefore=14,
+            spaceAfter=8,
         ),
         "subsection": ParagraphStyle(
             "subsection",
             parent=base["Normal"],
             fontName=font_name,
-            fontSize=12,
-            leading=16,
-            textColor=DARK_NAVY,
-            spaceBefore=10,
-            spaceAfter=6,
+            fontSize=11,
+            leading=15,
+            textColor=TEXT_COLOR,
+            spaceBefore=8,
+            spaceAfter=5,
         ),
         "body": ParagraphStyle(
             "body",
@@ -126,7 +161,7 @@ def get_styles():
             fontName=font_name,
             fontSize=10,
             leading=15,
-            textColor=DARK_NAVY,
+            textColor=TEXT_COLOR,
         ),
         "table_header": ParagraphStyle(
             "table_header",
@@ -143,7 +178,7 @@ def get_styles():
             fontName=font_name,
             fontSize=9,
             leading=12,
-            textColor=DARK_NAVY,
+            textColor=TEXT_COLOR,
             alignment=TA_CENTER,
         ),
         "table_cell_left": ParagraphStyle(
@@ -152,7 +187,7 @@ def get_styles():
             fontName=font_name,
             fontSize=9,
             leading=12,
-            textColor=DARK_NAVY,
+            textColor=TEXT_COLOR,
             alignment=TA_LEFT,
         ),
         "disclaimer": ParagraphStyle(
@@ -161,16 +196,7 @@ def get_styles():
             fontName=font_name,
             fontSize=8,
             leading=11,
-            textColor=TEXT_GRAY,
-        ),
-        "score_large": ParagraphStyle(
-            "score_large",
-            parent=base["Normal"],
-            fontName=font_name,
-            fontSize=36,
-            leading=44,
-            alignment=TA_CENTER,
-            textColor=DARK_NAVY,
+            textColor=SUB_TEXT,
         ),
         "cta": ParagraphStyle(
             "cta",
@@ -178,88 +204,83 @@ def get_styles():
             fontName=font_name,
             fontSize=10,
             leading=15,
-            textColor=DARK_NAVY,
+            textColor=TEXT_COLOR,
             alignment=TA_CENTER,
+        ),
+        "footer_style": ParagraphStyle(
+            "footer_style",
+            parent=base["Normal"],
+            fontName=font_name,
+            fontSize=7,
+            leading=10,
+            textColor=SUB_TEXT,
         ),
     }
     return styles
-
-
-def _resolve_font():
-    """시스템에 설치된 한글 폰트를 탐색하여 등록한다."""
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-
-    font_candidates = [
-        ("NanumGothic", "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"),
-        ("NanumGothic", "/usr/share/fonts/nanum/NanumGothic.ttf"),
-        ("MalgunGothic", "/usr/share/fonts/truetype/malgun/malgun.ttf"),
-        ("NanumGothic", "/System/Library/Fonts/AppleSDGothicNeo.ttc"),
-    ]
-    for name, path in font_candidates:
-        if Path(path).exists():
-            try:
-                pdfmetrics.registerFont(TTFont(name, path))
-                return name
-            except Exception:
-                continue
-    return "Helvetica"
 
 
 # ──────────────────────────────────────────────
 # 헤더/푸터
 # ──────────────────────────────────────────────
 def _draw_header_footer(canvas, doc):
-    """모든 페이지에 헤더와 푸터를 그린다."""
+    """모든 본문 페이지에 헤더와 푸터를 그린다."""
     canvas.saveState()
+    font_name = _resolve_font()
 
     # 헤더 오렌지 바
     canvas.setFillColor(BLESS_ORANGE)
-    canvas.rect(0, PAGE_HEIGHT - 8 * mm, PAGE_WIDTH, 8 * mm, fill=1, stroke=0)
+    canvas.rect(0, PAGE_HEIGHT - 6 * mm, PAGE_WIDTH, 6 * mm, fill=1, stroke=0)
 
     # 헤더 텍스트
-    canvas.setFillColor(DARK_NAVY)
-    canvas.setFont("Helvetica", 8)
-    canvas.drawString(MARGIN_LEFT, PAGE_HEIGHT - 18 * mm, "보장분석 리포트")
-    canvas.drawRightString(
-        PAGE_WIDTH - MARGIN_RIGHT, PAGE_HEIGHT - 18 * mm, "BLESS 본부"
-    )
+    canvas.setFillColor(TEXT_COLOR)
+    canvas.setFont(font_name, 8)
+    canvas.drawString(MARGIN, PAGE_HEIGHT - 16 * mm, "보장분석 리포트")
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 16 * mm, "블레스본부")
 
     # 헤더 구분선
-    canvas.setStrokeColor(MEDIUM_GRAY)
+    canvas.setStrokeColor(GRID_LINE)
     canvas.setLineWidth(0.5)
-    canvas.line(
-        MARGIN_LEFT, PAGE_HEIGHT - 20 * mm, PAGE_WIDTH - MARGIN_RIGHT, PAGE_HEIGHT - 20 * mm
-    )
+    canvas.line(MARGIN, PAGE_HEIGHT - 18 * mm, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 18 * mm)
 
     # 푸터 구분선
-    canvas.line(MARGIN_LEFT, MARGIN_BOTTOM, PAGE_WIDTH - MARGIN_RIGHT, MARGIN_BOTTOM)
+    canvas.line(MARGIN, MARGIN, PAGE_WIDTH - MARGIN, MARGIN)
 
     # 푸터 텍스트
-    canvas.setFillColor(TEXT_GRAY)
-    canvas.setFont("Helvetica", 7)
-    canvas.drawString(MARGIN_LEFT, MARGIN_BOTTOM - 10, "© BLESS 본부")
-    canvas.drawRightString(
-        PAGE_WIDTH - MARGIN_RIGHT,
-        MARGIN_BOTTOM - 10,
-        f"Page {doc.page}",
-    )
+    canvas.setFillColor(SUB_TEXT)
+    canvas.setFont(font_name, 7)
+    canvas.drawString(MARGIN, MARGIN - 10, FOOTER_TEXT)
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, MARGIN - 10, f"p.{doc.page}")
 
     canvas.restoreState()
 
 
-def _draw_cover_header(canvas, doc):
-    """표지 전용: 오렌지 바만 그린다."""
+def _draw_cover_page(canvas, doc):
+    """표지 전용: 오렌지 바 + 푸터만 그린다."""
     canvas.saveState()
+    font_name = _resolve_font()
+
+    # 오렌지 바
     canvas.setFillColor(BLESS_ORANGE)
-    canvas.rect(0, PAGE_HEIGHT - 12 * mm, PAGE_WIDTH, 12 * mm, fill=1, stroke=0)
+    canvas.rect(0, PAGE_HEIGHT - 10 * mm, PAGE_WIDTH, 10 * mm, fill=1, stroke=0)
+
+    # 푸터
+    canvas.setStrokeColor(GRID_LINE)
+    canvas.setLineWidth(0.5)
+    canvas.line(MARGIN, MARGIN, PAGE_WIDTH - MARGIN, MARGIN)
+    canvas.setFillColor(SUB_TEXT)
+    canvas.setFont(font_name, 7)
+    canvas.drawString(MARGIN, MARGIN - 10, FOOTER_TEXT)
+
     canvas.restoreState()
 
 
 # ──────────────────────────────────────────────
 # 점수 계산
 # ──────────────────────────────────────────────
-COVERAGE_AREAS = ["사망보장", "암보장", "뇌/심장보장", "실손보장", "후유장해", "입원/수술", "운전자/일상배상"]
+COVERAGE_AREAS = [
+    "사망보장", "암보장", "뇌/심장보장", "실손보장",
+    "후유장해", "입원/수술", "운전자/일상배상",
+]
 
 RATING_SCORES = {"충분": 100, "보통": 65, "부족": 30, "미가입": 0}
 
@@ -309,28 +330,27 @@ class CoverageReportBuilder:
         doc = BaseDocTemplate(
             self.output_path,
             pagesize=A4,
-            topMargin=MARGIN_TOP + 5 * mm,
-            bottomMargin=MARGIN_BOTTOM + 5 * mm,
-            leftMargin=MARGIN_LEFT,
-            rightMargin=MARGIN_RIGHT,
+            topMargin=MARGIN + 2 * mm,
+            bottomMargin=MARGIN + 2 * mm,
+            leftMargin=MARGIN,
+            rightMargin=MARGIN,
             title="보장분석 리포트",
-            author="BLESS 본부",
+            author=FOOTER_TEXT,
         )
 
         cover_frame = Frame(
-            MARGIN_LEFT, MARGIN_BOTTOM, CONTENT_WIDTH, PAGE_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM,
+            MARGIN, MARGIN,
+            CONTENT_WIDTH, PAGE_HEIGHT - MARGIN * 2,
             id="cover",
         )
         content_frame = Frame(
-            MARGIN_LEFT,
-            MARGIN_BOTTOM + 5 * mm,
-            CONTENT_WIDTH,
-            PAGE_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - 15 * mm,
+            MARGIN, MARGIN + 5 * mm,
+            CONTENT_WIDTH, PAGE_HEIGHT - MARGIN * 2 - 15 * mm,
             id="content",
         )
 
         doc.addPageTemplates([
-            PageTemplate(id="Cover", frames=[cover_frame], onPage=_draw_cover_header),
+            PageTemplate(id="Cover", frames=[cover_frame], onPage=_draw_cover_page),
             PageTemplate(id="Content", frames=[content_frame], onPage=_draw_header_footer),
         ])
 
@@ -350,31 +370,37 @@ class CoverageReportBuilder:
     # ── 표지 ──
     def _build_cover(self):
         s = self.styles
-        self.elements.append(Spacer(1, 80 * mm))
+        self.elements.append(Spacer(1, 70 * mm))
         self.elements.append(Paragraph("보장분석 리포트", s["cover_title"]))
         self.elements.append(Spacer(1, 20 * mm))
+
         name = self.customer.get("name", "고객")
         self.elements.append(Paragraph(f"고객명: {name}", s["cover_sub"]))
+        self.elements.append(Spacer(1, 3 * mm))
         self.elements.append(Paragraph(f"분석일: {self.analysis_date}", s["cover_sub"]))
         self.elements.append(Spacer(1, 40 * mm))
+
         self.elements.append(Paragraph("─" * 30, s["cover_sub"]))
-        self.elements.append(Paragraph("BLESS 본부", s["cover_sub"]))
-        self.elements.append(
-            Paragraph("보험설계사 현실 연구소", s["cover_sub"])
-        )
+        self.elements.append(Spacer(1, 3 * mm))
+        self.elements.append(Paragraph("블레스본부", s["cover_sub"]))
+        self.elements.append(Paragraph("인카금융서비스 VIP총괄", s["cover_sub"]))
+        self.elements.append(Paragraph("본부장 조홍철", s["cover_sub"]))
 
     # ── 분석 요약 ──
     def _build_summary(self):
         s = self.styles
         self.elements.append(Paragraph("분석 요약", s["section_title"]))
 
-        # 점수
+        # 전체 보장 점수
         score_color = get_score_color(self.total_score)
         self.elements.append(
             Paragraph(
-                f'<font color="{score_color.hexval()}" size="36">{self.total_score}</font>'
-                f'<font color="{DARK_NAVY.hexval()}" size="14"> / 100점</font>',
-                ParagraphStyle("score_inline", parent=s["body"], alignment=TA_CENTER, spaceBefore=10),
+                f'<font color="{score_color.hexval()}" size="32">{self.total_score}</font>'
+                f'<font color="{TEXT_COLOR.hexval()}" size="14"> / 100점</font>',
+                ParagraphStyle(
+                    "score_inline", parent=s["body"],
+                    alignment=TA_CENTER, spaceBefore=8,
+                ),
             )
         )
         self.elements.append(Spacer(1, 5 * mm))
@@ -392,25 +418,29 @@ class CoverageReportBuilder:
             self.elements.append(Paragraph(comment, s["body"]))
         self.elements.append(Spacer(1, 5 * mm))
 
-        # 7대 영역 미니 테이블
+        # 7대 영역 미니 요약 테이블
         header = [Paragraph(a[:4], s["table_header"]) for a in COVERAGE_AREAS]
         ratings = []
         for area in COVERAGE_AREAS:
             rating = self.analysis.get(area, {}).get("rating", "미가입")
             rc = RATING_COLORS.get(rating, RATING_COLORS["미가입"])
             ratings.append(
-                Paragraph(f'<font color="{rc["text"].hexval()}">{rating}</font>', s["table_cell"])
+                Paragraph(
+                    f'<font color="{rc["text"].hexval()}">{rating}</font>',
+                    s["table_cell"],
+                )
             )
 
         col_w = CONTENT_WIDTH / len(COVERAGE_AREAS)
         t = Table([header, ratings], colWidths=[col_w] * len(COVERAGE_AREAS))
 
         style_cmds = [
-            ("BACKGROUND", (0, 0), (-1, 0), DARK_NAVY),
-            ("GRID", (0, 0), (-1, -1), 0.5, MEDIUM_GRAY),
+            ("BACKGROUND", (0, 0), (-1, 0), BLESS_ORANGE),
+            ("GRID", (0, 0), (-1, -1), 0.5, GRID_LINE),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ]
-        # 등급별 배경색
         for i, area in enumerate(COVERAGE_AREAS):
             rating = self.analysis.get(area, {}).get("rating", "미가입")
             bg = RATING_COLORS.get(rating, RATING_COLORS["미가입"])["bg"]
@@ -442,31 +472,35 @@ class CoverageReportBuilder:
 
             rows.append([
                 Paragraph(area, s["table_cell_left"]),
-                Paragraph(product, s["table_cell"]),
+                Paragraph(str(product), s["table_cell"]),
                 Paragraph(str(amount), s["table_cell"]),
-                Paragraph(f'<font color="{rc["text"].hexval()}">{rating}</font>', s["table_cell"]),
+                Paragraph(
+                    f'<font color="{rc["text"].hexval()}">{rating}</font>',
+                    s["table_cell"],
+                ),
             ])
 
         col_widths = [CONTENT_WIDTH * r for r in [0.22, 0.33, 0.25, 0.20]]
         t = Table(rows, colWidths=col_widths)
 
         style_cmds = [
-            ("BACKGROUND", (0, 0), (-1, 0), DARK_NAVY),
-            ("GRID", (0, 0), (-1, -1), 0.5, MEDIUM_GRAY),
+            ("BACKGROUND", (0, 0), (-1, 0), BLESS_ORANGE),
+            ("GRID", (0, 0), (-1, -1), 0.5, GRID_LINE),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("TOPPADDING", (0, 0), (-1, -1), 4),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
         ]
-        # 줄무늬 + 등급 배경
         for i, area in enumerate(COVERAGE_AREAS):
             row_idx = i + 1
             rating = self.analysis.get(area, {}).get("rating", "미가입")
             # 평가 셀 배경
             bg = RATING_COLORS.get(rating, RATING_COLORS["미가입"])["bg"]
             style_cmds.append(("BACKGROUND", (3, row_idx), (3, row_idx), bg))
-            # 줄무늬
+            # 짝수행 연한 그레이
             if row_idx % 2 == 0:
-                style_cmds.append(("BACKGROUND", (0, row_idx), (2, row_idx), LIGHT_GRAY))
+                style_cmds.append(("BACKGROUND", (0, row_idx), (2, row_idx), ROW_EVEN))
 
         t.setStyle(TableStyle(style_cmds))
         self.elements.append(t)
@@ -518,7 +552,8 @@ class CoverageReportBuilder:
             pc = PRIORITY_COLORS.get(priority, PRIORITY_COLORS["보통"])
             rows.append([
                 Paragraph(
-                    f'<font color="{pc.hexval()}">{priority}</font>', s["table_cell"]
+                    f'<font color="{pc.hexval()}">{priority}</font>',
+                    s["table_cell"],
                 ),
                 Paragraph(sg.get("area", ""), s["table_cell"]),
                 Paragraph(sg.get("description", ""), s["table_cell_left"]),
@@ -526,13 +561,21 @@ class CoverageReportBuilder:
 
         col_widths = [CONTENT_WIDTH * r for r in [0.15, 0.20, 0.65]]
         t = Table(rows, colWidths=col_widths)
-        t.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), DARK_NAVY),
-            ("GRID", (0, 0), (-1, -1), 0.5, MEDIUM_GRAY),
+
+        style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), BLESS_ORANGE),
+            ("GRID", (0, 0), (-1, -1), 0.5, GRID_LINE),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("TOPPADDING", (0, 0), (-1, -1), 4),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ]))
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ]
+        for i in range(1, len(rows)):
+            if i % 2 == 0:
+                style_cmds.append(("BACKGROUND", (0, i), (-1, i), ROW_EVEN))
+
+        t.setStyle(TableStyle(style_cmds))
         self.elements.append(t)
         self.elements.append(Spacer(1, 8 * mm))
 
@@ -545,13 +588,19 @@ class CoverageReportBuilder:
             insurer = policy.get("insurer", "")
             product = policy.get("product_name", "")
             self.elements.append(
-                Paragraph(f"{insurer} - {product}", s["subsection"])
+                Paragraph(f"{insurer} — {product}", s["subsection"])
             )
             start = policy.get("start_date", "-")
             premium = policy.get("monthly_premium", 0)
-            self.elements.append(
-                Paragraph(f"가입일: {start}  |  월 보험료: {premium:,}원", s["body"])
-            )
+            payment = policy.get("payment_period", "")
+            end = policy.get("end_date", "")
+
+            detail_parts = [f"가입일: {start}", f"월 보험료: {premium:,}원"]
+            if payment:
+                detail_parts.append(f"납입기간: {payment}")
+            if end:
+                detail_parts.append(f"만기: {end}")
+            self.elements.append(Paragraph("  |  ".join(detail_parts), s["body"]))
 
             coverages = policy.get("coverages", [])
             if coverages:
@@ -573,13 +622,21 @@ class CoverageReportBuilder:
 
                 col_widths = [CONTENT_WIDTH * 0.5, CONTENT_WIDTH * 0.5]
                 t = Table(rows, colWidths=col_widths)
-                t.setStyle(TableStyle([
-                    ("BACKGROUND", (0, 0), (-1, 0), DARK_NAVY),
-                    ("GRID", (0, 0), (-1, -1), 0.5, MEDIUM_GRAY),
+
+                style_cmds = [
+                    ("BACKGROUND", (0, 0), (-1, 0), BLESS_ORANGE),
+                    ("GRID", (0, 0), (-1, -1), 0.5, GRID_LINE),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("TOPPADDING", (0, 0), (-1, -1), 3),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-                ]))
+                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ]
+                for i in range(1, len(rows)):
+                    if i % 2 == 0:
+                        style_cmds.append(("BACKGROUND", (0, i), (-1, i), ROW_EVEN))
+
+                t.setStyle(TableStyle(style_cmds))
                 self.elements.append(t)
 
             self.elements.append(Spacer(1, 5 * mm))
@@ -604,6 +661,23 @@ class CoverageReportBuilder:
             "bless-insight-recruit.netlify.app"
         )
         self.elements.append(Paragraph(cta_text, s["cta"]))
+        self.elements.append(Spacer(1, 10 * mm))
+
+        # 하단 브랜딩
+        footer_brand = (
+            f'<font color="{SUB_TEXT.hexval()}">'
+            "블레스본부 | 인카금융서비스 VIP총괄 | 본부장 조홍철"
+            "</font>"
+        )
+        self.elements.append(
+            Paragraph(
+                footer_brand,
+                ParagraphStyle(
+                    "brand_footer", parent=s["disclaimer"],
+                    alignment=TA_CENTER, spaceBefore=5,
+                ),
+            )
+        )
 
 
 # ──────────────────────────────────────────────
