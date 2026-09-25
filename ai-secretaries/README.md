@@ -84,6 +84,12 @@ Photorealistic bright editorial portrait of an original, fictional Korean woman 
 |---|---|---|---|
 | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_4a34716d-1e69-4f9b-84cf-b7b497a972bd.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_6da960cc-dcc7-431d-b4ee-6f31bf26d202.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_87f2f651-7bb1-470c-bfd2-788db4789acd.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_10f010cf-1d96-4a20-9961-d36adcdda230.png) |
 
+**감사실장 한윤슬 새 얼굴 후보 (바깥으로 뻗친 단발 + 시스루 앞머리 · 금색 링 귀걸이 · 흰 니트 + 네이비 재킷 · 햇살 비치는 벽돌 거리)**
+
+| 후보 A | 후보 B | 후보 C | 후보 D |
+|---|---|---|---|
+| [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_701ddb0e-876f-4214-a48c-0e3f7d39d55f.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_a8f209b6-e915-478f-9df3-83a56e6cfff9.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_124c58c8-9f16-4799-9093-6c3fff1e9744.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_0624c13a-adab-4c8f-a7eb-d90ffac63666.png) |
+
 > 영상 만들 때 이 job ID를 "참고 이미지"로 쓰면 얼굴이 유지됩니다.
 
 ---
