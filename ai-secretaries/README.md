@@ -10,11 +10,11 @@
 | 직책 | 이름 | 확정 사진 | job ID |
 |---|---|---|---|
 | 비서실장 | **김지수** | [전신 기준 사진 A](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_4a34716d-1e69-4f9b-84cf-b7b497a972bd.png) | 4a34716d-1e69-4f9b-84cf-b7b497a972bd |
-| 감사실장 | **한윤슬** (기존 비서실장 얼굴) | [2차 후보 B](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_9b93bf69-dd6c-4bda-8b52-e8978241c417.png) | 9b93bf69-dd6c-4bda-8b52-e8978241c417 |
+| 감사실장 | **한윤슬** | [새 얼굴 후보 B](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_a8f209b6-e915-478f-9df3-83a56e6cfff9.png) (볼륨 수정본 선택 대기) | a8f209b6-e915-478f-9df3-83a56e6cfff9 |
 | 기술감사실장 | **이해린** | [2차 후보 D](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_00fc68ef-d53a-4b82-b483-f9ab31914901.png) | 00fc68ef-d53a-4b82-b483-f9ab31914901 |
 | (보류) | 서다온 | [2차 후보 C](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_466ba340-cd69-4e41-b5d3-9ffb579ec4a6.png) | 466ba340-cd69-4e41-b5d3-9ffb579ec4a6 |
 
-> ⚠️ 김지수 전신 사진(A)은 한윤슬 얼굴(B)을 참고해서 만든 사진이라 **두 사람 얼굴이 닮아 보일 수 있습니다.** 합동 영상 전에 둘 중 한 명의 얼굴을 새로 뽑는 것을 권장합니다.
+> 한윤슬은 새 얼굴(단발 + 시스루 앞머리 · 네이비 재킷)로 교체해서 김지수와 겹치지 않습니다. 옛 윤슬 얼굴(9b93bf69)은 지수 사진의 참고용으로만 남깁니다.
 
 ---
 
@@ -89,6 +89,12 @@ Photorealistic bright editorial portrait of an original, fictional Korean woman 
 | 후보 A | 후보 B | 후보 C | 후보 D |
 |---|---|---|---|
 | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_701ddb0e-876f-4214-a48c-0e3f7d39d55f.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_a8f209b6-e915-478f-9df3-83a56e6cfff9.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_124c58c8-9f16-4799-9093-6c3fff1e9744.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_0624c13a-adab-4c8f-a7eb-d90ffac63666.png) |
+
+**한윤슬 후보 B — 볼륨감 수정본 (얼굴·머리·옷·배경 그대로)**
+
+| 수정 1 | 수정 2 | 수정 3 | 수정 4 |
+|---|---|---|---|
+| [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_8d6c7027-b595-426f-93d8-b77374824a04.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_c9f8f580-2bdd-40df-baf9-83ad36fdc41f.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_c7bfe45b-e2e9-4e7a-aa3d-6783180d39e8.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_01055a1d-e0e0-4eb5-b465-1164f99796ca.png) |
 
 > 영상 만들 때 이 job ID를 "참고 이미지"로 쓰면 얼굴이 유지됩니다.
 
