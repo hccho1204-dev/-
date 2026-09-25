@@ -13,7 +13,7 @@
 | 두뇌(모델) | Claude | Claude | GPT (또는 Gemini) — **일부러 다른 회사 모델** |
 | 이름 뜻 | 윤슬: 햇빛에 반짝이는 잔물결 | 다온: 좋은 일이 다 온다 | 해린: 해처럼 밝고 맑게 본다 |
 | 나이 느낌 | 30대 초반 | 30대 중반 | 20대 후반 |
-| 외모 포인트 | 어깨 기장 생머리, 크림 블라우스, 진주 귀걸이 | 낮게 묶은 포니테일, 금테 안경, 차콜·네이비 | 짧은 단발, 흰 셔츠 + 세이지 그린 가디건 |
+| 외모 포인트 | 둥근 얼굴, 웃으면 반달 되는 무쌍 눈, 낮은 올림머리, 크림 블라우스 + 네이비 가디건 | 낮게 묶은 포니테일, 금테 안경, 차콜·네이비 | 짧은 단발, 흰 셔츠 + 세이지 그린 가디건 |
 | 성격 | 다정하고 빠름. 먼저 챙김 | 차분하고 날카로움. 칭찬은 짧게, 지적은 정확하게 | 밝고 호기심 많음. "근거요?"가 입버릇 |
 | 말버릇 | "제가 먼저 챙겨뒀어요." | "좋아요. 그런데 하나만요." | "출처 링크 주세요, 그럼 믿을게요." |
 | 상징색 | 크림/베이지 | 네이비 | 세이지 그린 |
@@ -47,6 +47,17 @@ Photorealistic editorial portrait of a beautiful Korean woman in her late 20s, n
 |---|---|---|
 | [이미지 보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_214636_0e42dafa-f6be-4a37-8f54-dd32b97e8eb8.png) | [이미지 보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_214636_88370f81-35ff-4419-817b-d7ebd7a11ca8.png) | [이미지 보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_214635_0a3a2848-314a-4c2f-9db9-4c36b55c5f8c.png) |
 | job 0e42dafa… | job 88370f81… | job 0a3a2848… |
+
+**한윤슬 2차 (둥근 얼굴 · 웃으면 반달눈 · 낮은 올림머리 · 밝은 벽돌 배경)**
+
+| 후보 A | 후보 B | 후보 C | 후보 D |
+|---|---|---|---|
+| [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_8d35e9b0-f5f9-4351-b209-153e651f03c5.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_9b93bf69-dd6c-4bda-8b52-e8978241c417.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_466ba340-cd69-4e41-b5d3-9ffb579ec4a6.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_00fc68ef-d53a-4b82-b483-f9ab31914901.png) |
+
+2차 프롬프트:
+```
+Photorealistic bright editorial portrait of an original, fictional Korean woman in her early 30s, soft round oval face, natural monolid eyes with no double eyelid that curve into warm crescent moons when she smiles, big genuine bright smile showing teeth, clear fair dewy skin with light natural blush, soft pink lips, straight natural eyebrows, dark hair pulled back into a neat low bun with a few loose strands framing the face, delicate thin gold necklace, wearing a cream silk blouse with a soft navy cardigan, sitting at a desk, clean white brick wall background with soft daylight, fresh, friendly, wise and caring girl-next-door feeling, looking at camera, 85mm lens, shallow depth of field, high detail skin texture
+```
 
 > 영상 만들 때 이 job ID를 "참고 이미지"로 쓰면 얼굴이 유지됩니다.
 
