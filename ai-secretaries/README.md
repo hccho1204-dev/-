@@ -71,6 +71,12 @@ Photorealistic editorial portrait of a beautiful Korean woman in her late 20s, n
 Photorealistic bright editorial portrait of an original, fictional Korean woman in her early 30s, soft round oval face, natural monolid eyes with no double eyelid that curve into warm crescent moons when she smiles, big genuine bright smile showing teeth, clear fair dewy skin with light natural blush, soft pink lips, straight natural eyebrows, dark hair pulled back into a neat low bun with a few loose strands framing the face, delicate thin gold necklace, wearing a cream silk blouse with a soft navy cardigan, sitting at a desk, clean white brick wall background with soft daylight, fresh, friendly, wise and caring girl-next-door feeling, looking at camera, 85mm lens, shallow depth of field, high detail skin texture
 ```
 
+**이해린 2차 (바깥으로 뻗친 단발 + 시스루 앞머리 · 금색 링 귀걸이 · 흰 니트 가디건 · 햇살 비치는 벽돌 거리)**
+
+| 후보 A | 후보 B | 후보 C | 후보 D |
+|---|---|---|---|
+| [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_a5cb4024-0d32-403d-8ea3-e09081c123bb.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_b74a93d3-6ef7-4e23-bb18-d951f929d0ec.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_c52ff960-f520-45cc-8ad4-5d1c281c3d9a.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_5497c613-04eb-4026-b6f7-79155270cefe.png) |
+
 > 영상 만들 때 이 job ID를 "참고 이미지"로 쓰면 얼굴이 유지됩니다.
 
 ---
