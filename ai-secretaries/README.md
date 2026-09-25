@@ -10,7 +10,7 @@
 | 직책 | 이름 | 확정 사진 | job ID |
 |---|---|---|---|
 | 비서실장 | **김지수** | [전신 기준 사진 A](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_4a34716d-1e69-4f9b-84cf-b7b497a972bd.png) | 4a34716d-1e69-4f9b-84cf-b7b497a972bd |
-| 감사실장 | **한윤슬** | [새 얼굴 후보 B](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231502_a8f209b6-e915-478f-9df3-83a56e6cfff9.png) (볼륨 수정본 선택 대기) | a8f209b6-e915-478f-9df3-83a56e6cfff9 |
+| 감사실장 | **한윤슬** | [볼륨 수정 3번 얼굴](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_c7bfe45b-e2e9-4e7a-aa3d-6783180d39e8.png) 기준 → 윙크 없는 상반신 버전 선택 대기 | c7bfe45b-e2e9-4e7a-aa3d-6783180d39e8 |
 | 기술감사실장 | **이해린** | [2차 후보 D](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_00fc68ef-d53a-4b82-b483-f9ab31914901.png) | 00fc68ef-d53a-4b82-b483-f9ab31914901 |
 | (보류) | 서다온 | [2차 후보 C](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_466ba340-cd69-4e41-b5d3-9ffb579ec4a6.png) | 466ba340-cd69-4e41-b5d3-9ffb579ec4a6 |
 
@@ -95,6 +95,12 @@ Photorealistic bright editorial portrait of an original, fictional Korean woman 
 | 수정 1 | 수정 2 | 수정 3 | 수정 4 |
 |---|---|---|---|
 | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_8d6c7027-b595-426f-93d8-b77374824a04.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_c9f8f580-2bdd-40df-baf9-83ad36fdc41f.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_c7bfe45b-e2e9-4e7a-aa3d-6783180d39e8.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_01055a1d-e0e0-4eb5-b465-1164f99796ca.png) |
+
+**한윤슬 최종 후보 (수정 3번 얼굴 · 두 눈 뜬 정면 미소 · 허리까지 상반신 · 볼륨 조금 더)**
+
+| 최종 1 | 최종 2 | 최종 3 | 최종 4 |
+|---|---|---|---|
+| [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_62f37810-1b51-45fe-b0fc-2717e849ed85.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_cb255194-8556-4804-a463-c6ea5148b911.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_3aeb0ea8-3ffc-4e7c-8948-41ce7d81003c.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_a915ea36-5e5f-4b02-b0c9-57d8f2f5adaa.png) |
 
 > 영상 만들 때 이 job ID를 "참고 이미지"로 쓰면 얼굴이 유지됩니다.
 
