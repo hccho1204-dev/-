@@ -77,6 +77,12 @@ Photorealistic bright editorial portrait of an original, fictional Korean woman 
 |---|---|---|---|
 | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_a5cb4024-0d32-403d-8ea3-e09081c123bb.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_b74a93d3-6ef7-4e23-bb18-d951f929d0ec.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_c52ff960-f520-45cc-8ad4-5d1c281c3d9a.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221837_5497c613-04eb-4026-b6f7-79155270cefe.png) |
 
+**한윤슬 전신 기준 사진 (흰 블라우스 + 검은 치마 · 균형 잡힌 체형 · 선 자세)** — 다음 영상의 기준 사진으로 사용
+
+| 후보 A | 후보 B | 후보 C | 후보 D |
+|---|---|---|---|
+| [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_4a34716d-1e69-4f9b-84cf-b7b497a972bd.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_6da960cc-dcc7-431d-b4ee-6f31bf26d202.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_87f2f651-7bb1-470c-bfd2-788db4789acd.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_10f010cf-1d96-4a20-9961-d36adcdda230.png) |
+
 > 영상 만들 때 이 job ID를 "참고 이미지"로 쓰면 얼굴이 유지됩니다.
 
 ---
