@@ -141,6 +141,7 @@ Claude 프로젝트 / GPT 커스텀 지침에 그대로 붙여넣으세요.
 | 영상 | 모델 | 링크 |
 |---|---|---|
 | 한윤슬 자기소개 (12초, 세로, 정장·선 자세·천천히) — 고품질 | Seedance 2.5 | [영상 보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_222825_3e94f9e1-d4f5-48ca-9b85-1376542b8659.mp4) |
+| 한윤슬 자기소개 (10초, 세로) — "플러스" 발음 수정본 | Seedance 2.0 Mini | [영상 보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_223738_4dcd3f63-6cd9-469a-9149-ca9aa28e2ceb.mp4) |
 | 한윤슬 자기소개 (10초, 세로) — 테스트 | Seedance 2.0 Mini | [영상 보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_222239_94ed8009-c58d-4a0e-8c11-c2f73f8dddc7.mp4) |
 
 ### 4-2. 셋이 티격태격 (약 20초, 16:9, 세 사람 나란히)
