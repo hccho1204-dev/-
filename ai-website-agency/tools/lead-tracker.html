@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>영업 관리표</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--bg:#f6f5f2;--surface:#fff;--ink:#1c1b19;--muted:#6f6a63;--line:#e5e1da;--brand:#2f6fed;--good:#1f9d55;--warn:#d97706;--bad:#b42318}
+@media(prefers-color-scheme:dark){:root{--bg:#121212;--surface:#1c1c1c;--ink:#efece7;--muted:#a19b93;--line:#2c2c2c;--brand:#6b9bff}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Pretendard,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--muted);margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:20px 0}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi b{display:block;font-size:22px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:12px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.box h2{font-size:16px;font-weight:700;margin-bottom:12px}
+.form{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%}
+.checks{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:14px}
+.checks label{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px}
+.checks input{width:auto}
+.actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--brand);color:#fff}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.sm{padding:5px 9px;font-size:12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:600;padding:6px 12px;border-radius:999px}
+.chip.on{background:var(--ink);color:var(--bg)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:860px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:600}
+td select{padding:5px 6px;font-size:13px}
+.score{display:inline-block;min-width:34px;text-align:center;font-weight:800;border-radius:8px;padding:2px 6px}
+.s-hi{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.s-md{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.s-lo{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.due{color:var(--bad);font-weight:700}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.money{font-variant-numeric:tabular-nums}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.form{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>동네 가게 홈페이지 영업 관리표</h1>
+  <p class="sub">이 컴퓨터(브라우저)에만 저장됩니다. 주기적으로 "엑셀로 저장"을 눌러 백업하세요.</p>
+
+  <div class="kpis">
+    <div class="kpi"><span>전체 후보</span><b id="kTotal">0</b></div>
+    <div class="kpi"><span>제작 완료</span><b id="kBuilt">0</b></div>
+    <div class="kpi"><span>계약 성사</span><b id="kWon">0</b></div>
+    <div class="kpi"><span>제작 매출 합계</span><b class="money" id="kRev">0원</b></div>
+    <div class="kpi"><span>월 관리 매출</span><b class="money" id="kMrr">0원</b></div>
+  </div>
+
+  <div class="box">
+    <h2 id="formTitle">가게 추가</h2>
+    <form class="form" id="f">
+      <label>상호명 *<input name="name" required placeholder="예: 온기 베이커리"></label>
+      <label>업종<input name="cat" placeholder="예: 빵집"></label>
+      <label>지역<input name="area" placeholder="예: 연남동"></label>
+      <label>전화<input name="phone" placeholder="02-000-0000"></label>
+      <label>평점<input name="rating" type="number" step="0.1" min="0" max="5" placeholder="4.8"></label>
+      <label>리뷰 수<input name="reviews" type="number" min="0" placeholder="230"></label>
+      <label>미리보기 주소<input name="url" placeholder="https://xxx.netlify.app"></label>
+      <label>다음 연락일<input name="next" type="date"></label>
+      <div class="checks">
+        <label><input type="checkbox" name="noSite" checked> 홈페이지 없음</label>
+        <label><input type="checkbox" name="oldSite"> 홈페이지 낡음</label>
+        <label><input type="checkbox" name="insta"> 인스타 운영</label>
+        <label><input type="checkbox" name="booking"> 예약·문의 중요 업종</label>
+        <label><input type="checkbox" name="owner"> 사장님 매장 상주</label>
+      </div>
+      <label style="grid-column:1/-1">메모<textarea name="memo" rows="2" placeholder="사장님 반응, 수정 요청 등"></textarea></label>
+      <div class="actions">
+        <button type="submit" id="submitBtn">추가</button>
+        <button type="button" class="ghost" id="cancelBtn" hidden>수정 취소</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>가게 목록</h2>
+    <div class="filters" id="filters"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>점수</th><th>상호 / 업종 · 지역</th><th>평점·리뷰</th><th>진행 단계</th><th>패키지</th><th>월관리</th><th>다음 연락</th><th>미리보기</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="actions" style="margin-top:14px">
+      <button class="ghost" id="csv">엑셀(CSV)로 저장</button>
+      <button class="ghost" id="sample">예시 데이터 넣기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = 'agency-leads-v1';
+const STAGES = ['발굴', '제작완료', '연락함', '미팅/시연', '계약', '오픈완료', '거절/종료'];
+const PKGS = { '': 0, '할인 29만': 290000, '베이직 49만': 490000, '스탠다드 99만': 990000, '프리미엄 149만': 1490000 };
+const MRR = 33000;
+
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(leads)); } catch {} };
+let leads = load(), filter = '전체', editing = null;
+
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const won = n => n.toLocaleString('ko-KR') + '원';
+const today = () => new Date().toISOString().slice(0, 10);
+
+function score(l) {
+  let s = 0;
+  if (+l.rating >= 4.5) s += 2;
+  if (+l.reviews >= 100) s += 2; else if (+l.reviews >= 50) s += 1;
+  if (l.noSite) s += 3; else if (l.oldSite) s += 1;
+  if (l.insta) s += 1;
+  if (l.booking) s += 1;
+  if (l.owner) s += 1;
+  return s;
+}
+
+function render() {
+  const sold = leads.filter(l => ['계약', '오픈완료'].includes(l.stage));
+  $('#kTotal').textContent = leads.length;
+  $('#kBuilt').textContent = leads.filter(l => STAGES.indexOf(l.stage) >= 1 && l.stage !== '거절/종료').length;
+  $('#kWon').textContent = sold.length;
+  $('#kRev').textContent = won(sold.reduce((a, l) => a + (PKGS[l.pkg] || 0), 0));
+  $('#kMrr').textContent = won(sold.filter(l => l.care).length * MRR);
+
+  $('#filters').innerHTML = ['전체', '오늘 연락', ...STAGES].map(f => {
+    const n = f === '전체' ? leads.length : f === '오늘 연락' ? leads.filter(isDue).length : leads.filter(l => l.stage === f).length;
+    return `<button class="chip ${f === filter ? 'on' : ''}" data-f="${f}">${f} ${n}</button>`;
+  }).join('');
+
+  const list = leads
+    .filter(l => filter === '전체' || (filter === '오늘 연락' ? isDue(l) : l.stage === filter))
+    .sort((a, b) => score(b) - score(a));
+
+  $('#rows').innerHTML = list.length ? list.map(l => {
+    const s = score(l), cls = s >= 7 ? 's-hi' : s >= 5 ? 's-md' : 's-lo';
+    return `<tr data-id="${l.id}">
+      <td><span class="score ${cls}">${s}</span></td>
+      <td><strong>${esc(l.name)}</strong><br><span style="color:var(--muted)">${esc([l.cat, l.area].filter(Boolean).join(' · '))}</span>${l.memo ? `<br><span style="color:var(--muted);font-size:12px">${esc(l.memo)}</span>` : ''}</td>
+      <td>${l.rating ? '★' + esc(l.rating) : '-'} / ${l.reviews || 0}</td>
+      <td><select data-k="stage">${STAGES.map(x => `<option ${x === l.stage ? 'selected' : ''}>${x}</option>`).join('')}</select></td>
+      <td><select data-k="pkg">${Object.keys(PKGS).map(x => `<option value="${x}" ${x === (l.pkg || '') ? 'selected' : ''}>${x || '-'}</option>`).join('')}</select></td>
+      <td><input type="checkbox" data-k="care" ${l.care ? 'checked' : ''} title="월 관리 3.3만 원"></td>
+      <td class="${isDue(l) ? 'due' : ''}">${esc(l.next || '-')}</td>
+      <td>${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener" style="color:var(--brand)">열기</a>` : '-'}</td>
+      <td style="white-space:nowrap"><button class="sm ghost" data-act="edit">수정</button> <button class="sm ghost" data-act="del">삭제</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="9" class="empty">아직 가게가 없습니다. 위에서 추가하거나 "예시 데이터 넣기"를 눌러 보세요.</td></tr>`;
+}
+
+const isDue = l => l.next && l.next <= today() && !['오픈완료', '거절/종료'].includes(l.stage);
+
+$('#f').addEventListener('submit', e => {
+  e.preventDefault();
+  const fd = new FormData(e.target), d = Object.fromEntries(fd);
+  ['noSite', 'oldSite', 'insta', 'booking', 'owner'].forEach(k => d[k] = fd.has(k));
+  if (editing) Object.assign(leads.find(l => l.id === editing), d);
+  else leads.push({ id: Date.now().toString(36), stage: '발굴', pkg: '', care: false, ...d });
+  save(); resetForm(); render();
+});
+
+function resetForm() {
+  editing = null; $('#f').reset();
+  $('#formTitle').textContent = '가게 추가'; $('#submitBtn').textContent = '추가'; $('#cancelBtn').hidden = true;
+}
+$('#cancelBtn').onclick = resetForm;
+
+$('#filters').addEventListener('click', e => { if (e.target.dataset.f) { filter = e.target.dataset.f; render(); } });
+
+$('#rows').addEventListener('change', e => {
+  const tr = e.target.closest('tr'), l = leads.find(x => x.id === tr?.dataset.id), k = e.target.dataset.k;
+  if (!l || !k) return;
+  l[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+  save(); render();
+});
+
+$('#rows').addEventListener('click', e => {
+  const act = e.target.dataset.act; if (!act) return;
+  const id = e.target.closest('tr').dataset.id, l = leads.find(x => x.id === id);
+  if (act === 'del' && confirm(`'${l.name}'을(를) 삭제할까요?`)) { leads = leads.filter(x => x.id !== id); save(); render(); }
+  if (act === 'edit') {
+    editing = id; const f = $('#f');
+    for (const el of f.elements) if (el.name) el.type === 'checkbox' ? el.checked = !!l[el.name] : el.value = l[el.name] ?? '';
+    $('#formTitle').textContent = `수정: ${l.name}`; $('#submitBtn').textContent = '저장'; $('#cancelBtn').hidden = false;
+    f.scrollIntoView({ behavior: 'smooth' });
+  }
+});
+
+$('#csv').onclick = () => {
+  const head = ['상호', '업종', '지역', '전화', '평점', '리뷰수', '점수', '단계', '패키지', '월관리', '다음연락', '미리보기', '메모'];
+  const rows = leads.map(l => [l.name, l.cat, l.area, l.phone, l.rating, l.reviews, score(l), l.stage, l.pkg, l.care ? 'O' : '', l.next, l.url, l.memo]);
+  const csv = '﻿' + [head, ...rows].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `영업관리_${today()}.csv`; a.click();
+};
+
+$('#sample').onclick = () => {
+  const t = today();
+  leads.push(
+    { id: 'a' + Date.now(), name: '온기 베이커리', cat: '빵집', area: '연남동', rating: '4.8', reviews: '230', noSite: true, insta: true, owner: true, stage: '미팅/시연', pkg: '스탠다드 99만', care: false, next: t, memo: '소금빵 리뷰 많음, 단체주문 관심' },
+    { id: 'b' + Date.now(), name: '모모 헤어', cat: '미용실', area: '망원동', rating: '4.9', reviews: '410', noSite: true, insta: true, booking: true, owner: true, stage: '계약', pkg: '프리미엄 149만', care: true, next: '', memo: '영어 버전 요청' },
+    { id: 'c' + Date.now(), name: '한결 한식당', cat: '한식', area: '합정동', rating: '4.6', reviews: '88', oldSite: true, booking: true, stage: '제작완료', pkg: '', care: false, next: t, memo: '회식 단체석 강조' }
+  );
+  save(); render();
+};
+
+render();
+</script>
+</body>
+</html>
