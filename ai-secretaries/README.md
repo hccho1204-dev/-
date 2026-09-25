@@ -10,11 +10,11 @@
 | 직책 | 이름 | 확정 사진 | job ID |
 |---|---|---|---|
 | 비서실장 | **김지수** | [전신 기준 사진 A](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_230719_4a34716d-1e69-4f9b-84cf-b7b497a972bd.png) | 4a34716d-1e69-4f9b-84cf-b7b497a972bd |
-| 감사실장 | **한윤슬** | [볼륨 수정 3번 얼굴](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231651_c7bfe45b-e2e9-4e7a-aa3d-6783180d39e8.png) 기준 → 윙크 없는 상반신 버전 선택 대기 | c7bfe45b-e2e9-4e7a-aa3d-6783180d39e8 |
+| 감사실장 | **한윤슬** | [최초 윤슬 얼굴](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_9b93bf69-dd6c-4bda-8b52-e8978241c417.png) (원래대로 복귀) → 볼륨 버전 선택 대기 | 9b93bf69-dd6c-4bda-8b52-e8978241c417 |
 | 기술감사실장 | **이해린** | [2차 후보 D](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_00fc68ef-d53a-4b82-b483-f9ab31914901.png) | 00fc68ef-d53a-4b82-b483-f9ab31914901 |
 | (보류) | 서다온 | [2차 후보 C](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_466ba340-cd69-4e41-b5d3-9ffb579ec4a6.png) | 466ba340-cd69-4e41-b5d3-9ffb579ec4a6 |
 
-> 한윤슬은 새 얼굴(단발 + 시스루 앞머리 · 네이비 재킷)로 교체해서 김지수와 겹치지 않습니다. 옛 윤슬 얼굴(9b93bf69)은 지수 사진의 참고용으로만 남깁니다.
+> 한윤슬은 최초 얼굴(9b93bf69)로 복귀. 김지수 전신 사진(A)이 이 얼굴을 참고해 만들어져 두 사람이 닮아 보일 수 있으므로, 영상에서는 헤어·옷으로 구분합니다 (지수: 흰 블라우스 + 검은 치마 / 윤슬: 크림 블라우스 + 네이비 가디건).
 
 ---
 
@@ -101,6 +101,12 @@ Photorealistic bright editorial portrait of an original, fictional Korean woman 
 | 최종 1 | 최종 2 | 최종 3 | 최종 4 |
 |---|---|---|---|
 | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_62f37810-1b51-45fe-b0fc-2717e849ed85.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_cb255194-8556-4804-a463-c6ea5148b911.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_3aeb0ea8-3ffc-4e7c-8948-41ce7d81003c.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_231936_a915ea36-5e5f-4b02-b0c9-57d8f2f5adaa.png) |
+
+**한윤슬 — 최초 얼굴 + 볼륨 버전 (상반신)**
+
+| 볼륨 1 | 볼륨 2 | 볼륨 3 | 볼륨 4 |
+|---|---|---|---|
+| [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_232851_7c82fe4a-29d3-4052-8d26-048e007c653c.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_232851_701004a3-ef84-479b-856f-27d46f6265ce.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_232852_e092b91f-45b6-4ad1-bb5b-e2ab87b468af.png) | [보기](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_232851_30fc397f-f6e1-42d5-a2f2-96441f26899b.png) |
 
 > 영상 만들 때 이 job ID를 "참고 이미지"로 쓰면 얼굴이 유지됩니다.
 
