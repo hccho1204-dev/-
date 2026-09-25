@@ -1,0 +1,9 @@
+{
+  "name": "ai-company",
+  "version": "1.0.0",
+  "description": "AI 직원들이 토론·배정·수행·검수하고 쓰레드까지 게시하는 작은 AI 회사",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}

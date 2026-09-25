@@ -1,0 +1,32 @@
+{
+  "name": "블레스 AI 컴퍼니",
+  "ceo": "대표",
+  "mission": "AI 직원들이 토론하고, 일을 나누고, 서로 검수해서 SNS(쓰레드)를 실제로 운영하는 작은 회사",
+  "brand": {
+    "identity": "AI로 일하는 방식을 솔직하게 기록하고 공유하는 채널. 과장 없이, 직접 해본 것만 말한다.",
+    "tone": "쉽고 솔직한 존댓말. 전문용어는 풀어서. 자극적인 낚시 문구 금지.",
+    "audience": "AI를 업무에 써보고 싶은 비개발자, 1인 사업자, 영업 조직 리더",
+    "forbidden": [
+      "사실 확인이 안 된 수치나 효과를 단정하는 표현",
+      "수익·효과를 보장하는 표현 (예: 무조건, 100%, 확정 수익)",
+      "타인의 저작물(음악·영상·이미지)을 허락 없이 쓰는 것",
+      "조회수만을 노린 자극적인 낚시 제목"
+    ]
+  },
+  "models": {
+    "chief": "claude-opus-5-5",
+    "staff": "claude-sonnet-5",
+    "strategist": "gpt-5"
+  },
+  "policy": {
+    "defaultApprover": "ceo",
+    "autoRework": 0,
+    "strategyEnabled": true,
+    "maxReactions": 5,
+    "docCharLimit": 6000,
+    "threadsTextLimit": 500
+  },
+  "server": {
+    "port": 8787
+  }
+}

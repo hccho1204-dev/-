@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+  :root { --bg:#f6f7fb; --card:#fff; --ink:#111827; --sub:#6b7280; --line:#e5e7eb; --accent:#4f46e5; --good:#059669; --warn:#d97706; --bad:#dc2626; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0b0f19; --card:#131a2a; --ink:#e5e7eb; --sub:#9ca3af; --line:#243049; --accent:#818cf8; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif; line-height:1.6; }
+  .wrap { max-width:880px; margin:0 auto; padding:32px 16px 64px; }
+  .meta { color:var(--sub); font-size:13px; display:flex; gap:12px; flex-wrap:wrap; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700; background:var(--accent); color:#fff; }
+  h1 { font-size:26px; line-height:1.35; margin:10px 0 18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin:14px 0; }
+  .card h2 { font-size:15px; margin:0 0 10px; color:var(--sub); letter-spacing:.02em; }
+  .decision { border-left:6px solid var(--accent); font-size:17px; font-weight:600; }
+  ol.summary { margin:0; padding-left:20px; font-size:16px; } ol.summary li { margin:4px 0; }
+  .finding { padding:10px 0; border-top:1px dashed var(--line); } .finding:first-child { border-top:0; }
+  .finding b { display:block; } .finding .ev { color:var(--sub); font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--sub); font-weight:600; }
+  .ok { color:var(--good); font-weight:700; } .no { color:var(--bad); font-weight:700; }
+  .post { white-space:pre-wrap; background:var(--bg); border-radius:10px; padding:14px; font-size:15px; }
+  .foot { color:var(--sub); font-size:12px; margin-top:24px; }
+  @media print { body { background:#fff; } .card { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="meta"><span class="badge">{{STATUS}}</span><span>업무 {{TASK_ID}}</span><span>마감 {{DEADLINE}}</span><span>작성 {{DATE}}</span><span>검수 {{ROUNDS}}회</span></div>
+  <h1>{{HEADLINE}}</h1>
+
+  <div class="card decision"><h2>CEO가 결정할 것</h2>{{DECISION}}</div>
+
+  <div class="card"><h2>핵심 요약</h2><ol class="summary">{{SUMMARY}}</ol></div>
+
+  {{POST}}
+
+  <div class="card"><h2>근거</h2>{{FINDINGS}}</div>
+
+  <div class="card"><h2>리스크와 대응</h2><table><thead><tr><th>리스크</th><th>대응</th></tr></thead><tbody>{{RISKS}}</tbody></table></div>
+
+  <div class="card"><h2>다음 행동</h2><table><thead><tr><th>담당</th><th>할 일</th><th>마감</th></tr></thead><tbody>{{ACTIONS}}</tbody></table></div>
+
+  <div class="card"><h2>전략실장 한수합 의견 처리</h2><table><thead><tr><th>권고</th><th>반영</th><th>이유</th></tr></thead><tbody>{{STRATEGY}}</tbody></table></div>
+
+  <div class="card"><h2>완료 기준 검수 결과</h2><table><thead><tr><th>기준</th><th>결과</th><th>메모</th></tr></thead><tbody>{{CHECKLIST}}</tbody></table></div>
+
+  <div class="card"><h2>작업 문서 (한줄요약)</h2><table><thead><tr><th>담당</th><th>문서가 알려주는 것</th></tr></thead><tbody>{{DOCS}}</tbody></table></div>
+
+  <div class="foot">CEO 지시: {{INSTRUCTION}}</div>
+</div>
+</body>
+</html>

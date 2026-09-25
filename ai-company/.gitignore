@@ -1,0 +1,6 @@
+# 개인 정보·실행 기록 (깃허브에 올라가면 안 됨)
+data/
+workspace/
+.env
+content/videos/*
+!content/videos/.gitkeep
