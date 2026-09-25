@@ -11,9 +11,9 @@
 |---|---|---|
 | 비서실장 한윤슬 | [2차 후보 B](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_9b93bf69-dd6c-4bda-8b52-e8978241c417.png) | 9b93bf69-dd6c-4bda-8b52-e8978241c417 |
 | 감사실장 서다온 | [2차 후보 C](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_466ba340-cd69-4e41-b5d3-9ffb579ec4a6.png) | 466ba340-cd69-4e41-b5d3-9ffb579ec4a6 |
-| 기술감사실장 이해린 | [1차](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_214635_0a3a2848-314a-4c2f-9db9-4c36b55c5f8c.png) (미확정) | 0a3a2848-314a-4c2f-9db9-4c36b55c5f8c |
+| 기술감사실장 이해린 | [2차 윤슬 후보 D](https://d8j0ntlcm91z4.cloudfront.net/user_3Fhh2UucHeHbrEzf3HGxjl98LyG/hf_20260925_221352_00fc68ef-d53a-4b82-b483-f9ab31914901.png) | 00fc68ef-d53a-4b82-b483-f9ab31914901 |
 
-> 윤슬·다온은 같은 주문문에서 나온 사진이라 옷차림(크림 블라우스 + 네이비 가디건)이 같습니다. 합동 영상에서 헷갈리지 않도록 다온은 영상 단계에서 옷을 네이비 재킷·금테 안경으로 바꿔 구분합니다.
+> 세 사람 모두 같은 주문문에서 나온 사진이라 옷차림(크림 블라우스 + 네이비 가디건)이 같습니다. 합동 영상에서 헷갈리지 않도록 영상 단계에서 옷을 바꿔 구분합니다 — 윤슬: 크림 블라우스 + 네이비 가디건(그대로) / 다온: 네이비 재킷 + 금테 안경 / 해린: 흰 니트 가디건 + 금색 링 귀걸이.
 
 ---
 
