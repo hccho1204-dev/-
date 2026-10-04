@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PPT의 변화 — 텍스트 없는 모션그래픽 (11초)</title>
+<!--
+  방법 ① "대사 + 시간"만 주고 텍스트 없이 만들기
+  대사: "우리가 항상 사용하는 PPT도 조금씩 조금씩 변화가 있었습니다.
+        오늘은 아직 많은 분들이 모를 수 있는 기능 세 가지를 알려드리겠습니다.
+        후딱 지나가니까 집중해 주세요."   (총 11초)
+  타이밍:  0.0~4.2s  옛날 4:3 슬라이드 → 현대 16:9 슬라이드로 진화
+           4.2~8.3s  숨은 기능 3개 (카드 3장이 하나씩 등장)
+           8.3~11.0s 속도선 + 과녁 줌인 ("집중!")
+-->
+<style>
+  :root { --bg:#0E1116; --ink:#F4F1EA; --accent:#FF6A3D; --blue:#3D7BFF; --mint:#2ED3A6; --gold:#FFC53D; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background:#000; height:100%; overflow:hidden; }
+  #stage { position:relative; overflow:hidden; background:var(--bg); }
+  .abs { position:absolute; left:50%; top:50%; }
+  /* 씬1: 슬라이드 */
+  #slide { width:640px; height:480px; margin:-240px 0 0 -320px; background:#fff; border-radius:6px; box-shadow:0 30px 80px rgba(0,0,0,.5); overflow:hidden; }
+  #slide .title { position:absolute; left:8%; top:9%; height:9%; background:#1F3B8A; border-radius:3px; }
+  #slide .line { position:absolute; left:12%; height:4.2%; background:#B9C2D3; border-radius:3px; }
+  #slide .dot { position:absolute; left:7%; width:2.4%; aspect-ratio:1; background:#1F3B8A; border-radius:50%; }
+  #slide .card { position:absolute; border-radius:14px; }
+  #slide .bar { position:absolute; bottom:14%; width:5%; border-radius:6px 6px 0 0; }
+  #slide .ring { position:absolute; border-radius:50%; }
+  /* 씬2: 기능 카드 */
+  .feat { width:340px; height:420px; margin:-210px 0 0 -170px; border-radius:28px; background:#1A1F29; border:2px solid #2A3140; }
+  .feat .num { position:absolute; left:28px; top:24px; width:54px; height:54px; border-radius:50%; }
+  .feat .pip { position:absolute; top:17px; width:10px; height:20px; background:var(--bg); border-radius:3px; }
+  .feat svg { position:absolute; left:50%; top:56%; transform:translate(-50%,-50%); }
+  #spot { width:900px; height:900px; margin:-450px 0 0 -450px; border-radius:50%; background:radial-gradient(circle, rgba(255,255,255,.08), transparent 60%); }
+  /* 씬3: 집중 */
+  .speed { position:absolute; height:6px; border-radius:3px; background:var(--ink); }
+  .target { border-radius:50%; border:18px solid var(--accent); }
+  #flash { position:absolute; inset:0; background:var(--ink); opacity:0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="spot" class="abs"></div>
+
+  <!-- 씬1 -->
+  <div id="slide" class="abs">
+    <div class="title"></div>
+    <div class="dot" style="top:28%"></div><div class="line" style="top:27%"></div>
+    <div class="dot" style="top:40%"></div><div class="line" style="top:39%"></div>
+    <div class="dot" style="top:52%"></div><div class="line" style="top:51%"></div>
+    <div class="dot" style="top:64%"></div><div class="line" style="top:63%"></div>
+    <div class="card" style="background:#FFE7DF"></div>
+    <div class="card" style="background:#E3ECFF"></div>
+    <div class="bar" style="background:var(--blue)"></div>
+    <div class="bar" style="background:var(--mint)"></div>
+    <div class="bar" style="background:var(--accent)"></div>
+    <div class="bar" style="background:var(--gold)"></div>
+    <div class="ring"></div>
+  </div>
+
+  <!-- 씬2: 기능 3개 (번호는 점 개수로 표현) -->
+  <div class="feat abs" data-i="0">
+    <div class="num" style="background:var(--accent)"><div class="pip" style="left:22px"></div></div>
+    <svg width="180" height="180" viewBox="0 0 180 180"><rect x="20" y="40" width="140" height="100" rx="12" fill="none" stroke="#FF6A3D" stroke-width="10"/><path class="draw" d="M50 115 L80 80 L105 100 L135 62" fill="none" stroke="#F4F1EA" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="feat abs" data-i="1">
+    <div class="num" style="background:var(--blue)"><div class="pip" style="left:15px"></div><div class="pip" style="left:29px"></div></div>
+    <svg width="180" height="180" viewBox="0 0 180 180"><circle cx="90" cy="90" r="60" fill="none" stroke="#3D7BFF" stroke-width="10"/><path class="draw" d="M90 30 A60 60 0 0 1 150 90 L90 90 Z" fill="#F4F1EA"/></svg>
+  </div>
+  <div class="feat abs" data-i="2">
+    <div class="num" style="background:var(--mint)"><div class="pip" style="left:9px"></div><div class="pip" style="left:22px"></div><div class="pip" style="left:35px"></div></div>
+    <svg width="180" height="180" viewBox="0 0 180 180"><path d="M90 20 L104 70 L156 70 L114 100 L130 152 L90 120 L50 152 L66 100 L24 70 L76 70 Z" fill="none" stroke="#2ED3A6" stroke-width="10" stroke-linejoin="round"/><circle class="draw" cx="90" cy="92" r="18" fill="#F4F1EA"/></svg>
+  </div>
+
+  <!-- 씬3 -->
+  <div id="speeds"></div>
+  <div class="target abs" id="t1"></div>
+  <div class="target abs" id="t2" style="border-color:var(--ink)"></div>
+  <div class="target abs" id="t3" style="background:var(--accent);border:0"></div>
+  <div id="flash"></div>
+</div>
+
+<script src="../../engine/motion.js"></script>
+<script>
+Motion.start({
+  width: 1920, height: 1080, duration: 11,
+  setup(M) {
+    const box = M.$('#speeds'), r = M.rand(7);
+    for (let i = 0; i < 26; i++) {
+      const d = document.createElement('div');
+      d.className = 'speed';
+      d.dataset.y = r() * 1080; d.dataset.len = 200 + r() * 500; d.dataset.d = r() * 0.6; d.dataset.v = 2600 + r() * 2200;
+      box.appendChild(d);
+    }
+  },
+  render(t, M) {
+    const { set, key, prog, $, $$, ease } = M;
+
+    // ───── 씬1 (0~4.2s): 4:3 → 16:9 진화 ─────
+    const slide = $('#slide');
+    const appear = prog(t, 0, 0.6, ease.outBack);
+    const widen = prog(t, 1.4, 2.2, ease.inOutExpo);      // "조금씩"
+    const modern = prog(t, 2.3, 3.2, ease.inOutExpo);     // "조금씩 변화"
+    const leave = prog(t, 3.8, 4.3, ease.inOutExpo);
+    const w = M.lerp(640, 1280, widen), h = M.lerp(480, 720, widen);
+    set(slide, { width: w + 'px', height: h + 'px', marginLeft: -w / 2 + 'px', marginTop: -h / 2 + 'px',
+      s: appear * (1 - leave * 0.6), y: leave * -900, r: (1 - appear) * -8 + leave * -6,
+      borderRadius: M.lerp(6, 28, modern) + 'px', o: t > 4.4 ? 0 : 1 });
+    set($('#slide .title'), { width: M.lerp(55, 38, modern) + '%', background: modern > 0.5 ? '#0E1116' : '#1F3B8A' });
+    $$('#slide .line').forEach((el, i) => {
+      const grow = prog(t, 0.5 + i * 0.15, 1.0 + i * 0.15, ease.outCubic);
+      set(el, { width: grow * (70 - i * 8) + '%', o: 1 - modern });
+    });
+    $$('#slide .dot').forEach((el, i) => set(el, { o: prog(t, 0.5 + i * 0.15, 0.7 + i * 0.15) * (1 - modern) }));
+    $$('#slide .card').forEach((el, i) => {
+      const p = prog(t, 2.5 + i * 0.12, 3.1 + i * 0.12, ease.outBack);
+      set(el, { left: 8 + i * 22 + '%', top: '28%', width: '19%', height: '58%', s: p, o: p > 0 ? 1 : 0 });
+    });
+    $$('#slide .bar').forEach((el, i) => {
+      const p = prog(t, 2.8 + i * 0.08, 3.4 + i * 0.08, ease.outBack);
+      set(el, { left: 56 + i * 7 + '%', height: p * [30, 48, 38, 62][i] + '%' });
+    });
+    const rp = prog(t, 3.0, 3.6, ease.outBack);
+    set($('#slide .ring'), { right: '6%', top: '10%', width: '9%', aspectRatio: '1', border: '10px solid #FF6A3D', s: rp, o: rp > 0 ? 1 : 0 });
+
+    // ───── 씬2 (4.2~8.3s): 기능 3개 ─────
+    $$('.feat').forEach((el, i) => {
+      const inP = prog(t, 4.4 + i * 0.55, 5.0 + i * 0.55, ease.outBack);
+      const outP = prog(t, 7.9 + i * 0.08, 8.35 + i * 0.08, ease.inOutExpo);
+      const gap = M.portrait ? 0 : 420;
+      const x = (i - 1) * gap + (1 - inP) * 300;
+      const y = (M.portrait ? (i - 1) * 470 : 0) + outP * 1400 + Math.sin((t - i) * 2.2) * 8 * inP;
+      set(el, { x, y, s: M.portrait ? 0.95 : 1, r: (1 - inP) * 12 - outP * 15, o: inP > 0 ? Math.min(1, inP * 2) : 0 });
+      const d = el.querySelector('.draw');
+      const dp = prog(t, 5.0 + i * 0.55, 5.6 + i * 0.55, ease.outBack);
+      d.style.transformOrigin = '90px 90px';
+      d.style.transform = `scale(${dp})`;
+    });
+    set($('#spot'), { o: prog(t, 4.2, 5) * (1 - prog(t, 8, 8.4)), s: 1 + Math.sin(t * 1.5) * 0.05 });
+
+    // ───── 씬3 (8.3~11s): 속도선 + 과녁 ─────
+    const s3 = t >= 8.3;
+    $$('.speed').forEach(el => {
+      const local = t - 8.3 - +el.dataset.d;
+      const x = -800 + local * +el.dataset.v;
+      set(el, { left: x + 'px', top: +el.dataset.y + 'px', width: el.dataset.len + 'px', o: s3 && local > 0 && t < 9.9 ? 0.85 : 0 });
+    });
+    [['#t1', 520, 8.9], ['#t2', 340, 9.05], ['#t3', 150, 9.2]].forEach(([id, size, st]) => {
+      const p = prog(t, st, st + 0.45, ease.outBack);
+      const zoom = key(t, [[10.3, 1], [10.85, 7, 'inOutExpo']]);
+      set($(id), { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px',
+        s: p * zoom, o: p > 0 ? 1 : 0 });
+    });
+    set($('#flash'), { o: key(t, [[10.7, 0], [10.85, 1], [11, 0]]) });
+    set($('#stage'), { background: t > 10.85 ? '#FF6A3D' : '' });
+  },
+});
+</script>
+</body>
+</html>
