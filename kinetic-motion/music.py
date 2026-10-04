@@ -11,7 +11,7 @@ import numpy as np
 SR = 44100
 BPM = 120
 BEAT = 60 / BPM          # 0.5초
-DUR = 20.0
+DUR = 22.0  # 20초 비트 + 2초 엔딩 여운
 N = int(SR * DUR)
 rng = np.random.default_rng(7)
 
@@ -187,9 +187,21 @@ add(impact(), 16.0, 0.9)
 add(impact(), 19.0, 1.0)
 add(stab([57, 60, 64, 69], 1.0) * np.linspace(1, 0, int(1.0 * SR)), 19.0, 0.5)
 
+# 엔딩 여운 (19~22초): 부드러운 패드 + 인스타 아이디 등장(19.5초) '팅' 효과음
+pad_len = 2.9
+pad = sum(saw(note(m), pad_len, 0.004) for m in [57, 64, 69, 71, 76]) / 5
+pad = lowpass(pad, 0.06)
+pn = len(pad)
+pe = np.minimum(np.linspace(0, 1, pn) * 6, 1) * np.linspace(1, 0, pn) ** 1.5
+add(pad * pe, 19.05, 0.55)
+pl = int(0.6 * SR)
+tp = np.arange(pl) / SR
+ping = (np.sin(2 * np.pi * note(88) * tp) + 0.5 * np.sin(2 * np.pi * note(95) * tp)) * np.exp(-tp / 0.15)
+add(ping, 19.5, 0.35, 0.2)
+
 # 사이드체인 느낌(킥에 맞춰 살짝 눌러주기) + 마스터
 t = np.arange(N) / SR
-duck = 1 - 0.35 * np.exp(-((t % BEAT) / 0.08))
+duck = 1 - 0.35 * np.exp(-((t % BEAT) / 0.08)) * (t < 19)
 mix *= duck[:, None]
 mix /= np.max(np.abs(mix)) + 1e-9
 mix = np.tanh(mix * 1.4) / np.tanh(1.4) * 0.92
@@ -204,4 +216,4 @@ with wave.open("out/music.wav", "wb") as w:
     w.setsampwidth(2)
     w.setframerate(SR)
     w.writeframes(pcm.tobytes())
-print("out/music.wav 생성 완료 (20초, 120 BPM)")
+print("out/music.wav 생성 완료 (22초, 120 BPM)")

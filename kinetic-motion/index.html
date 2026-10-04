@@ -35,13 +35,16 @@
    render.js 가 30fps 프레임을 뽑아 MP4로 만듭니다.
    ===================================================================== */
 const BK = "#0a0a0a", WH = "#f5f5f0", PK = "#ff2d95";
-const BEAT = 0.5, DUR = 20;
+const BEAT = 0.5, DUR = 22;
+// ▼ 엔딩에 들어갈 인스타그램 아이디 (주소창 ?insta=@아이디 로도 바꿀 수 있음)
+const INSTA_DEFAULT = "@instagram_id";
 const KR = "BHS", EN = "Anton";
 
 const params = new URLSearchParams(location.search);
 const cv = document.getElementById("c");
 const ctx = cv.getContext("2d");
 let W, H, U, PORTRAIT;
+const INSTA = params.get("insta") || INSTA_DEFAULT;
 
 function setSize(ar) {
   [W, H] = ar === "9x16" ? [1080, 1920] : [1920, 1080];
@@ -376,21 +379,49 @@ const scenes = [
     }
   }],
 
-  // ⑩ 19~20s  엔딩 카드
-  [19, 20.01, t => {
+  // ⑩ 19~22s  엔딩 카드 + 인스타그램 아이디
+  [19, 22.01, t => {
     const lt = t - 19;
     bg(BK);
     const k = outBack(prog(lt, 0, 0.3));
-    const R = U * (PORTRAIT ? 30 : 26);
-    circle(cx(), cy() - (PORTRAIT ? VY() * 6 : VY() * 8), R * k, PK);
-    circle(cx(), cy() - (PORTRAIT ? VY() * 6 : VY() * 8), R * 1.25 * outExpo(prog(lt, 0, 0.6)), null, WH, U * 0.3 * (1 - prog(lt, 0, 0.6)));
+    const R = U * (PORTRAIT ? 30 : 22);
+    const ccy = cy() - (PORTRAIT ? VY() * 8 : VY() * 14);
+    // 숨쉬듯 아주 살짝 커졌다 작아지는 원
+    const breathe = 1 + 0.015 * Math.sin(lt * 4);
+    circle(cx(), ccy, R * k * breathe, PK);
+    if (lt < 0.6) circle(cx(), ccy, R * 1.25 * outExpo(prog(lt, 0, 0.6)), null, WH, U * 0.3 * (1 - prog(lt, 0, 0.6)));
     const s = fit("조홍철", KR, R * 1.5, U * 17, 0.05);
-    text("조홍철", cx(), cy() - (PORTRAIT ? VY() * 6 : VY() * 8) + s * 0.05, s, { color: BK, spacing: 0.05, alpha: prog(lt, 0.1, 0.25) });
-    const y2 = cy() + R + (PORTRAIT ? VY() * 0 : VY() * 3);
+    text("조홍철", cx(), ccy + s * 0.05, s, { color: BK, spacing: 0.05, alpha: prog(lt, 0.1, 0.25) });
+    const y2 = ccy + R + U * 6;
     text("BLESS 본부장  |  인카금융서비스", cx(), y2, U * 5, { color: WH, alpha: prog(lt, 0.25, 0.45), spacing: 0.1 });
     text("함께 가면, 더 멀리.", cx(), y2 + U * 8, U * 4.4, { color: PK, alpha: prog(lt, 0.4, 0.6), spacing: 0.3 });
+    // 인스타그램 아이디 알약 버튼 (아래에서 튀어 올라옴)
+    const ki = prog(lt, 0.5, 0.85);
+    if (ki > 0) {
+      const fs = U * 4.6;
+      const tw = measure(INSTA, fs, EN, 0.04);
+      const ic = fs * 1.1, padX = fs * 0.8, gap = fs * 0.5;
+      const pw = padX * 2 + ic + gap + tw, ph = fs * 2;
+      const py = y2 + U * (PORTRAIT ? 22 : 20) + (1 - outBack(ki)) * U * 8;
+      ctx.save();
+      ctx.globalAlpha = clamp(ki * 2);
+      ctx.beginPath(); ctx.roundRect(cx() - pw / 2, py - ph / 2, pw, ph, ph / 2);
+      ctx.fillStyle = WH; ctx.fill();
+      // 카메라 아이콘 (둥근 사각형 + 원 + 점)
+      const ix = cx() - pw / 2 + padX + ic / 2;
+      ctx.strokeStyle = PK; ctx.lineWidth = ic * 0.11;
+      ctx.beginPath(); ctx.roundRect(ix - ic / 2, py - ic / 2, ic, ic, ic * 0.3); ctx.stroke();
+      circle(ix, py, ic * 0.22, null, PK, ic * 0.11);
+      circle(ix + ic * 0.27, py - ic * 0.27, ic * 0.06, PK);
+      ctx.restore();
+      text(INSTA, ix + ic / 2 + gap, py + fs * 0.04, fs, { color: BK, font: EN, align: "left", spacing: 0.04, alpha: clamp(ki * 2) });
+      // 아이디 아래로 핑크 밑줄이 그어짐
+      const ku = outExpo(prog(lt, 1.0, 1.4));
+      rect(cx(), py + ph / 2 + U * 2, pw * 0.6 * ku, U * 0.5, PK);
+      text("팔로우하고 함께 성장해요", cx(), py + ph / 2 + U * 6, U * 3.4, { color: "#aaa", alpha: prog(lt, 1.2, 1.5), spacing: 0.15 });
+    }
     // 마지막 페이드아웃
-    ctx.fillStyle = `rgba(0,0,0,${prog(lt, 0.75, 1)})`; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = `rgba(0,0,0,${prog(lt, 2.6, 3)})`; ctx.fillRect(0, 0, W, H);
   }],
 ];
 

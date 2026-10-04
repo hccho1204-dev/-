@@ -12,7 +12,9 @@ let chromium;
 try { ({ chromium } = require("playwright")); } catch { ({ chromium } = require("/opt/node-tools/node_modules/playwright")); }
 
 const ROOT = __dirname, OUT = path.join(ROOT, "out");
-const FPS = 30, DUR = 20;
+const FPS = 30, DUR = 22;
+// 인스타 아이디: INSTA=@아이디 node render.js  (없으면 index.html 기본값 사용)
+const INSTA = process.env.INSTA || "";
 const TYPES = { ".html": "text/html", ".ttf": "font/ttf", ".wav": "audio/wav", ".js": "text/javascript" };
 
 function serve() {
@@ -31,7 +33,7 @@ function serve() {
 async function openPage(browser, port, ar) {
   const [w, h] = ar === "9x16" ? [1080, 1920] : [1920, 1080];
   const page = await browser.newPage({ viewport: { width: w, height: h } });
-  await page.goto(`http://localhost:${port}/index.html?render&ar=${ar}`);
+  await page.goto(`http://localhost:${port}/index.html?render&ar=${ar}${INSTA ? "&insta=" + encodeURIComponent(INSTA) : ""}`);
   await page.evaluate(() => window.ready);
   return page;
 }
@@ -62,7 +64,7 @@ async function renderVideo(browser, port, ar) {
 // 장면별 대표 컷 10장을 한 장의 스토리보드로
 async function storyboard(browser, port, ar) {
   const page = await openPage(browser, port, ar);
-  const times = [1.8, 3.8, 5.8, 7.8, 9.8, 11.9, 13.9, 15.6, 17.8, 19.5];
+  const times = [1.8, 3.8, 5.8, 7.8, 9.8, 11.9, 13.9, 15.6, 17.8, 20.8];
   const dir = path.join(OUT, `sb_${ar}`);
   fs.mkdirSync(dir, { recursive: true });
   for (let i = 0; i < times.length; i++) {
