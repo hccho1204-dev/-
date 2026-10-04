@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLESS Kinetic</title>
+<style>
+  @font-face { font-family: "BHS"; src: url("fonts/BlackHanSans.ttf"); }
+  @font-face { font-family: "Anton"; src: url("fonts/Anton.ttf"); }
+  :root { --bg: #0a0a0a; --fg: #f5f5f0; --pk: #ff2d95; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "BHS", sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; box-shadow: 0 0 0 1px #222; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #222; color: var(--fg); }
+  button.on { background: var(--pk); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; box-shadow: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="16x9" class="on">가로 16:9</button>
+  <button data-ar="9x16">세로 9:16</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   BLESS 키네틱 타이포그래피 — 20초 / 120BPM (1비트 = 0.5초)
+   색상: 블랙 · 화이트 · 형광 핑크
+   window.renderFrame(t) 로 어떤 시점이든 똑같이 그려지므로(결정적 렌더)
+   render.js 가 30fps 프레임을 뽑아 MP4로 만듭니다.
+   ===================================================================== */
+const BK = "#0a0a0a", WH = "#f5f5f0", PK = "#ff2d95";
+const BEAT = 0.5, DUR = 20;
+const KR = "BHS", EN = "Anton";
+
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, U, PORTRAIT;
+
+function setSize(ar) {
+  [W, H] = ar === "9x16" ? [1080, 1920] : [1920, 1080];
+  cv.width = W; cv.height = H;
+  U = Math.min(W, H) / 100;
+  PORTRAIT = H > W;
+}
+setSize(params.get("ar") || "16x9");
+if (params.has("render")) document.body.classList.add("render");
+
+/* ---------- 수학 / 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outBack = k => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const outElastic = k => k === 0 || k === 1 ? k : Math.pow(2, -10 * k) * Math.sin((k * 10 - 0.75) * (2 * Math.PI / 3)) + 1;
+// 비트 펄스: 매 비트 직후 1 → 빠르게 0
+const pulse = (t, d = 0.12) => Math.exp(-((t % BEAT) / d));
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* ---------- 그리기 도우미 ---------- */
+function bg(c) { ctx.fillStyle = c; ctx.fillRect(0, 0, W, H); }
+
+function fit(str, font, maxW, maxSize, spacing = 0) {
+  ctx.font = `${maxSize}px ${font}`;
+  ctx.letterSpacing = `${spacing * maxSize}px`;
+  const w = ctx.measureText(str).width;
+  ctx.letterSpacing = "0px";
+  return w > maxW ? maxSize * maxW / w : maxSize;
+}
+
+function text(str, x, y, size, o = {}) {
+  const { color = WH, font = KR, align = "center", alpha = 1, rot = 0, sx = 1, sy = 1,
+          stroke = null, lw = 0, spacing = 0, base = "middle" } = o;
+  if (alpha <= 0 || sx === 0) return;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sx, sy);
+  ctx.font = `${size}px ${font}`;
+  ctx.letterSpacing = `${spacing * size}px`;
+  ctx.textAlign = align; ctx.textBaseline = base;
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || size * 0.03; ctx.lineJoin = "round"; ctx.strokeText(str, 0, 0); }
+  else { ctx.fillStyle = color; ctx.fillText(str, 0, 0); }
+  ctx.restore();
+}
+
+function measure(str, size, font = KR, spacing = 0) {
+  ctx.font = `${size}px ${font}`;
+  ctx.letterSpacing = `${spacing * size}px`;
+  const w = ctx.measureText(str).width;
+  ctx.letterSpacing = "0px";
+  return w;
+}
+
+function circle(x, y, r, fill, stroke, lw) {
+  if (r <= 0) return;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+
+function rect(x, y, w, h, fill, rot = 0, stroke, lw) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  if (fill) { ctx.fillStyle = fill; ctx.fillRect(-w / 2, -h / 2, w, h); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.strokeRect(-w / 2, -h / 2, w, h); }
+  ctx.restore();
+}
+
+function tri(x, y, r, rot, fill, stroke, lw) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.beginPath();
+  for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 3; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+  ctx.restore();
+}
+
+// 한 글자씩 등장하는 단어 (각 글자 시작 시간 배열)
+function letters(str, x, y, size, times, o = {}) {
+  const chars = [...str];
+  const sp = o.spacing || 0;
+  const widths = chars.map(c => measure(c, size, o.font || KR, sp));
+  const total = widths.reduce((a, b) => a + b, 0);
+  let cx = x - total / 2;
+  chars.forEach((c, i) => {
+    const k = prog(o.t, times[i], times[i] + (o.d || 0.3));
+    if (k > 0) {
+      const s = o.from !== undefined ? lerp(o.from, 1, outBack(k)) : 1;
+      const dy = o.drop ? (1 - outExpo(k)) * -size * 0.8 : 0;
+      text(c, cx + widths[i] / 2, y + dy, size, { ...o, align: "center", sx: s, sy: s, alpha: Math.min(1, k * 3) });
+    }
+    cx += widths[i];
+  });
+}
+
+// 무한 흐르는 텍스트 띠
+function marquee(str, y, size, speed, t, color, rot, font = KR) {
+  ctx.save();
+  ctx.translate(W / 2, H / 2); ctx.rotate(rot); ctx.translate(-W / 2, -H / 2);
+  const w = measure(str, size, font);
+  const span = Math.hypot(W, H) * 1.2;
+  let x = -span / 2 + W / 2 - ((t * speed) % w + w) % w;
+  for (; x < span; x += w) text(str, x, y, size, { color, font, align: "left" });
+  ctx.restore();
+}
+
+// 필름 그레인 (미리 만든 노이즈를 프레임마다 위치만 이동)
+const grain = document.createElement("canvas");
+grain.width = grain.height = 256;
+{ const g = grain.getContext("2d"), d = g.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 14; }
+  g.putImageData(d, 0, 0); }
+function drawGrain(f) {
+  ctx.save();
+  ctx.fillStyle = ctx.createPattern(grain, "repeat");
+  ctx.translate(-(rand(f) * 256) | 0, -(rand(f + 99) * 256) | 0);
+  ctx.fillRect(0, 0, W + 256, H + 256);
+  ctx.restore();
+}
+
+/* =====================================================================
+   장면(Scene) 정의 — [시작, 끝, 그리기 함수]
+   ===================================================================== */
+const cx = () => W / 2, cy = () => H / 2;
+const VY = () => H / 100;          // 세로 기준 단위
+const MAXW = () => W * 0.86;       // 텍스트 최대 폭
+
+const scenes = [
+  // ① 0~2s  HELLO — 핑크 원이 터지며 시작
+  [0, 2, t => {
+    bg(BK);
+    // 도트 그리드
+    const gap = U * 6;
+    for (let x = gap / 2; x < W; x += gap) for (let y = gap / 2; y < H; y += gap) {
+      const d = Math.hypot(x - cx(), y - cy());
+      const k = prog(t * 1400 - d, 0, 200);
+      circle(x, y, U * 0.25 * k, "#2a2a2a");
+    }
+    const k = outExpo(prog(t, 0, 0.6));
+    circle(cx(), cy(), U * 34 * k, null, PK, U * 2.2 * (1 - k * 0.6));
+    circle(cx(), cy(), U * 22 * outBack(prog(t, 0.05, 0.5)), PK);
+    const s = fit("HELLO", EN, MAXW(), U * 30, 0.04);
+    letters("HELLO", cx(), cy(), s, [0.5, 0.75, 1.0, 1.25, 1.5], { t, font: EN, color: WH, from: 2.4, spacing: 0.04 });
+    text("안녕하세요", cx(), cy() + s * 0.62, U * 5, { color: WH, alpha: prog(t, 1.5, 1.7), spacing: 0.3 });
+  }],
+
+  // ② 2~4s  저는 조·홍·철 — 흰 배경에 이름이 쾅쾅쾅
+  [2, 4, t => {
+    bg(WH);
+    const lt = t - 2;
+    text("저는", cx(), cy() - VY() * (PORTRAIT ? 16 : 26), U * 6, { color: BK, alpha: prog(lt, 0, 0.15), spacing: 0.2 });
+    const s = fit("조홍철", KR, MAXW(), U * 34, 0.05);
+    const times = [0.5, 1.0, 1.5];
+    const ws = [...("조홍철")].map(c => measure(c, s, KR, 0.05));
+    let x = cx() - ws.reduce((a, b) => a + b) / 2;
+    ws.forEach((w, i) => {
+      const k = prog(lt, times[i], times[i] + 0.35);
+      if (k > 0) rect(x + w / 2, cy(), w * 0.92 * outBack(k), s * 1.05 * outBack(k), i === 1 ? PK : BK, (1 - k) * 0.6 * (i % 2 ? -1 : 1));
+      x += w;
+    });
+    letters("조홍철", cx(), cy() + s * 0.04, s, times, { t: lt, color: WH, from: 2.6, spacing: 0.05 });
+    // 비트마다 흔들리는 작은 원
+    for (let i = 0; i < 6; i++) {
+      const a = i * Math.PI / 3 + lt;
+      circle(cx() + Math.cos(a) * W * 0.42, cy() + Math.sin(a) * H * 0.4, U * (1 + pulse(lt) * 1.2), i % 2 ? PK : BK);
+    }
+  }],
+
+  // ③ 4~6s  BLESS 본부장 — 핑크 바가 쓸고 지나감
+  [4, 6, t => {
+    bg(BK);
+    const lt = t - 4;
+    const barH = PORTRAIT ? H * 0.2 : H * 0.36;
+    const up = inOut(prog(lt, 0.9, 1.2)) * (PORTRAIT ? H * 0.1 : H * 0.14);
+    const bw = W * outExpo(prog(lt, 0, 0.35));
+    rect(bw / 2, cy() - up, bw, barH, PK);
+    const s = fit("BLESS", EN, MAXW(), barH * 0.95, 0.12);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, cy() - up - barH / 2, bw, barH); ctx.clip();
+    text("BLESS", cx() + (1 - outExpo(prog(lt, 0.1, 0.6))) * W * 0.3, cy() - up + s * 0.03, s, { color: BK, font: EN, spacing: 0.12 });
+    ctx.restore();
+    const s2 = fit("본부장", KR, MAXW() * 0.7, U * 16, 0.1);
+    letters("본부장", cx(), cy() + barH / 2 - up + s2 * 0.8, s2, [1.0, 1.25, 1.5], { t: lt, color: WH, drop: true, spacing: 0.1 });
+    text("INCAR FINANCIAL SERVICE  ·  인카금융서비스", cx(), H - VY() * 8, U * 3.2, { color: "#888", alpha: prog(lt, 1.5, 1.8), spacing: 0.15 });
+  }],
+
+  // ④ 6~8s  65명의 설계사와 함께 — 숫자 카운터 + 65개 도트
+  [6, 8, t => {
+    bg(BK);
+    const lt = t - 6;
+    const cols = PORTRAIT ? 5 : 13, rows = PORTRAIT ? 13 : 5;
+    const gap = Math.min(W * 0.9 / cols, H * 0.9 / rows);
+    const n = Math.floor(65 * outExpo(prog(lt, 0, 1)));
+    for (let i = 0; i < 65; i++) {
+      const c = i % cols, r = Math.floor(i / cols);
+      const x = cx() + (c - (cols - 1) / 2) * gap, y = cy() + (r - (rows - 1) / 2) * gap;
+      circle(x, y, gap * 0.36, i < n ? (i % 7 === 0 ? PK : "#1f1f1f") : "#141414");
+    }
+    const num = String(Math.round(65 * outExpo(prog(lt, 0, 1))));
+    const s = fit("65명", KR, MAXW(), U * 42);
+    const pop = 1 + 0.08 * pulse(lt);
+    text(num, cx() - measure("명", s * 0.5) / 2, cy() - (PORTRAIT ? VY() * 4 : 0), s, { color: WH, font: EN, sx: pop, sy: pop });
+    text("명", cx() + measure(num, s, EN) / 2 + U, cy() + s * 0.2 - (PORTRAIT ? VY() * 4 : 0), s * 0.35, { color: PK, alpha: prog(lt, 0.9, 1.0) });
+    const words = ["설계사와", "함께"];
+    words.forEach((w, i) => {
+      const k = prog(lt, 1.0 + i * 0.5, 1.25 + i * 0.5);
+      const y = cy() + (PORTRAIT ? VY() * 14 : s * 0.62);
+      const off = (i === 0 ? -1 : 1) * (PORTRAIT ? U * 15 : U * 13);
+      if (k > 0) {
+        rect(cx() + off, y, measure(w, U * 7) + U * 4, U * 10, i ? PK : WH, 0);
+        text(w, cx() + off, y + U * 0.4, U * 7, { color: BK, sx: outBack(k), sy: outBack(k) });
+      }
+    });
+  }],
+
+  // ⑤ 8~10s  의료 / 약사 / 법인 / VIP — 비트마다 배경 반전
+  [8, 10, t => {
+    const lt = t - 8;
+    const i = Math.min(3, Math.floor(lt / BEAT));
+    const words = ["의료", "약사", "법인", "VIP"];
+    const bgs = [BK, WH, PK, BK], fgs = [WH, BK, BK, PK];
+    bg(bgs[i]);
+    const bl = lt - i * BEAT;
+    // 회전하는 사각 테두리
+    for (let j = 0; j < 4; j++) {
+      const r = U * (24 + j * 9) * (1 + 0.15 * pulse(lt));
+      rect(cx(), cy(), r * 2, r * 2, null, lt * (j % 2 ? -0.8 : 0.8) + j * 0.3, fgs[i], U * 0.35);
+    }
+    text("FOR", cx(), cy() - VY() * (PORTRAIT ? 14 : 32), U * 4, { color: fgs[i], font: EN, spacing: 0.5, alpha: 0.8 });
+    const font = i === 3 ? EN : KR;
+    const s = fit(words[i], font, MAXW(), U * 38, 0.04);
+    const k = outBack(prog(bl, 0, 0.18));
+    text(words[i], cx(), cy() + s * 0.04, s, { color: fgs[i], font, sx: lerp(1.6, 1, k), sy: lerp(1.6, 1, k), spacing: 0.04 });
+    text(["Medical", "Pharmacy", "Corporate", "Very Important Partner"][i], cx(), cy() + VY() * (PORTRAIT ? 14 : 32), U * 3.2, { color: fgs[i], font: EN, spacing: 0.3, alpha: 0.7 });
+  }],
+
+  // ⑥ 10~12s  보험이 아닌 / 인생을 설계합니다
+  [10, 12, t => {
+    bg(BK);
+    const lt = t - 10;
+    for (let i = 0; i < 9; i++) {           // 흩날리는 사각형
+      const x = rand(i) * W, y = (rand(i + 9) * H + lt * U * 20 * (1 + rand(i + 3))) % H;
+      rect(x, y, U * (2 + rand(i + 5) * 4), U * (2 + rand(i + 5) * 4), i % 3 ? null : PK, lt * (1 + i * 0.3), i % 3 ? "#333" : null, U * 0.4);
+    }
+    const s1 = fit("보험이 아닌", KR, MAXW() * 0.8, U * 13, 0.02);
+    const k1 = outExpo(prog(lt, 0, 0.5));
+    const y1 = cy() - (PORTRAIT ? VY() * 6 : VY() * 13);
+    text("보험이 아닌", lerp(-W * 0.5, cx(), k1), y1, s1, { color: "#777", spacing: 0.02 });
+    // 취소선 (보험 상품이 아닌 사람 중심)
+    const ks = outExpo(prog(lt, 0.5, 0.8));
+    const sw = measure("보험이 아닌", s1, KR, 0.02);
+    rect(cx() - sw / 2 + sw * ks / 2, y1, sw * ks, U * 0.8, PK);
+    const s2 = fit("인생을 설계합니다", KR, MAXW(), U * 16, 0.02);
+    const k2 = outExpo(prog(lt, 1.0, 1.4));
+    const y2 = cy() + (PORTRAIT ? VY() * 6 : VY() * 10);
+    const full = measure("인생을 설계합니다", s2, KR, 0.02);
+    const x2 = lerp(W * 1.5, cx(), k2) - full / 2;
+    text("인생을", x2, y2, s2, { color: PK, align: "left", spacing: 0.02 });
+    text(" 설계합니다", x2 + measure("인생을", s2, KR, 0.02), y2, s2, { color: WH, align: "left", spacing: 0.02 });
+    const ku = outExpo(prog(lt, 1.5, 1.8));
+    rect(x2 + full * ku / 2, y2 + s2 * 0.62, full * ku, U * 1.2, WH);
+  }],
+
+  // ⑦ 12~14s  AI NATIVE — 핑크 AI + 삼각형 궤도
+  [12, 14, t => {
+    bg(BK);
+    const lt = t - 12;
+    const s = fit("AI", EN, MAXW() * 0.7, H * (PORTRAIT ? 0.32 : 0.7));
+    const k = outElastic(prog(lt, 0, 0.8));
+    const p = 1 + 0.06 * pulse(lt);
+    for (let i = 0; i < 6; i++) {
+      const a = lt * 1.6 + i * Math.PI / 3, R = s * 0.85;
+      tri(cx() + Math.cos(a) * R * (W > H ? 1.4 : 0.9), cy() + Math.sin(a) * R * 0.7, U * (2.2 + pulse(lt + i * 0.1) * 1.5), a, i % 2 ? PK : null, i % 2 ? null : WH, U * 0.4);
+    }
+    text("AI", cx(), cy() + s * 0.05 - (PORTRAIT ? VY() * 4 : 0), s, { color: PK, font: EN, sx: k * p, sy: k * p });
+    const s2 = fit("NATIVE", EN, MAXW(), U * 22, 0.2);
+    const k2 = outExpo(prog(lt, 1.0, 1.4));
+    text("NATIVE", lerp(W * 1.4, cx(), k2), cy() + (PORTRAIT ? s * 0.55 : s * 0.15), s2, { stroke: WH, lw: U * 0.5, font: EN, spacing: 0.2 });
+    text("AI 네이티브 조직을 만듭니다", cx(), H - VY() * (PORTRAIT ? 14 : 10), U * 4.2, { color: WH, alpha: prog(lt, 1.5, 1.7), spacing: 0.15 });
+  }],
+
+  // ⑧ 14~16s  한 달을 1년처럼 — 빌드업 (점점 빨라지는 스트로브)
+  [14, 16, t => {
+    const lt = t - 14;
+    const step = lt < 1 ? BEAT : BEAT / 4;
+    const flip = Math.floor(lt / step) % 2 === 1 && lt > 1;
+    bg(flip ? WH : BK);
+    const fg = flip ? BK : WH;
+    const shake = prog(lt, 1, 2) * U * 0.8;
+    const sx = (rand(Math.floor(t * 30)) - 0.5) * shake, sy = (rand(Math.floor(t * 30) + 7) - 0.5) * shake;
+    const s1 = fit("한 달을", KR, MAXW(), U * (PORTRAIT ? 22 : 18));
+    text("한 달을", cx() + sx, cy() - (PORTRAIT ? VY() * 9 : VY() * 16) + sy, s1, { color: fg, alpha: prog(lt, 0, 0.1), sx: lerp(1.3, 1, outExpo(prog(lt, 0, 0.4))), sy: lerp(1.3, 1, outExpo(prog(lt, 0, 0.4))) });
+    const s2 = fit("1년처럼", KR, MAXW(), U * (PORTRAIT ? 26 : 26));
+    const k2 = outBack(prog(lt, 1.0, 1.25));
+    text("1년처럼", cx() - sx, cy() + (PORTRAIT ? VY() * 7 : VY() * 14) - sy, s2, { color: PK, sx: k2, sy: k2 });
+    // 진행 바
+    rect(W * prog(lt, 0, 2) / 2, H - U * 3, W * prog(lt, 0, 2), U * 1.4, PK);
+  }],
+
+  // ⑨ 16~19s  DROP — 핑크 + 흐르는 띠 + 함께 가면 더 멀리
+  [16, 19, t => {
+    const lt = t - 16;
+    bg(PK);
+    const rot = -0.2;
+    const band = U * 9;
+    for (let r = -6; r <= 6; r++) {
+      const y = cy() + r * band * 1.35;
+      if (r % 2) rect(cx(), y, W * 3, band * 1.1, BK, rot);
+      marquee(r % 2 ? "BLESS  ·  BLESS  ·  BLESS  ·  " : "함께 가면 더 멀리  ·  ", y + band * 0.04, band * 0.8, (r % 2 ? 1 : -1) * U * 30, lt, r % 2 ? PK : BK, rot, r % 2 ? EN : KR);
+    }
+    // 중앙 카드
+    const words = ["함께", "가면", "더", "멀리"];
+    const i = Math.min(3, Math.floor(lt / BEAT));
+    const bl = lt - i * BEAT;
+    if (lt < 2) {
+      const cw = PORTRAIT ? W * 0.8 : W * 0.5, ch = PORTRAIT ? H * 0.3 : H * 0.5;
+      const k = outBack(prog(lt, 0, 0.25));
+      rect(cx(), cy(), cw * k, ch * k, BK, 0);
+      const s = fit(words[i], KR, cw * 0.8, ch * 0.62);
+      const kk = outBack(prog(bl, 0, 0.15));
+      text(words[i], cx(), cy() + s * 0.04, s, { color: i === 3 ? PK : WH, sx: lerp(1.5, 1, kk), sy: lerp(1.5, 1, kk) });
+    } else {
+      // 18~19s: 원이 터지며 BLESS 본부
+      const k = prog(lt, 2, 3);
+      for (let j = 0; j < 5; j++) circle(cx(), cy(), Math.hypot(W, H) * 0.6 * outExpo(prog(k, j * 0.08, 0.6 + j * 0.08)), j % 2 ? PK : BK);
+      const s = fit("BLESS", EN, MAXW() * 0.8, U * 30, 0.1);
+      const kk = outBack(prog(lt, 2.1, 2.5));
+      text("BLESS", cx(), cy() + s * 0.04, s, { color: WH, font: EN, sx: kk, sy: kk, spacing: 0.1 });
+    }
+  }],
+
+  // ⑩ 19~20s  엔딩 카드
+  [19, 20.01, t => {
+    const lt = t - 19;
+    bg(BK);
+    const k = outBack(prog(lt, 0, 0.3));
+    const R = U * (PORTRAIT ? 30 : 26);
+    circle(cx(), cy() - (PORTRAIT ? VY() * 6 : VY() * 8), R * k, PK);
+    circle(cx(), cy() - (PORTRAIT ? VY() * 6 : VY() * 8), R * 1.25 * outExpo(prog(lt, 0, 0.6)), null, WH, U * 0.3 * (1 - prog(lt, 0, 0.6)));
+    const s = fit("조홍철", KR, R * 1.5, U * 17, 0.05);
+    text("조홍철", cx(), cy() - (PORTRAIT ? VY() * 6 : VY() * 8) + s * 0.05, s, { color: BK, spacing: 0.05, alpha: prog(lt, 0.1, 0.25) });
+    const y2 = cy() + R + (PORTRAIT ? VY() * 0 : VY() * 3);
+    text("BLESS 본부장  |  인카금융서비스", cx(), y2, U * 5, { color: WH, alpha: prog(lt, 0.25, 0.45), spacing: 0.1 });
+    text("함께 가면, 더 멀리.", cx(), y2 + U * 8, U * 4.4, { color: PK, alpha: prog(lt, 0.4, 0.6), spacing: 0.3 });
+    // 마지막 페이드아웃
+    ctx.fillStyle = `rgba(0,0,0,${prog(lt, 0.75, 1)})`; ctx.fillRect(0, 0, W, H);
+  }],
+];
+
+/* ---------- 프레임 렌더 ---------- */
+function renderFrame(t) {
+  t = clamp(t, 0, DUR - 1e-4);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  const sc = scenes.find(s => t >= s[0] && t < s[1]) || scenes[scenes.length - 1];
+  // 비트마다 아주 살짝 줌인되는 카메라
+  const z = 1 + 0.012 * pulse(t, 0.1);
+  ctx.save();
+  ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
+  sc[2](t);
+  ctx.restore();
+  // 장면 전환 순간 흰색 플래시
+  const sinceCut = t - sc[0];
+  if (sc[0] > 0 && sinceCut < 0.08) { ctx.fillStyle = `rgba(255,255,255,${0.5 * (1 - sinceCut / 0.08)})`; ctx.fillRect(0, 0, W, H); }
+  drawGrain(Math.floor(t * 30));
+}
+window.renderFrame = renderFrame;
+window.setAspect = ar => { setSize(ar); renderFrame(0); };
+window.ready = document.fonts.load(`10px ${KR}`).then(() => document.fonts.load(`10px ${EN}`)).then(() => document.fonts.ready);
+
+/* ---------- 미리보기 플레이어 ---------- */
+const audio = document.getElementById("music");
+let playing = false, t0 = 0;
+function loop() {
+  if (!playing) return;
+  const t = audio.currentTime || (performance.now() - t0) / 1000;
+  renderFrame(t);
+  if (t >= DUR) { playing = false; document.getElementById("play").textContent = "▶ 재생"; return; }
+  requestAnimationFrame(loop);
+}
+document.getElementById("play").onclick = () => {
+  playing = !playing;
+  document.getElementById("play").textContent = playing ? "■ 정지" : "▶ 재생";
+  if (playing) { audio.currentTime = 0; t0 = performance.now(); audio.play().catch(() => {}); loop(); }
+  else audio.pause();
+};
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b));
+  setSize(b.dataset.ar); renderFrame(audio.currentTime || 0);
+});
+window.ready.then(() => renderFrame(params.has("t") ? +params.get("t") : 1.9));
+</script>
+</body>
+</html>
