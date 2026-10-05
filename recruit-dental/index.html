@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dental Recruit</title>
+<style>
+  @font-face { font-family: "BHS"; src: url("fonts/BlackHanSans.ttf"); }
+  @font-face { font-family: "Anton"; src: url("fonts/Anton.ttf"); }
+  @font-face { font-family: "Serif"; src: url("fonts/InstrumentSerif-Italic.ttf"); }
+  :root { --bg: #0a0a0a; --fg: #f5f5f0; --pk: #ff2d95; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "BHS", sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #222; color: var(--fg); }
+  button.on { background: var(--pk); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="16x9" class="on">가로 16:9</button>
+  <button data-ar="9x16">세로 9:16</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   치위생사 리크루팅 영상 — 20초 / 120BPM (1비트 = 0.5초)
+   0~8초  공감 : "하루 종일 허리 숙여 스케일링, 손목은 시큰 허리는 뻐근할 때" (진료실 톤)
+   8~16초 전환 : 의료 경력이 무기가 되는 곳 / 블레스본부 지원 (블랙·화이트·핑크)
+   16~20초 행동 : 상담 안내 + @incarvip_bless
+   ※ 수입 약속 문구는 넣지 않음 (보험 리크루팅 광고 주의사항)
+   ===================================================================== */
+const BK = "#0a0a0a", WH = "#f5f5f0", PK = "#ff2d95", NV = "#0f2328", MUTE = "#8fb3b0";
+const B = 0.5, DUR = 20;
+const KR = "BHS", EN = "Anton", SF = "Serif";
+const params = new URLSearchParams(location.search);
+const INSTA = params.get("insta") || "@incarvip_bless";
+const IMG = {};
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, U, P;
+function setSize(ar) {
+  [W, H] = ar === "9x16" ? [1080, 1920] : [1920, 1080];
+  cv.width = W; cv.height = H; U = Math.min(W, H) / 100; P = H > W;
+}
+setSize(params.get("ar") || "16x9");
+if (params.has("render")) document.body.classList.add("render");
+/* ---------- 수학 / 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const outBack = k => { const c = 2.2; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const inExpo = k => (k <= 0 ? 0 : Math.pow(2, 10 * k - 10));
+const pulse = (t, d = 0.1) => Math.exp(-((((t % B) + B) % B) / d));
+const bt = n => n * B;   // 비트 → 초
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* ---------- 그리기 도우미 ---------- */
+const cx = () => W / 2, cy = () => H / 2;
+function bg(c) { ctx.fillStyle = c; ctx.fillRect(0, 0, W, H); }
+function measure(s, size, font = KR, sp = 0) { ctx.font = `${size}px ${font}`; ctx.letterSpacing = `${sp * size}px`; const w = ctx.measureText(s).width; ctx.letterSpacing = "0px"; return w; }
+function fit(s, font, maxW, maxSize, sp = 0) { const w = measure(s, maxSize, font, sp); return w > maxW ? maxSize * maxW / w : maxSize; }
+function text(s, x, y, size, o = {}) {
+  const { color = WH, font = KR, align = "center", alpha = 1, rot = 0, sx = 1, sy = 1, stroke = null, lw = 0, sp = 0, base = "middle" } = o;
+  if (alpha <= 0 || sx <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sx, sy);
+  ctx.font = `${size}px ${font}`; ctx.letterSpacing = `${sp * size}px`; ctx.textAlign = align; ctx.textBaseline = base;
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || size * 0.025; ctx.lineJoin = "round"; ctx.strokeText(s, 0, 0); }
+  else { ctx.fillStyle = color; ctx.fillText(s, 0, 0); }
+  ctx.restore();
+}
+function circle(x, y, r, fill, stroke, lw) {
+  if (r <= 0) return; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke && lw > 0) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+function rrect(x, y, w, h, r, fill, stroke, lw) {
+  ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, r);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke && lw > 0) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+// 둥근 모서리 + 그림자가 있는 이미지 프레임 (cover 방식으로 꽉 채움)
+function frame(name, x, y, w, h, o = {}) {
+  const im = IMG[name]; if (!im) return;
+  const { rot = 0, s = 1, alpha = 1, r = U * 1.2, border = null } = o;
+  if (s <= 0 || alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = U * 3; ctx.shadowOffsetY = U * 1.2;
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, r); ctx.fillStyle = "#000"; ctx.fill();
+  ctx.shadowColor = "transparent"; ctx.clip();
+  const k = Math.max(w / im.width, h / im.height);
+  ctx.drawImage(im, -im.width * k / 2, -im.height * k / 2, im.width * k, im.height * k);
+  ctx.restore();
+  if (border) { ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); rrect(0, 0, w, h, r, null, border, U * 0.4); ctx.restore(); }
+}
+function wrap(s, size, maxW, font = KR) {
+  const words = s.split(" "), lines = []; let cur = "";
+  for (const w of words) { const t = cur ? cur + " " + w : w; if (measure(t, size, font) > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur); return lines;
+}
+// 블로그 카드
+function blogCard(i, x, y, w, rot = 0, s = 1) {
+  const h = w * 0.62;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  ctx.shadowColor = "rgba(0,0,0,0.18)"; ctx.shadowBlur = U * 2; ctx.shadowOffsetY = U;
+  rrect(0, 0, w, h, w * 0.04, "#fff"); ctx.shadowColor = "transparent";
+  rrect(0, 0, w, h, w * 0.04, null, BK, w * 0.006);
+  const pad = w * 0.07;
+  rrect(-w / 2 + pad + w * 0.08, -h / 2 + pad + w * 0.03, w * 0.16, w * 0.06, w * 0.03, i % 3 === 0 ? PK : BK);
+  text("BLOG", -w / 2 + pad + w * 0.08, -h / 2 + pad + w * 0.032, w * 0.035, { font: EN, color: WH, sp: 0.1 });
+  text(String(i + 1).padStart(2, "0"), w / 2 - pad, -h / 2 + pad + w * 0.03, w * 0.05, { font: EN, color: "#bbb", align: "right" });
+  const fs = w * 0.068, lines = wrap(POSTS[i % POSTS.length], fs, w - pad * 2).slice(0, 3);
+  lines.forEach((l, j) => text(l, -w / 2 + pad, -h / 2 + pad + w * 0.14 + j * fs * 1.25, fs, { color: BK, align: "left" }));
+  ctx.fillStyle = "#e5e5e5"; ctx.fillRect(-w / 2 + pad, h / 2 - pad - w * 0.05, w - pad * 2, w * 0.004);
+  text("BLESS INSIGHT · AEO", -w / 2 + pad, h / 2 - pad - w * 0.012, w * 0.035, { font: EN, color: "#999", align: "left", sp: 0.08 });
+  ctx.restore();
+}
+// 아이콘 (선으로 그린 단순 기호)
+function icon(type, x, y, s, color, lw = s * 0.09) {
+  ctx.save(); ctx.translate(x, y); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw; ctx.lineCap = ctx.lineJoin = "round";
+  const h = s / 2;
+  ctx.beginPath();
+  if (type === "play") { ctx.moveTo(-h * 0.4, -h * 0.55); ctx.lineTo(h * 0.6, 0); ctx.lineTo(-h * 0.4, h * 0.55); ctx.closePath(); ctx.fill(); }
+  else if (type === "chat") { ctx.roundRect(-h * 0.8, -h * 0.65, h * 1.6, h * 1.1, h * 0.3); ctx.moveTo(-h * 0.3, h * 0.45); ctx.lineTo(-h * 0.5, h * 0.85); ctx.lineTo(0, h * 0.45); ctx.stroke(); ctx.beginPath(); [-0.4, 0, 0.4].forEach(d => ctx.arc(h * d, -h * 0.1, lw * 0.6, 0, 7)); ctx.fill(); }
+  else if (type === "pen") { ctx.moveTo(-h * 0.6, h * 0.6); ctx.lineTo(h * 0.5, -h * 0.5); ctx.lineTo(h * 0.7, -h * 0.3); ctx.lineTo(-h * 0.4, h * 0.8); ctx.lineTo(-h * 0.7, h * 0.85); ctx.closePath(); ctx.stroke(); }
+  else if (type === "chart") { [[-0.55, 0.2], [-0.1, -0.2], [0.35, -0.6]].forEach(([px, py]) => { ctx.rect(h * px, h * py, h * 0.3, h * (0.75 - py)); }); ctx.fill(); ctx.beginPath(); ctx.moveTo(-h * 0.8, h * 0.8); ctx.lineTo(h * 0.85, h * 0.8); ctx.stroke(); }
+  else if (type === "spark") { for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; ctx.lineTo(Math.cos(a) * h * 0.9, Math.sin(a) * h * 0.9); ctx.lineTo(Math.cos(a + Math.PI / 4) * h * 0.25, Math.sin(a + Math.PI / 4) * h * 0.25); } ctx.closePath(); ctx.fill(); }
+  else if (type === "camera") { ctx.roundRect(-h * 0.75, -h * 0.75, h * 1.5, h * 1.5, h * 0.4); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, h * 0.33, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(h * 0.42, -h * 0.42, lw * 0.6, 0, 7); ctx.fill(); }
+  else if (type === "doc") { ctx.roundRect(-h * 0.6, -h * 0.8, h * 1.2, h * 1.6, h * 0.15); ctx.stroke(); ctx.beginPath(); [-0.35, 0, 0.35].forEach(d => { ctx.moveTo(-h * 0.3, h * d); ctx.lineTo(h * 0.3, h * d); }); ctx.stroke(); }
+  else if (type === "star") { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? h * 0.42 : h; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+// 둥근 배지 안의 아이콘
+function badge(type, x, y, r, s, bgc = WH, fg = PK) {
+  if (s <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = U * 2; circle(0, 0, r, bgc); ctx.shadowColor = "transparent";
+  icon(type, 0, 0, r * 1.05, fg);
+  ctx.restore();
+}
+function label(num, name, t, t0, dark = true, fade = 1) {
+  const k = outExpo(prog(t, t0, t0 + 0.4)) * fade;
+  const x = P ? U * 7 : U * 6, y = P ? U * 12 : U * 8;
+  text(num, x - (1 - k) * U * 10, y, U * 7, { font: EN, stroke: dark ? WH : BK, lw: U * 0.25, align: "left", alpha: k });
+  text(name, x + U * 11 - (1 - k) * U * 10, y + U * 0.5, U * 5, { font: SF, color: dark ? WH : BK, align: "left", alpha: k });
+}
+
+
+// 추가 아이콘: 십자(의료), 하트, 체크, 달, 시계
+function icon2(type, x, y, s, color, lw = s * 0.1, cut = NV) {
+  ctx.save(); ctx.translate(x, y); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw; ctx.lineCap = ctx.lineJoin = "round";
+  const h = s / 2; ctx.beginPath();
+  if (type === "cross") { const a = h * 0.28; ctx.moveTo(-a, -h * 0.8); ctx.lineTo(a, -h * 0.8); ctx.lineTo(a, -a); ctx.lineTo(h * 0.8, -a); ctx.lineTo(h * 0.8, a); ctx.lineTo(a, a); ctx.lineTo(a, h * 0.8); ctx.lineTo(-a, h * 0.8); ctx.lineTo(-a, a); ctx.lineTo(-h * 0.8, a); ctx.lineTo(-h * 0.8, -a); ctx.lineTo(-a, -a); ctx.closePath(); ctx.fill(); }
+  else if (type === "tooth") { ctx.moveTo(-h * 0.75, -h * 0.35); ctx.bezierCurveTo(-h * 0.85, -h * 0.95, -h * 0.25, -h * 0.95, 0, -h * 0.68); ctx.bezierCurveTo(h * 0.25, -h * 0.95, h * 0.85, -h * 0.95, h * 0.75, -h * 0.35); ctx.bezierCurveTo(h * 0.7, h * 0.1, h * 0.55, h * 0.25, h * 0.45, h * 0.85); ctx.bezierCurveTo(h * 0.35, h * 0.95, h * 0.2, h * 0.9, h * 0.15, h * 0.6); ctx.lineTo(h * 0.05, h * 0.2); ctx.lineTo(-h * 0.05, h * 0.2); ctx.lineTo(-h * 0.15, h * 0.6); ctx.bezierCurveTo(-h * 0.2, h * 0.9, -h * 0.35, h * 0.95, -h * 0.45, h * 0.85); ctx.bezierCurveTo(-h * 0.55, h * 0.25, -h * 0.7, h * 0.1, -h * 0.75, -h * 0.35); ctx.closePath(); ctx.fill(); }
+  else if (type === "heart") { ctx.moveTo(0, h * 0.75); ctx.bezierCurveTo(-h * 1.2, -h * 0.1, -h * 0.55, -h * 0.95, 0, -h * 0.35); ctx.bezierCurveTo(h * 0.55, -h * 0.95, h * 1.2, -h * 0.1, 0, h * 0.75); ctx.fill(); }
+  else if (type === "check") { ctx.moveTo(-h * 0.55, 0); ctx.lineTo(-h * 0.15, h * 0.4); ctx.lineTo(h * 0.6, -h * 0.4); ctx.stroke(); }
+  else if (type === "moon") { ctx.arc(0, 0, h * 0.8, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = cut; ctx.beginPath(); ctx.arc(h * 0.38, -h * 0.3, h * 0.7, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
+function badge2(type, x, y, r, s, bgc, fg) {
+  if (s <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  circle(0, 0, r, bgc);
+  if (["cross", "heart", "check", "moon", "tooth"].includes(type)) icon2(type, 0, 0, r * 1.1, fg, r * 0.16, bgc); else icon(type, 0, 0, r * 1.05, fg);
+  ctx.restore();
+}
+// 한 줄씩 아래에서 솟아오르는 글자 (마스크)
+function rise(s, x, y, size, t, t0, o = {}) {
+  const k = outExpo(prog(t, t0, t0 + 0.45));
+  if (k <= 0) return;
+  const w = measure(s, size, o.font || KR, o.sp || 0);
+  const align = o.align || "center";
+  const left = align === "left" ? x : align === "right" ? x - w : x - w / 2;
+  ctx.save(); ctx.beginPath(); ctx.rect(left - U * 2, y - size * 0.7, w + U * 4, size * 1.4); ctx.clip();
+  text(s, x, y + (1 - k) * size * 1.3, size, o);
+  ctx.restore();
+}
+function stars(t, n = 60, c = "#fff") {
+  for (let i = 0; i < n; i++) {
+    const x = rand(i) * W, y = rand(i + 77) * H * (P ? 0.55 : 0.7);
+    const a = 0.25 + 0.5 * Math.abs(Math.sin(t * (1 + rand(i + 5) * 2) + i));
+    ctx.globalAlpha = a; circle(x, y, U * (0.12 + rand(i + 3) * 0.2), c); ctx.globalAlpha = 1;
+  }
+}
+// 필름 그레인
+const grain = document.createElement("canvas"); grain.width = grain.height = 256;
+{ const g = grain.getContext("2d"), d = g.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 12; } g.putImageData(d, 0, 0); }
+function drawGrain(f) { ctx.save(); ctx.fillStyle = ctx.createPattern(grain, "repeat"); ctx.translate(-(rand(f) * 256) | 0, -(rand(f + 9) * 256) | 0); ctx.fillRect(0, 0, W + 256, H + 256); ctx.restore(); }
+
+
+const scenes = [
+  // ① 0~4초 : 하루 종일 허리 숙여 스케일링 — 치아 아이콘 + 반복되는 SCALING
+  [0, 4, t => {
+    bg(NV);
+    // 진료실 조명 같은 동심원
+    for (let i = 1; i < 6; i++) circle(P ? cx() : W * 0.76, P ? H * 0.3 : cy(), U * i * 8, null, "rgba(127,227,211,0.08)", U * 0.25);
+    const ccx = P ? cx() : W * 0.76, ccy = P ? H * 0.3 : cy();
+    const kt = outBack(prog(t, 0, 0.5));
+    const bob = Math.sin(t * Math.PI * 4) * U * 0.6;   // 박자에 맞춰 까딱
+    icon2("tooth", ccx, ccy + bob, (P ? W * 0.42 : H * 0.42) * kt, WH);
+    // 반복되는 SCALING 라벨 (박자마다 하나씩 쌓임)
+    const n = Math.min(6, Math.floor(t / B) + 1);
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 3;
+      const R = P ? W * 0.36 : H * 0.33;
+      const k = outBack(prog(t, i * B, i * B + 0.25));
+      text("SCALING", ccx + Math.cos(a) * R, ccy + Math.sin(a) * R, U * 2.8, { font: EN, color: i === n - 1 ? PK : MUTE, sp: 0.2, sx: k, sy: k });
+    }
+    if (t > 3) text("09:00 — 21:00", ccx, ccy + (P ? W * 0.45 : H * 0.46), U * 4, { font: EN, color: WH, sp: 0.2, alpha: prog(t, 3, 3.2) });
+    const tx = P ? cx() : W * 0.08, al = P ? "center" : "left";
+    const s1 = P ? fit("허리 숙여 스케일링,", KR, W * 0.86, U * 16) : fit("허리 숙여 스케일링,", KR, W * 0.42, U * 12);
+    const ty = P ? H * 0.64 : cy() - U * 8;
+    rise("하루 종일,", tx, ty, s1 * 0.6, t, 0.5, { color: MUTE, align: al });
+    rise("허리 숙여 스케일링,", tx, ty + s1 * 0.95, s1, t, 1.5, { color: WH, align: al });
+  }],
+
+  // ② 4~8초 : 손목은 시큰, 허리는 뻐근할 때 + 야간·토요 진료표
+  [4, 8, t => {
+    const lt = t - 4;
+    bg(NV);
+    const up = inOut(prog(lt, 2, 2.5));
+    const s = P ? fit("허리는 뻐근할 때,", KR, W * 0.7, U * 14) : U * 13;
+    const baseY = lerp(cy() - s * 0.9, P ? H * 0.22 : H * 0.2, up);
+    const sc = lerp(1, 0.6, up);
+    ctx.save(); ctx.translate(cx(), baseY); ctx.scale(sc, sc); ctx.translate(-cx(), -baseY);
+    rise("손목은 시큰,", cx(), baseY, s, lt, 0, { color: WH });
+    rise("허리는 뻐근할 때,", cx(), baseY + s * 1.15, s, lt, 0.5, { color: WH });
+    // 통증 표시 (핑크 번개 점)
+    [[measure("손목은 시큰,", s) / 2 + s * 0.4, 0], [measure("허리는 뻐근할 때,", s) / 2 + s * 0.4, s * 1.15]].forEach(([dx, dy], i) => {
+      const k = outBack(prog(lt, 0.8 + i * 0.4, 1.1 + i * 0.4));
+      if (k > 0) { circle(cx() + dx, baseY + dy, s * 0.3 * k * (1 + 0.2 * pulse(lt)), null, PK, U * 0.5); circle(cx() + dx, baseY + dy, s * 0.12 * k, PK); }
+    });
+    ctx.restore();
+    // 진료 시간표 (2~3.5초)
+    if (lt > 2) {
+      const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT"], hrs = ["~18", "~21", "~18", "~21", "~18", "~14"], hot = [0, 1, 0, 1, 0, 1];
+      const cols = P ? 3 : 6, cw = P ? W * 0.26 : W * 0.12, ch = cw * 1.1, gap = U * 1.5;
+      days.forEach((d, i) => {
+        const c = i % cols, r = Math.floor(i / cols);
+        const x = cx() + (c - (cols - 1) / 2) * (cw + gap), y = (P ? H * 0.5 : H * 0.6) + r * (ch + gap);
+        const k = outBack(prog(lt, 2 + i * 0.2, 2.25 + i * 0.2));
+        if (k <= 0) return;
+        ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+        rrect(0, 0, cw, ch, U * 1.2, "#16343a", "#24525a", U * 0.25);
+        text(d, 0, -ch * 0.3, cw * 0.15, { font: EN, color: MUTE, sp: 0.15 });
+        text(hrs[i], 0, ch * 0.08, cw * 0.32, { font: EN, color: hot[i] ? PK : WH });
+        text(hot[i] ? (i === 5 ? "토요진료" : "야간진료") : "", 0, ch * 0.33, cw * 0.11, { color: PK });
+        ctx.restore();
+      });
+      text("이번 주도, 토요일까지.", cx(), (P ? H * 0.5 : H * 0.6) + (P ? 2 : 1) * (ch + gap) + U * 3, U * 5, { color: MUTE, sp: 0.1, alpha: prog(lt, 3.2, 3.5) });
+    }
+    const k = inExpo(prog(lt, 3.6, 4));
+    if (k > 0) { ctx.fillStyle = `rgba(0,0,0,${k})`; ctx.fillRect(0, 0, W, H); }
+  }],
+
+  // ③ 8~11초 : 당신의 치과 경력이 무기가 되는 곳
+  [8, 11, t => {
+    const lt = t - 8;
+    bg(BK);
+    const kb = outExpo(prog(lt, 0, 0.5));
+    circle(cx(), cy(), Math.hypot(W, H) * 0.6 * kb, null, PK, U * 3 * (1 - kb));
+    const kc = outBack(prog(lt, 0, 0.4));
+    ctx.save(); ctx.translate(cx(), P ? H * 0.2 : H * 0.12); ctx.rotate((1 - kc) * Math.PI);
+    badge2("tooth", 0, 0, U * (P ? 8 : 6.5), kc * (1 + 0.08 * pulse(lt)), PK, WH);
+    ctx.restore();
+    const s = P ? fit("치과 경력이", KR, W * 0.84, U * 22) : U * 16;
+    const y0 = P ? H * 0.42 : cy() - U * 6;
+    rise("당신의", cx(), y0 - s * 0.95, s * 0.5, lt, 0, { color: MUTE });
+    rise("치과 경력이", cx(), y0, s, lt, 0.5, { color: WH });
+    const s2 = Math.min(s * 0.95, fit("무기가 되는 곳", KR, W * 0.8, s)), w2 = measure("무기가 되는 곳", s2) + U * 6;
+    const kw = outExpo(prog(lt, 1.5, 1.9));
+    const y2 = y0 + s * 1.2;
+    if (kw > 0) { ctx.fillStyle = PK; ctx.fillRect(cx() - w2 / 2, y2 - s2 * 0.62, w2 * kw, s2 * 1.24); }
+    ctx.save(); ctx.beginPath(); ctx.rect(cx() - w2 / 2, y2 - s2, w2 * kw, s2 * 2); ctx.clip();
+    text("무기가 되는 곳", cx(), y2 + s2 * 0.04, s2, { color: BK });
+    ctx.restore();
+  }],
+
+  // ④ 11~14초 : 치과 경력 → 보험 역량 매칭
+  [11, 14, t => {
+    const lt = t - 11;
+    bg(WH);
+    text("치과 현장에서 쌓은 것이 그대로", cx(), P ? H * 0.16 : H * 0.14, U * (P ? 4.6 : 4.2), { color: BK, alpha: prog(lt, 0, 0.2), sp: 0.05 });
+    const rows = [["구강 질환 지식", "치아보험 설명 전문가"], ["환자 상담 경험", "고객 신뢰"], ["치료비 안내 경험", "보장 분석 감각"]];
+    const pw = P ? W * 0.4 : W * 0.28, ph = P ? U * 12 : U * 13, gapY = P ? U * 22 : U * 20;
+    rows.forEach(([a, b], i) => {
+      const y = (P ? H * 0.32 : H * 0.34) + i * gapY;
+      const t0 = i * 0.5 + 0.25;
+      const k1 = outBack(prog(lt, t0, t0 + 0.3));
+      const xa = cx() - (P ? W * 0.25 : W * 0.2), xb = cx() + (P ? W * 0.25 : W * 0.2);
+      if (k1 > 0) {
+        ctx.save(); ctx.translate(xa, y); ctx.scale(k1, k1);
+        rrect(0, 0, pw, ph, ph / 2, "#e4e4df"); text(a, 0, U * 0.3, fit(a, KR, pw * 0.8, ph * 0.42), { color: BK });
+        ctx.restore();
+      }
+      const ka = outExpo(prog(lt, t0 + 0.15, t0 + 0.45));
+      const ax0 = xa + pw / 2 + U * 1.2, ax1 = lerp(ax0, xb - pw / 2 - U * 1.2, ka);
+      if (ka > 0) { ctx.strokeStyle = PK; ctx.lineWidth = U * 0.8; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(ax0, y); ctx.lineTo(ax1, y); ctx.lineTo(ax1 - U * 1.4, y - U * 1.4); ctx.moveTo(ax1, y); ctx.lineTo(ax1 - U * 1.4, y + U * 1.4); ctx.stroke(); }
+      const k2 = outBack(prog(lt, t0 + 0.35, t0 + 0.65));
+      if (k2 > 0) {
+        ctx.save(); ctx.translate(xb, y); ctx.scale(k2, k2);
+        rrect(0, 0, pw, ph, ph / 2, PK); text(b, 0, U * 0.3, fit(b, KR, pw * 0.8, ph * 0.42), { color: WH });
+        ctx.restore();
+      }
+    });
+    text("치과를 아는 것 자체가 고객에게 신뢰가 됩니다", cx(), P ? H * 0.86 : H * 0.92, U * (P ? 3.4 : 3), { color: "#777", alpha: prog(lt, 2, 2.3), sp: 0.03 });
+  }],
+
+  // ⑤ 14~16초 : 블레스본부가 함께합니다
+  [14, 16, t => {
+    const lt = t - 14;
+    bg(BK);
+    const s = P ? fit("BLESS본부가 함께합니다", KR, W * 0.84, U * 10) : U * 8;
+    rise("BLESS본부가 함께합니다", cx(), P ? H * 0.22 : H * 0.2, s, lt, 0, { color: WH });
+    const items = [["내가 짜는 스케줄", "진료 시간이 아닌, 내 시간에 맞춰"], ["1:1 전담 멘토링", "보험 경험이 없어도"], ["AI 자동화 도구", "반복 업무는 AI가"]];
+    items.forEach(([a, b], i) => {
+      const y = (P ? H * 0.38 : H * 0.4) + i * (P ? U * 19 : U * 17);
+      const x = P ? W * 0.16 : W * 0.32;
+      const k = outBack(prog(lt, i * 0.5, i * 0.5 + 0.3));
+      badge2("check", x, y, U * (P ? 5 : 4.2), k * (1 + 0.1 * pulse(lt - i * 0.5)), PK, WH);
+      const kt = outExpo(prog(lt, i * 0.5 + 0.1, i * 0.5 + 0.45));
+      text(a, x + U * 8 - (1 - kt) * U * 4, y - U * 1.6, U * (P ? 6.4 : 5.6), { color: WH, align: "left", alpha: kt });
+      text(b, x + U * 8 - (1 - kt) * U * 4, y + U * 3.6, U * (P ? 3.4 : 3), { color: MUTE, align: "left", alpha: kt });
+    });
+  }],
+
+  // ⑥ 16~20초 : 치위생사 경력자 상담 + 인스타
+  [16, 20.01, t => {
+    const lt = t - 16;
+    bg(PK);
+    const fin = t >= 19 ? pulse(t - 19, 0.15) : 0;
+    if (t >= 19) { const k = outExpo(prog(t, 19, 19.8)); circle(cx(), cy(), Math.hypot(W, H) * 0.5 * k, null, WH, U * 2 * (1 - k)); }
+    const s = P ? fit("치위생사 경력자", KR, W * 0.86, U * 18) : U * 16;
+    const y0 = P ? H * 0.36 : cy() - U * 12;
+    const k1 = outBack(prog(lt, 0, 0.25)), k2 = outBack(prog(lt, 0.5, 0.75));
+    text("치위생사 경력자", cx(), y0, s, { color: WH, sx: k1 * (1 + 0.04 * fin), sy: k1 * (1 + 0.04 * fin) });
+    text("상담 받습니다", cx(), y0 + s * 1.1, s * 0.7, { color: BK, sx: k2, sy: k2 });
+    const ki = prog(lt, 1, 1.3);
+    if (ki > 0) {
+      const fs = U * (P ? 5 : 4.4), tw = measure(INSTA, fs, EN, 0.04), ic = fs * 1.1, padX = fs * 0.8, gap = fs * 0.5;
+      const pw = padX * 2 + ic + gap + tw, ph = fs * 2;
+      const py = y0 + s * 2.2 + (1 - outBack(ki)) * U * 6;
+      ctx.save(); ctx.globalAlpha = clamp(ki * 2);
+      rrect(cx(), py, pw, ph, ph / 2, BK);
+      const ix = cx() - pw / 2 + padX + ic / 2;
+      icon("camera", ix, py, ic * 1.15, PK, ic * 0.11);
+      ctx.restore();
+      text(INSTA, ix + ic / 2 + gap, py + fs * 0.04, fs, { font: EN, color: WH, align: "left", sp: 0.04, alpha: clamp(ki * 2) });
+      text("DM 주세요", cx(), py + ph / 2 + U * 4.5, U * 4, { color: BK, alpha: prog(lt, 1.5, 1.8), sp: 0.1 });
+    }
+    text("허리 펴고, 내 시간을 되찾는 시작", cx(), H - U * (P ? 9 : 6), U * (P ? 4.4 : 3.6), { color: WH, alpha: prog(lt, 2, 2.3), sp: 0.12 });
+    const pops = P
+      ? [["tooth", 0.18, 0.14], ["heart", 0.82, 0.12], ["check", 0.85, 0.24], ["chat", 0.15, 0.26], ["star", 0.2, 0.8], ["spark", 0.8, 0.8]]
+      : [["tooth", 0.1, 0.2], ["heart", 0.9, 0.18], ["check", 0.88, 0.6], ["chat", 0.12, 0.62], ["star", 0.24, 0.84], ["spark", 0.76, 0.84]];
+    pops.forEach(([ty, nx, ny], i) => {
+      const t0 = 0.25 + i * 0.5;
+      const k = outBack(prog(lt, t0, t0 + 0.28)) * (1 + 0.15 * fin);
+      const x = nx * W, y = ny * H + Math.sin(t * 3 + i) * U * 0.8, r = U * (P ? 6 : 5.5);
+      if (ty === "star" || ty === "spark") { ctx.save(); ctx.translate(x, y); ctx.rotate(t); icon(ty, 0, 0, r * 2.2 * k, WH); ctx.restore(); }
+      else badge2(ty, x, y, r, k, i % 2 ? WH : BK, i % 2 ? PK : WH);
+    });
+    ctx.fillStyle = `rgba(0,0,0,${prog(t, DUR - 0.25, DUR)})`; ctx.fillRect(0, 0, W, H);
+  }],
+];
+function renderFrame(t) {
+  t = clamp(t, 0, DUR - 1e-4);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+  const sc = scenes.find(s => t >= s[0] && t < s[1]) || scenes[scenes.length - 1];
+  const z = 1 + 0.01 * pulse(t, 0.08);
+  ctx.save(); ctx.translate(cx(), cy()); ctx.scale(z, z); ctx.translate(-cx(), -cy());
+  sc[2](t);
+  ctx.restore();
+  const since = t - sc[0];
+  if (sc[0] > 0 && since < 0.07) { ctx.fillStyle = `rgba(255,255,255,${0.45 * (1 - since / 0.07)})`; ctx.fillRect(0, 0, W, H); }
+  drawGrain(Math.floor(t * 30));
+}
+window.renderFrame = renderFrame;
+window.ready = Promise.all([document.fonts.load(`10px ${KR}`), document.fonts.load(`10px ${EN}`), document.fonts.load(`10px ${SF}`)]).then(() => document.fonts.ready);
+
+/* ---------- 미리보기 플레이어 ---------- */
+const audio = document.getElementById("music");
+let playing = false, t0 = 0;
+function loop() {
+  if (!playing) return;
+  const t = audio.currentTime || (performance.now() - t0) / 1000;
+  renderFrame(t);
+  if (t >= DUR) { playing = false; document.getElementById("play").textContent = "▶ 재생"; return; }
+  requestAnimationFrame(loop);
+}
+document.getElementById("play").onclick = () => {
+  playing = !playing;
+  document.getElementById("play").textContent = playing ? "■ 정지" : "▶ 재생";
+  if (playing) { audio.currentTime = 0; t0 = performance.now(); audio.play().catch(() => {}); loop(); } else audio.pause();
+};
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b));
+  setSize(b.dataset.ar); renderFrame(audio.currentTime || 0);
+});
+window.ready.then(() => renderFrame(params.has("t") ? +params.get("t") : 1.6));
+</script>
+</body>
+</html>
