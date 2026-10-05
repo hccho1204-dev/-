@@ -1,0 +1,7 @@
+{
+  "name": "study-notes",
+  "version": "0.1.0",
+  "description": "AI가 코드를 고칠 때마다 '왜 이렇게 바꿨는지'를 쉬운 말로 학습 노트 패널에 정리합니다",
+  "author": { "name": "hccho1204-dev" },
+  "types": "./types/index.d.ts"
+}

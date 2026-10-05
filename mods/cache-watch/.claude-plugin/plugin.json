@@ -1,0 +1,7 @@
+{
+  "name": "cache-watch",
+  "version": "0.1.0",
+  "author": { "name": "hccho1204-dev" },
+  "description": "프롬프트 위에 캐시 남은 시간, 컨텍스트 날씨, 이번 세션 비용을 한 줄로 보여줍니다",
+  "types": "./types/index.d.ts"
+}
