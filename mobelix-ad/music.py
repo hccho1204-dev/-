@@ -1,19 +1,20 @@
 """
-모벨릭스 광고 음악 — 96 BPM 힙합/트랩 비트, 정확히 20초 (32비트, 1비트 = 0.625초)
+모벨릭스 광고 음악 — 144 BPM 퐁크/트랩 비트, 정확히 20초 (48비트, 1비트 = 0.4167초)
 코드로 직접 합성 → 저작권 걱정 없음, 상업적 사용 가능.
 
-  b0~3   인트로   : 808 한 방 + 일렉트릭 피아노 코드
-  b4~19  그루브   : 붐뱁 킥·스네어 + 트랩 하이햇 롤 + 808 베이스
-  b20~25 하이라이트: 하이햇 더 촘촘하게
-  b26~29 엔딩     : 매 비트 '팡' (화면 요소가 튀어나옴)
-  b30    마지막 한 방
+  b0~5   인트로   : 카우벨 리프 + 라이저
+  b6     드롭     : 임팩트 한 방
+  b6~29  그루브   : 킥·클랩 + 16분 하이햇 + 808 슬라이드 + 카우벨 멜로디
+  b30~38 그리드   : 하이햇 32분 + 스네어 롤 빌드업
+  b39~44 엔딩     : 매 비트 '팡' (화면 요소가 튀어나옴)
+  b45    마지막 한 방
 """
 import os
 import wave
 import numpy as np
 
 SR = 44100
-BPM = 96
+BPM = 144
 B = 60 / BPM
 DUR = 20.0
 N = int(SR * DUR)
@@ -162,61 +163,77 @@ def epiano(ms, dur):
     return s * np.exp(-t / (dur * 0.5)) * np.minimum(1, t / 0.005 + 1e-9)
 
 
-# Dm7 - Bbmaj7 - Gm7 - A7
-PROG = [([62, 65, 69, 72], 38), ([58, 62, 65, 69], 34), ([55, 58, 62, 65], 31), ([57, 61, 64, 67], 33)]
-K, C, H = kick(), clap(), hat(0.01)
 
-for b in range(30):
+def cowbell(m, dur=0.18):
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    f = note(m)
+    s = np.sign(np.sin(2 * np.pi * f * t)) + np.sign(np.sin(2 * np.pi * f * 1.48 * t))
+    s = lowpass(s * 0.5, 0.35)
+    return s * np.exp(-t / 0.06)
+
+
+# Dm - Bb - Gm - A (2마디씩 = 8비트)
+PROG = [38, 34, 31, 33]
+RIFF = [74, 77, 81, 77, 74, 72, 74, 69]   # 16분음표 카우벨 리프
+K, C, H, S = kick(), clap(), hat(0.008), snare()
+
+for b in range(48):
     t = b * B
-    bar, pos = b // 4, b % 4
-    ch, root = PROG[bar % 4]
-    if pos == 0:
-        add(epiano(ch, B * 4), t, 0.32)
-    if b < 4:
-        if b == 0:
-            add(b808(root, B * 3.5, root + 12), t, 0.8)
+    root = PROG[(b // 8) % 4]
+    pos = b % 4
+    # 카우벨 리프 (8분음표 2개/비트)
+    if b < 39:
+        for k in range(2):
+            m = RIFF[(b * 2 + k) % 8] + (0 if (b // 8) % 2 == 0 else -2)
+            add(cowbell(m), t + k * B / 2, 0.22 if b >= 6 else 0.3, 0.2 if k else -0.2)
+    if b < 6:
+        if b >= 4:
+            for k in range(4):
+                add(S, t + k * B / 4, 0.2 + 0.08 * k + 0.15 * (b - 4))
         continue
-    if b >= 26:   # 엔딩: 매 비트 팡
-        add(K, t, 0.9)
-        add(C, t, 0.35)
-        add(pop(86 + (b - 26) * 3), t, 0.3, (b % 2) * 0.6 - 0.3)
-        add(b808(root, B * 0.9), t, 0.5)
-        continue
-    # 붐뱁 킥 패턴
-    if pos == 0:
+    if 39 <= b < 45:          # 엔딩: 매 비트 팡
         add(K, t, 1.0)
-    if pos == 1:
-        add(K, t + B * 0.75, 0.7)
-    if pos == 2:
-        add(K, t + B * 0.5, 0.85)
-    # 스네어(클랩) 2, 4박
-    if pos in (1, 3):
-        add(C, t, 0.7, 0.05)
-    # 트랩 하이햇: 8분, 마디 끝엔 32분 롤
-    dense = b >= 20
-    div = 4 if dense else 2
-    for k in range(div):
-        add(H, t + k * B / div, 0.5 if k % 2 == 0 else 0.3, -0.25)
+        add(C, t, 0.45)
+        add(pop(84 + (b - 39) * 3), t, 0.35, (b % 2) * 0.6 - 0.3)
+        add(b808(root + 12, B * 0.9, root + 19), t, 0.55)
+        continue
+    if b >= 45:
+        continue
+    build = 36 <= b < 39
+    # 킥: 1, 3박 + 당김
+    if pos in (0, 2):
+        add(K, t, 1.0)
     if pos == 3:
-        for k in range(8):
-            add(H, t + B / 2 + k * B / 16, 0.18 + 0.03 * k, 0.3)
-    # 808 베이스
+        add(K, t + B * 0.5, 0.75)
+    if build:
+        div = 4 if b < 38 else 8
+        for k in range(div):
+            add(S, t + k * B / div, 0.25 + 0.04 * k + 0.1 * (b - 36))
+    elif pos in (1, 3):
+        add(C, t, 0.7)
+    # 하이햇: 16분, 그리드 구간은 32분
+    div = 8 if b >= 30 else 4
+    for k in range(div):
+        add(H, t + k * B / div, 0.45 if k % 2 == 0 else 0.25, -0.3 if k % 2 else 0.3)
+    # 808 슬라이드
     if pos == 0:
-        add(b808(root, B * 1.6), t, 0.75)
+        add(b808(root, B * 1.8, root + 12 if (b // 4) % 2 else None), t, 0.8)
     if pos == 2:
-        add(b808(root + 7, B * 0.6, root), t + B * 0.5, 0.55)
+        add(b808(root + 5, B * 0.8, root), t + B * 0.5, 0.55)
 
-add(impact(), 0.0, 0.7)
-add(whoosh(B * 2), 4 * B - B * 1.5, 0.3)
-add(whoosh(B * 2), 12 * B - B * 1.5, 0.3)
-add(whoosh(B * 2), 20 * B - B * 1.5, 0.35)
-add(impact(1.2), 20 * B, 0.6)
-add(whoosh(B * 2), 26 * B - B * 1.5, 0.35)
-add(impact(1.6), 30 * B, 0.95)
-add(epiano([62, 65, 69, 72, 76], 1.2), 30 * B, 0.4)
+add(impact(), 0.0, 0.6)
+add(whoosh(B * 4), 2 * B, 0.45)
+add(impact(), 6 * B, 1.0)
+add(whoosh(B * 2), 18 * B - B * 1.5, 0.35)
+add(whoosh(B * 2), 30 * B - B * 1.5, 0.35)
+add(whoosh(B * 3), 36 * B, 0.5)
+add(impact(1.2), 39 * B, 0.85)
+add(impact(2.0), 45 * B, 1.0)
+add(epiano([62, 65, 69, 74, 77], 1.4), 45 * B, 0.4)
 
 mix /= np.max(np.abs(mix)) + 1e-9
-mix = np.tanh(mix * 1.5) / np.tanh(1.5) * 0.92
+mix = np.tanh(mix * 1.6) / np.tanh(1.6) * 0.92
 fade = np.ones(N)
 fade[-int(0.25 * SR):] = np.linspace(1, 0, int(0.25 * SR))
 mix *= fade[:, None]
@@ -226,4 +243,4 @@ with wave.open("out/music.wav", "wb") as w:
     w.setsampwidth(2)
     w.setframerate(SR)
     w.writeframes((mix * 32767).astype(np.int16).tobytes())
-print("out/music.wav 생성 완료 (정확히 20초, 96 BPM)")
+print("out/music.wav 생성 완료 (정확히 20초, 144 BPM)")

@@ -64,7 +64,7 @@ async function renderVideo(browser, port, ar) {
 // 장면별 대표 컷 10장을 한 장의 스토리보드로
 async function storyboard(browser, port, ar) {
   const page = await openPage(browser, port, ar);
-  const times = [1.0, 2.2, 3.4, 5.8, 9.0, 11.6, 13.6, 15.4, 17.6, 19.4];
+  const times = [0.95, 2.2, 3.3, 6.1, 8.1, 9.5, 12.3, 14.0, 17.4, 19.5];
   const dir = path.join(OUT, `sb_${ar}`);
   fs.mkdirSync(dir, { recursive: true });
   for (let i = 0; i < times.length; i++) {
