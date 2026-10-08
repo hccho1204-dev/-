@@ -1,5 +1,9 @@
 """lessons/*.md, README.md, SELF_CHECK.md 를 읽어 공부 허브 페이지(hub.html)를 만든다."""
 import json, pathlib, re
+import markdown  # pip install markdown
+
+def md(t):
+    return markdown.markdown(t, extensions=["tables", "fenced_code"])
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 lessons = []
@@ -7,10 +11,10 @@ for p in sorted((ROOT / "lessons").glob("day*.md")):
     text = p.read_text(encoding="utf-8")
     first = text.splitlines()[0].lstrip("# ").strip()
     day = int(re.search(r"day(\d+)", p.stem).group(1))
-    lessons.append({"day": day, "title": first, "md": text})
+    lessons.append({"day": day, "title": first, "md": md(text)})
 data = {
-    "curriculum": (ROOT / "README.md").read_text(encoding="utf-8"),
-    "selfcheck": (ROOT / "SELF_CHECK.md").read_text(encoding="utf-8"),
+    "curriculum": md((ROOT / "README.md").read_text(encoding="utf-8")),
+    "selfcheck": md((ROOT / "SELF_CHECK.md").read_text(encoding="utf-8")),
     "lessons": lessons,
 }
 tpl = (pathlib.Path(__file__).parent / "template.html").read_text(encoding="utf-8")

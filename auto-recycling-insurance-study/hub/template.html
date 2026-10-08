@@ -54,7 +54,6 @@ article hr{border:0;border-top:1px solid var(--line);margin:2em 0}
   <article id="view"><p class="empty">강의를 불러오는 중입니다.</p></article>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script>
 const DATA = __DATA__;
 const nav = document.getElementById('nav'), view = document.getElementById('view');
@@ -65,7 +64,7 @@ const items = [
 ];
 function render(id){
   const it = items.find(i => i.id === id) || items[0];
-  let html = window.marked ? marked.parse(it.md) : '<pre>'+it.md.replace(/</g,'&lt;')+'</pre>';
+  let html = it.md;
   html = html.replace(/<table>/g,'<div class="tbl"><table>').replace(/<\/table>/g,'</table></div>');
   view.innerHTML = html;
   view.querySelectorAll('a[href^="./"]').forEach(a => a.removeAttribute('href'));
