@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<style>
+@font-face{font-family:P;src:url(fonts/Pretendard-Regular.woff2);font-weight:400}
+@font-face{font-family:P;src:url(fonts/Pretendard-Medium.woff2);font-weight:500}
+@font-face{font-family:P;src:url(fonts/Pretendard-SemiBold.woff2);font-weight:600}
+@font-face{font-family:P;src:url(fonts/Pretendard-Bold.woff2);font-weight:700}
+@font-face{font-family:P;src:url(fonts/Pretendard-ExtraBold.woff2);font-weight:800}
+:root{--bg:#FFFFFF;--panel:#F4F6FA;--line:#E3E7EF;--ink:#0E1116;--mute:#5B6270;--soft:#9AA1AE;--acc:#3B5BFD;--accs:#E8EDFF;--bad:#E5484D;--good:#16A34A}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg);font-family:P,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#app{position:absolute;inset:0}
+#bar{position:absolute;left:60px;right:60px;top:70px;height:90px;display:flex;align-items:center;justify-content:space-between}
+#logo{display:flex;align-items:center;gap:18px;font-weight:800;font-size:36px;letter-spacing:-.5px}
+#logo i{width:44px;height:44px;border-radius:12px;background:var(--acc);display:block;position:relative}
+#logo i:after{content:"";position:absolute;left:12px;top:12px;width:20px;height:20px;border-radius:5px;background:#fff}
+#tonechip{font-size:28px;font-weight:600;color:var(--acc);background:var(--accs);padding:12px 24px;border-radius:999px}
+#prog{position:absolute;left:60px;right:60px;top:178px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+#prog b{display:block;height:100%;background:var(--acc);transform-origin:left;width:100%}
+#stage{position:absolute;left:60px;top:210px;width:960px;height:1090px;border-radius:44px;background:var(--panel);overflow:hidden}
+.scene{position:absolute;inset:0;padding:64px 60px;visibility:hidden}
+#portal{position:absolute;background:var(--acc);border-radius:999px;visibility:hidden;z-index:40}
+#sub{position:absolute;left:70px;right:70px;top:1345px;height:300px;display:flex;align-items:flex-start;justify-content:center;text-align:center;font-weight:700;font-size:60px;line-height:1.32;letter-spacing:-1px;word-break:keep-all}
+#cursor{position:absolute;left:0;top:0;width:64px;height:64px;z-index:60;transform-origin:8px 6px}
+#ripple{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:5px solid var(--acc);z-index:55;visibility:hidden}
+/* 공통 요소 */
+.kicker{font-size:36px;font-weight:600;color:var(--acc);margin-bottom:26px}
+.title{font-size:88px;font-weight:800;line-height:1.16;letter-spacing:-2.5px;white-space:pre-line;word-break:keep-all}
+.h2{font-size:58px;font-weight:800;letter-spacing:-1.5px;line-height:1.2;margin-bottom:40px;word-break:keep-all;white-space:pre-line}
+.subt{font-size:40px;font-weight:500;color:var(--mute);margin-top:30px;line-height:1.35;word-break:keep-all}
+.next{position:absolute;right:56px;bottom:56px;background:var(--acc);color:#fff;font-weight:700;font-size:36px;padding:26px 44px;border-radius:999px;display:flex;gap:16px;align-items:center;box-shadow:0 10px 30px rgba(59,91,253,.28)}
+.next:after{content:"→";font-weight:800}
+.card{background:#fff;border-radius:32px;box-shadow:0 2px 0 rgba(14,17,22,.04),0 12px 32px rgba(14,17,22,.06)}
+.pill{display:inline-block;background:var(--accs);color:var(--acc);font-weight:700;font-size:34px;padding:14px 30px;border-radius:999px}
+.row{display:flex;align-items:center;gap:28px;padding:0 36px;height:112px;margin-bottom:20px;font-size:42px;font-weight:600}
+.ck{width:52px;height:52px;border-radius:50%;border:4px solid var(--line);flex:none;position:relative}
+.ck b{position:absolute;inset:-4px;border-radius:50%;background:var(--acc);opacity:0}
+.ck b:after{content:"";position:absolute;left:16px;top:10px;width:13px;height:24px;border:solid #fff;border-width:0 6px 6px 0;transform:rotate(45deg)}
+.note{position:absolute;left:60px;right:60px;bottom:180px;font-size:38px;font-weight:700;color:var(--acc);background:#fff;border:3px solid var(--accs);border-radius:28px;padding:26px 34px;word-break:keep-all}
+.src{font-size:24px;color:var(--soft);font-weight:500;margin-top:24px}
+.big{font-size:230px;font-weight:800;letter-spacing:-8px;color:var(--acc);line-height:1}
+.tile{border-radius:26px;overflow:hidden;position:relative}
+.steph{display:flex;gap:12px;margin-bottom:46px}
+.steph div{flex:1;height:76px;border-radius:20px;background:#fff;color:var(--soft);font-size:28px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steph div.on{background:var(--acc);color:#fff}
+.mono{font-family:ui-monospace,monospace;font-size:30px;color:var(--mute);font-weight:500;margin-left:auto}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar"><div id="logo"><i></i>톤카드 하네스</div><div id="tonechip">미니멀 UI</div></div>
+  <div id="prog"><b></b></div>
+  <div id="stage"><div id="portal"></div></div>
+  <div id="sub"></div>
+  <div id="ripple"></div>
+  <svg id="cursor" viewBox="0 0 64 64"><path d="M8 6 L8 52 L20 41 L29 60 L37 56 L28 38 L44 38 Z" fill="#0E1116" stroke="#fff" stroke-width="4" stroke-linejoin="round"/></svg>
+</div>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = p => 1 - Math.pow(1 - p, 3);
+const inout = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const lerp = (a, b, p) => a + (b - a) * p;
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const STAGE = { x: 60, y: 210, w: 960, h: 1090 };
+const TRANS = 0.38;      // 장면 연결 시간
+let SC = [], SUBS = [], DUR = 0;
+
+// 등장 애니메이션 종류
+const FX = {
+  rise: (el, p) => { el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 46}px)`; },
+  pop: (el, p) => { el.style.opacity = clamp(p * 2); el.style.transform = `scale(${lerp(.82, 1, p)})`; },
+  fade: (el, p) => { el.style.opacity = p; },
+  left: (el, p) => { el.style.opacity = p; el.style.transform = `translateX(${(1 - p) * -60}px)`; },
+  grow: (el, p) => { el.style.transform = `scaleX(${p})`; },
+  check: (el, p) => { el.style.opacity = p; el.style.transform = `scale(${lerp(.4, 1, p)})`; },
+  type: (el, p) => { const s = el.dataset.full; el.textContent = s.slice(0, Math.round(s.length * clamp(p))); },
+  strike: (el, p) => { el.style.transform = `scaleX(${p})`; },
+  stamp: (el, p) => { el.style.opacity = clamp(p * 3); el.style.transform = `rotate(-8deg) scale(${lerp(1.6, 1, p)})`; },
+  hl: (el, p) => { el.style.boxShadow = `0 0 0 ${6 * p}px var(--acc)`; el.style.transform = `scale(${1 + .06 * p})`; },
+  bad: (el, p) => { el.style.opacity = p; el.style.transform = `scale(${lerp(1.3, 1, p)})`; },
+};
+const DURS = { type: 1.1, grow: .9, strike: .45, stamp: .35 };
+
+// 템플릿: (scene, at) → html   at(x): '@n'·숫자 → 그 문장이 시작되는 절대 시각
+const STEPS = ["톤", "재료", "과제지", "제작", "검수"];
+const stepHead = i => `<div class="steph">${STEPS.map((s, k) => `<div class="${k === i ? "on" : ""}" ${k === i ? 'data-a="pop" data-t="0"' : ""}>${s}</div>`).join("")}</div>`;
+const A = (fx, t, extra = "") => `data-a="${fx}" data-t="${t}" ${extra}`;
+const thumb = (bg, ac, k = 0) => `<div style="position:absolute;inset:0;background:${bg}"></div>
+  <div style="position:absolute;left:12%;top:${18 + k % 3 * 6}%;width:${46 + k % 4 * 8}%;height:12%;border-radius:10px;background:${ac}"></div>
+  <div style="position:absolute;left:12%;top:40%;width:60%;height:7%;border-radius:8px;background:${ac};opacity:.45"></div>
+  <div style="position:absolute;right:10%;bottom:14%;width:24%;aspect-ratio:1;border-radius:50%;background:${ac};opacity:.8"></div>`;
+
+const T = {
+  hero: (s, at) => `
+    <div style="position:absolute;left:60px;right:60px;top:${s.answer ? 170 : 260}px">
+      <div class="kicker" ${A("rise", at(0) + .1)}>${esc(s.kicker || "")}</div>
+      <div class="title" ${A("rise", s.titleAt != null ? at(s.titleAt) : at(0) + .3)} style="${s.title.length < 6 ? "font-size:170px;color:var(--acc)" : ""}">${esc(s.title)}</div>
+      ${s.sub ? `<div class="subt" ${A("rise", at(s.subAt || 0) + .2)}>${esc(s.sub)}</div>` : ""}
+      ${s.answer ? `<div class="pill" style="margin-top:60px;font-size:54px;padding:26px 44px" ${A("pop", at(s.answerAt))}>${esc(s.answer)}</div>` : ""}
+    </div>`,
+  thumbs: (s, at) => {
+    const n = s.tiles.length, w = 400, h = n > 2 ? 250 : 520;
+    return `<div class="h2" ${A("rise", at(0))}>${esc(s.title)}</div><div class="subt" style="margin:-20px 0 44px" ${A("rise", at(0) + .2)}>${esc(s.sub)}</div>
+    <div style="display:grid;grid-template-columns:400px 400px;gap:40px">${s.tiles.map((t, k) => `
+      <div ${A("pop", t[3] ? at(t[3]) : at(0) + .35 + k * .18)} ${k === n - 1 ? 'data-cur="1"' : ""}>
+        <div class="tile" style="width:${w}px;height:${h}px">${thumb(t[1], t[2], k)}</div>
+        <div style="font-size:34px;font-weight:700;margin-top:16px">${esc(t[0])}</div></div>`).join("")}</div>
+    ${s.linked ? `<div style="position:absolute;left:260px;top:440px;width:440px;height:8px;border-radius:4px;background:var(--acc);transform-origin:left" ${A("grow", at(3))}></div>` : ""}`;
+  },
+  prompt: (s, at) => `
+    <div class="kicker" ${A("rise", at(0))}>${esc(s.label)}</div>
+    <div class="card" style="padding:44px;min-height:250px;font-size:52px;font-weight:700;line-height:1.35" ${A("rise", at(0) + .2)}>
+      <span data-full="${esc(s.text)}" ${A("type", at(1))}></span><span style="color:var(--acc)">|</span></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:34px"><div class="next hot" style="position:static" ${A("pop", at(0) + .4)}>${esc(s.btn)}</div></div>
+    <div class="card" style="margin-top:44px;padding:30px;display:flex;gap:30px;align-items:center" ${A("rise", at(2))}>
+      <div class="tile" style="width:260px;height:170px">${thumb("#FFFFFF", "#3B5BFD", 1)}</div>
+      <div style="font-size:44px;font-weight:700">${esc(s.result)} <span style="color:var(--good)">✓</span></div></div>`,
+  quote: (s, at) => `
+    <div style="position:absolute;left:60px;right:60px;top:200px">
+      <div style="width:150px;height:150px;border-radius:44px;background:var(--acc);color:#fff;font-size:96px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:56px" ${A("pop", at(0))}>${esc(s.icon)}</div>
+      ${s.subFirst ? `<div class="kicker" ${A("rise", at(0) + .2)}>${esc(s.sub)}</div>` : ""}
+      <div class="title" style="font-size:80px" ${A("rise", s.subFirst ? at(1) : at(0) + .3)}>${esc(s.title)}</div>
+      ${!s.subFirst ? `<div class="subt" style="font-size:48px;font-weight:700;color:var(--acc)" ${A("rise", at(s.subAt != null ? s.subAt : s.segs.length - 1))}>${esc(s.sub)}</div>` : ""}
+    </div>`,
+  stat: (s, at) => `
+    <div class="kicker" ${A("rise", at(0))}>${esc(s.pre)}</div>
+    ${s.small ? `<div class="pill" style="margin:10px 0 0;font-size:32px" ${A("pop", at(s.smallAt != null ? s.smallAt : 2))}>${esc(s.small)}</div>` : ""}
+    <div style="position:absolute;left:60px;right:60px;top:360px">
+      <div class="big" ${A("pop", at(s.bigAt))}>${esc(s.big)}</div>
+      <div style="font-size:54px;font-weight:800;margin-top:30px" ${A("rise", at(s.bigAt) + .2)}>${esc(s.label)}</div>
+      <div class="subt" ${A("rise", at(s.subAt != null ? s.subAt : s.bigAt) + .4)}>${esc(s.sub)}</div></div>`,
+  list: (s, at) => `<div class="h2" ${A("rise", at(0))}>${esc(s.title)}</div>
+    ${s.items.map((it, k) => `<div class="row card" style="${s.items.length > 5 ? "height:92px;margin-bottom:14px;font-size:39px" : ""}" ${A("left", at(it[1]) + k % 2 * .25)} data-cur="1">
+      <div class="ck"><b ${A("check", at(it[1]) + k % 2 * .25 + .45)}></b></div>${esc(it[0])}</div>`).join("")}`,
+  compare: (s, at) => {
+    const c = (x, hi) => `<div class="card" style="width:400px;padding:40px 34px;min-height:470px;${hi ? "box-shadow:0 0 0 5px var(--acc),0 12px 32px rgba(59,91,253,.15)" : ""}" ${A("rise", at(x[3]))} ${hi ? 'data-cur="1"' : ""}>
+      <div class="pill" style="font-size:30px;${hi ? "background:var(--acc);color:#fff" : "background:#EEF0F4;color:var(--mute)"}">${esc(x[0])}</div>
+      <div style="font-size:48px;font-weight:800;margin:40px 0 26px;line-height:1.25;word-break:keep-all">${esc(x[1])}</div>
+      <div style="font-size:36px;color:var(--mute);font-weight:600;word-break:keep-all">${esc(x[2])}</div></div>`;
+    return `${s.kicker ? `<div class="h2" style="font-size:50px" ${A("rise", at(0))}>${esc(s.kicker)}</div>` : '<div style="height:60px"></div>'}
+      <div style="display:flex;gap:40px">${c(s.a, 0)}${c(s.b, 1)}</div>
+      ${s.note ? `<div class="note" ${A("rise", at(s.noteAt))}>${esc(s.note)}</div>` : ""}`;
+  },
+  post: (s, at) => `<div class="kicker" ${A("rise", at(0))}>${esc(s.label)}</div>
+    <div class="card" style="padding:44px" ${A("rise", at(0) + .2)}>
+      <div style="display:flex;align-items:center;gap:22px;margin-bottom:30px"><div style="width:76px;height:76px;border-radius:50%;background:#D9DEE8"></div>
+        <div><div style="font-size:34px;font-weight:700">해외 게시물</div><div style="font-size:28px;color:var(--soft)">motion prompt</div></div></div>
+      <div style="font-size:44px;font-weight:700;line-height:1.4;word-break:keep-all;min-height:250px"><span data-full="${esc(s.text)}" ${A("type", at(2))} data-d="${(at(4) - at(2)).toFixed(2)}"></span></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:26px;font-size:46px;font-weight:800;color:var(--bad)" ${A("pop", at(1))}>♥ <span style="color:var(--ink)">${esc(s.likes)}</span></div>
+    </div>
+    <div style="display:flex;gap:20px;margin-top:36px">${s.tags.map(t => `<div class="pill" ${A("pop", at(t[1]))}>${esc(t[0])}</div>`).join("")}</div>
+    <div class="src" ${A("fade", at(0) + .4)}>${esc(s.source)}</div>`,
+  menu: (s, at) => `<div class="kicker" style="font-size:32px" ${A("rise", at(0))}>${esc(s.kicker)}</div>
+    <div class="card" style="padding:56px 60px;margin-top:20px" ${A("rise", at(1))}>
+      <div style="font-size:30px;letter-spacing:8px;color:var(--soft);font-weight:700">MENU</div>
+      <div style="font-size:120px;font-weight:800;color:var(--acc);letter-spacing:-4px;margin:10px 0 30px" ${A("pop", at(s.titleAt))}>${esc(s.title)}</div>
+      ${s.rows.map((r, k) => `<div style="display:flex;align-items:center;font-size:40px;font-weight:600;height:84px;border-top:2px dashed var(--line)" ${A("left", at(1) + .3 + k * .15)}>${esc(r)}<span style="margin-left:auto;color:var(--soft);font-size:30px">규칙 · 사진 · 숫자</span></div>`).join("")}
+    </div>`,
+  funnel: (s, at) => `<div style="display:flex;flex-wrap:wrap;gap:16px">${s.chips.map((c, k) => `<div class="pill" style="background:#fff;color:var(--ink);font-size:32px" ${A("pop", at(s.chipsAt) + k * .12)}>${esc(c)}</div>`).join("")}</div>
+    <div style="margin-top:70px" ${A("rise", at(s.n1At))}><div style="font-size:36px;color:var(--mute);font-weight:700">${esc(s.l1)}</div><div style="font-size:150px;font-weight:800;letter-spacing:-5px">${esc(s.n1)}</div></div>
+    <div style="width:8px;height:90px;background:var(--line);margin:10px 0 10px 40px" ${A("fade", at(s.n2At))}></div>
+    <div ${A("rise", at(s.n2At) + .15)}><div style="font-size:36px;color:var(--mute);font-weight:700">${esc(s.l2)}</div><div class="big" style="font-size:170px">${esc(s.n2)}</div></div>`,
+  ruler: (s, at) => `<div class="h2" ${A("rise", at(0))}>${esc(s.title)}</div>
+    ${s.items.map((it, k) => `<div class="card" style="padding:34px 40px;margin-bottom:24px" ${A("left", at(it[1]) + k * .2)} data-cur="1">
+      <div style="font-size:40px;font-weight:700;margin-bottom:22px">${esc(it[0])}</div>
+      <div style="position:relative;height:30px;border-radius:15px;background:#EEF0F4">
+        ${s.band ? `<div style="position:absolute;top:-8px;bottom:-8px;left:${(it[2] - .12) * 100}%;width:24%;border-radius:12px;background:var(--accs);border:3px dashed var(--acc)" ${A("fade", at(it[1]) + .3 + k * .2)}></div>` : ""}
+        <div style="position:absolute;left:0;top:0;bottom:0;width:${it[2] * 100}%;border-radius:15px;background:var(--acc);transform-origin:left;${s.band ? "opacity:.9" : ""}" ${A("grow", at(it[1]) + .4 + k * .2)}></div>
+        ${s.bad && s.bad[0] === k ? `<div style="position:absolute;top:-22px;left:calc(${s.bad[1] * 100}% - 37px);width:74px;height:74px;border-radius:50%;background:var(--bad);color:#fff;font-size:44px;font-weight:800;display:flex;align-items:center;justify-content:center" ${A("bad", at(s.bad[2]))}>✕</div>` : ""}
+      </div></div>`).join("")}
+    ${s.note ? `<div class="note" ${A("rise", at(s.noteAt))}>${esc(s.note)}</div>` : ""}`,
+  chips: (s, at) => `<div class="h2" ${A("rise", at(s.titleAt))}>${esc(s.title)}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">${s.chips.map((c, k) => `
+      <div class="card" style="padding:16px;border-radius:26px" ${A("pop", at(s.titleAt) + .2 + k * .07)}>
+       <div ${A("hl", at(c[3]))} ${c[3] < 7 ? 'data-cur="1" data-curt="' + at(c[3]) + '"' : ""} style="border-radius:18px">
+        <div class="tile" style="height:86px;border-radius:18px">${thumb(c[1], c[2], k)}</div>
+        <div style="font-size:30px;font-weight:700;margin-top:14px;white-space:nowrap">${esc(c[0])}</div></div></div>`).join("")}</div>`,
+  card: (s, at) => `<div class="h2" ${A("rise", at(0))}>${esc(s.title)}</div>
+    <div class="card" style="padding:44px" ${A("rise", at(0) + .2)}>
+      <div style="display:flex;align-items:center;gap:24px;margin-bottom:30px"><div style="width:90px;height:90px;border-radius:24px;background:#fff;border:4px solid var(--acc)"></div><div style="font-size:50px;font-weight:800">미니멀 UI</div></div>
+      ${s.rows.map((r, k) => `<div class="row" style="background:var(--panel);border-radius:24px;padding:0 34px" ${A("left", at(0) + .6 + k * .45)}><div class="pill" style="font-size:30px;padding:10px 24px">${esc(r[0])}</div>${esc(r[1])}</div>`).join("")}
+    </div>`,
+  uidemo: (s, at) => `<div class="h2" style="font-size:50px" ${A("rise", at(0))}>${esc(s.title)}</div>
+    <div class="card" style="position:absolute;left:110px;top:220px;width:480px;height:760px;border-radius:56px;overflow:hidden;border:10px solid #0E1116" ${A("rise", at(0) + .2)}>
+      <div class="ui-a" style="position:absolute;inset:0;padding:60px 40px">
+        <div style="height:40px;width:60%;border-radius:12px;background:var(--line);margin-bottom:24px"></div>
+        <div style="height:220px;border-radius:24px;background:var(--panel);margin-bottom:24px"></div>
+        <div style="height:28px;width:80%;border-radius:10px;background:var(--line);margin-bottom:14px"></div>
+        <div style="height:28px;width:55%;border-radius:10px;background:var(--line)"></div>
+        <div class="ui-btn" data-cur="1" data-curt="${at(s.clickAt) - .2}" style="position:absolute;left:40px;right:40px;bottom:60px;height:96px;border-radius:24px;background:var(--acc);color:#fff;font-size:34px;font-weight:700;display:flex;align-items:center;justify-content:center">다음 화면</div>
+      </div>
+      <div class="ui-b" style="position:absolute;inset:0;padding:60px 40px;background:#fff">
+        <div style="font-size:40px;font-weight:800;margin-bottom:28px">화면이 바뀜</div>
+        ${[0, 1, 2].map(k => `<div style="height:120px;border-radius:24px;background:${k ? "var(--panel)" : "var(--accs)"};margin-bottom:20px"></div>`).join("")}
+      </div>
+    </div>`,
+  photos: (s, at) => {
+    const cols = s.cols || 5, n = s.n, w = (840 - (cols - 1) * 14) / cols;
+    return `<div class="h2" style="font-size:52px" ${A("rise", at(0))}>${esc(s.title)}</div>
+    <div class="card" style="padding:${s.sheet ? 20 : 0}px;${s.sheet ? "" : "background:none;box-shadow:none"}"><div style="display:grid;grid-template-columns:repeat(${cols},${w}px);gap:14px">
+     ${Array.from({ length: n }, (_, k) => `<div class="tile" style="height:${s.sheet ? w * 1.2 : w * 1.25}px;border-radius:14px" ${A("pop", at(s.sheet ? 1 : 0) + .3 + k * (s.sheet ? .05 : .08))}>${thumb(["#FFFFFF", "#F4F6FA", "#EEF2FF"][k % 3], ["#3B5BFD", "#0E1116", "#9AA1AE"][k % 3], k)}</div>`).join("")}
+    </div></div>
+    <div class="pill" style="margin-top:44px;font-size:50px;padding:24px 44px" ${A("pop", at(s.wordAt))} data-cur="1" data-curt="${at(s.wordAt) + .3}">${esc(s.word)}</div>
+    ${s.n === 10 ? `<div class="subt" style="font-weight:700;color:var(--ink)" ${A("rise", at(3))}>사진을 보여 주면 안 흔들림</div>` : ""}`;
+  },
+  trio: (s, at) => `<div class="h2" style="margin-top:120px" ${A("rise", at(0))}>${esc(s.title)}</div>
+    ${s.items.map((it, k) => `<div class="card" style="height:${s.items.length > 2 ? 170 : 200}px;margin-bottom:28px;display:flex;align-items:center;padding:0 50px;gap:34px;font-size:${s.items.length > 2 ? 54 : 64}px;font-weight:800" ${A("left", at(Array.isArray(s.itemsAt) ? s.itemsAt[k] : s.itemsAt) + .2 + (Array.isArray(s.itemsAt) ? 0 : k * .35))} data-cur="1">
+      <div style="width:84px;height:84px;border-radius:24px;background:var(--acc);color:#fff;font-size:44px;display:flex;align-items:center;justify-content:center">${k + 1 > 0 ? "✓" : ""}</div>${esc(it)}</div>`).join("")}`,
+  steps: (s, at) => `<div class="h2" style="margin-bottom:50px" ${A("rise", at(0))}>영상 한 편이 나오는 흐름</div>
+    ${["톤 고르기", "재료 준비", "과제지 만들기", "자율 제작", "검수"].map((t, k) => `<div class="row card" style="height:112px;margin-bottom:18px;${k === s.active ? "background:var(--acc);color:#fff" : ""}" ${A("left", at(0) + .3 + k * .25)} ${k === (s.active < 0 ? 0 : s.active) ? 'data-cur="1"' : ""}>
+      <div style="width:64px;height:64px;border-radius:20px;background:${k === s.active ? "#fff" : "var(--accs)"};color:var(--acc);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:34px">${"①②③④⑤"[k]}</div>${t}
+      ${k === 4 && s.star ? `<div class="pill" style="margin-left:auto;background:#fff;font-size:30px" ${A("pop", at(1))}>오늘의 핵심</div>` : ""}</div>`).join("")}`,
+  chat: (s, at) => `${s.step != null ? stepHead(s.step) : '<div class="h2">검수 원칙</div>'}
+    ${s.msgs.map(m => `<div style="display:flex;justify-content:${m[0] === "me" ? "flex-end" : "flex-start"};margin-bottom:30px" ${A("rise", at(m[2]))}>
+      <div style="max-width:640px;font-size:46px;font-weight:700;padding:32px 40px;border-radius:40px;${m[0] === "me" ? "background:var(--acc);color:#fff;border-bottom-right-radius:12px" : "background:#fff;border-bottom-left-radius:12px;box-shadow:0 8px 24px rgba(14,17,22,.06)"}">${m[0] === "ai" ? '<div style="font-size:28px;color:var(--soft);margin-bottom:8px">AI</div>' : ""}${esc(m[1])}</div></div>`).join("")}
+    ${s.note ? `<div class="note" style="color:var(--bad);border-color:#FBD5D6" ${A("rise", at(s.noteAt))}>${esc(s.note)}</div>` : ""}`,
+  files: (s, at) => `${stepHead(s.step)}
+    ${s.items.map((it, k) => `<div class="row card" ${A("left", at(it[2]) + k * .2)} data-cur="1"><div style="width:60px;height:72px;border-radius:12px;background:var(--accs);border:3px solid var(--acc)"></div>${esc(it[0])}<span class="mono">${esc(it[1])}</span></div>`).join("")}
+    <div class="note" ${A("rise", at(s.noteAt))}>${esc(s.note)}</div>`,
+  doc: (s, at) => `${stepHead(s.step)}
+    <div class="card" style="padding:50px;position:relative" ${A("rise", at(1))}>
+      <div style="font-size:60px;font-weight:800;margin-bottom:30px">${esc(s.title)}</div>
+      ${s.lines.map((l, k) => `<div style="display:flex;align-items:center;gap:22px;height:86px;border-top:2px solid var(--line);font-size:38px;font-weight:600" ${A("left", at(2) + k * .2)}><span style="color:var(--acc);font-weight:800">${"ABCDE"[k]}</span>${esc(l)}</div>`).join("")}
+      <div style="position:absolute;right:30px;top:40px;border:6px solid var(--acc);color:var(--acc);font-size:40px;font-weight:800;padding:14px 26px;border-radius:18px" ${A("stamp", at(s.stampAt))}>${esc(s.stamp)}</div>
+    </div>`,
+  progress: (s, at) => `${stepHead(s.step)}
+    <div class="h2" ${A("rise", at(0))}>오퍼스 혼자 진행 중</div>
+    ${s.items.map((it, k) => `<div class="card" style="padding:34px 40px;margin-bottom:24px" ${A("left", at(it[1]) + k * .15)}>
+      <div style="font-size:42px;font-weight:700;margin-bottom:20px">${esc(it[0])}</div>
+      <div style="height:26px;border-radius:13px;background:#EEF0F4;overflow:hidden"><div class="pbar" data-k="${k}" style="height:100%;background:var(--acc);transform-origin:left;transform:scaleX(0)"></div></div></div>`).join("")}`,
+  cutflow: (s, at) => {
+    const ph = (side) => `<div style="width:400px">
+      <div class="pill" style="margin-bottom:24px;${side ? "" : "background:#FDECEC;color:var(--bad)"}">${side ? "흐름" : "끊김 (PPT)"}</div>
+      <div class="card ${side ? "cf-r" : "cf-l"}" style="height:640px;border-radius:40px;overflow:hidden;position:relative;border:8px solid #0E1116"></div></div>`;
+    return `<div style="display:flex;gap:40px;margin-top:40px"><div ${A("rise", at(0))}>${ph(0)}</div><div ${A("rise", at(s.rightAt))} data-cur="1">${ph(1)}</div></div>`;
+  },
+  theater: (s, at) => {
+    const st = (cls, lab, t, hi) => `<div class="card" style="padding:30px;margin-bottom:30px;${hi ? "" : ""}" ${A("rise", t)} ${hi ? 'data-cur="1"' : ""}>
+      <div style="display:flex;align-items:center;margin-bottom:20px"><div style="font-size:38px;font-weight:800">${lab}</div>${hi ? `<div class="pill" style="margin-left:auto;font-size:30px" ${A("pop", at(s.winAt))}>관객 몰입 ↑</div>` : ""}</div>
+      <div class="${cls}" style="height:300px;border-radius:24px;overflow:hidden;position:relative;background:var(--panel)"></div></div>`;
+    return st("th-a", "막 내리고 무대 교체", at(1), 0) + st("th-b", "걸어가는 사이 무대가 바뀜", at(s.bAt), 1);
+  },
+  rules: (s, at) => `<div class="title" style="color:var(--acc);font-size:120px;margin-bottom:50px" ${A("pop", at(0))}>${esc(s.title)}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:22px;position:relative">${s.items.map((r, k) => `<div class="card" style="position:relative;font-size:44px;font-weight:700;padding:28px 40px" ${A("pop", at(s.itemsAt) + k * .22)}>${esc(r)}
+      <div style="position:absolute;left:20px;right:20px;top:50%;height:7px;background:var(--bad);transform-origin:left" ${A("strike", at(s.strikeAt) + k * .1)}></div></div>`).join("")}</div>
+    <div class="note" ${A("rise", at(s.noteAt))}>${esc(s.note)}</div>`,
+  brief: (s, at) => `<div class="card" style="padding:40px 44px;background:var(--acc);color:#fff;margin-bottom:34px" ${A("rise", at(s.goalAt))}>
+      <div style="font-size:30px;font-weight:700;opacity:.8">목적 하나</div><div style="font-size:48px;font-weight:800;margin-top:12px;word-break:keep-all">${esc(s.goal)}</div></div>
+    <div style="font-size:36px;font-weight:800;margin-bottom:20px" ${A("rise", at(2))}>꼭 지킬 것 5개</div>
+    ${s.items.map((it, k) => `<div class="row card" style="height:92px;font-size:38px;margin-bottom:14px" ${A("left", at(it[1]) + (k % 2) * .3)} data-cur="1"><div class="ck" style="width:44px;height:44px"><b ${A("check", at(it[1]) + (k % 2) * .3 + .4)}></b></div>${esc(it[0])}</div>`).join("")}
+    <div class="note" style="bottom:40px;right:300px;font-size:32px" ${A("rise", at(s.noteAt))}>${esc(s.note)}</div>`,
+  numcheck: (s, at) => `<div class="h2" style="font-size:54px" ${A("rise", at(0))}>${esc(s.title)}</div>
+    <div class="card" style="padding:20px 40px" ${A("rise", at(2))}>
+      <div style="display:flex;font-size:30px;color:var(--soft);font-weight:700;height:80px;align-items:center"><span>화면에 나온 숫자</span><span style="margin-left:auto">대본에 있나?</span></div>
+      ${s.rows.map((r, k) => `<div style="display:flex;align-items:center;height:120px;border-top:2px solid var(--line);font-size:52px;font-weight:800" ${A("left", at(s.rowsAt) + k * .35)} ${r[1] ? "" : 'data-cur="1"'}>${esc(r[0])}
+        <span style="margin-left:auto;width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:42px;background:${r[1] ? "var(--good)" : "var(--bad)"}" ${A(r[1] ? "check" : "bad", r[1] ? at(s.rowsAt) + k * .35 + .4 : at(s.badAt))}>${r[1] ? "✓" : "✕"}</span></div>`).join("")}
+    </div>
+    <div style="margin-top:50px;display:inline-block;border:7px solid var(--bad);color:var(--bad);font-size:56px;font-weight:800;padding:20px 36px;border-radius:22px" ${A("stamp", at(s.stampAt))}>${esc(s.stamp)}</div>`,
+  log: (s, at) => `<div class="h2" ${A("rise", at(0))}>${esc(s.title)}</div>
+    <div class="card" style="padding:16px 36px" ${A("rise", at(1))}>
+      <div style="display:flex;font-size:28px;color:var(--soft);font-weight:700;height:70px;align-items:center"><span style="width:250px">실수</span><span>다음부터 규칙</span></div>
+      ${s.rows.map(r => `<div style="display:flex;align-items:center;min-height:110px;border-top:2px solid var(--line);font-size:38px;font-weight:700" ${A("left", at(r[2]))} data-cur="1"><span style="width:250px;color:var(--bad)">${esc(r[0])}</span><span ${A("fade", at(4))}>${esc(r[1])}</span></div>`).join("")}
+      ${Array.from({ length: 4 }, (_, k) => `<div style="display:flex;align-items:center;height:84px;border-top:2px solid var(--line);gap:30px" ${A("left", at(s.grow) + k * .45)}><div style="width:200px;height:22px;border-radius:11px;background:#F2D6D7"></div><div style="width:${340 - k * 30}px;height:22px;border-radius:11px;background:var(--accs)"></div></div>`).join("")}
+    </div>
+    <div class="note" style="bottom:170px" ${A("rise", at(s.noteAt))}>${esc(s.note)}</div>`,
+  summary: (s, at) => `<div class="h2" ${A("rise", at(0))}>오늘의 정리</div>
+    ${s.items.map((it, k) => `<div class="card" style="padding:36px 44px;margin-bottom:26px;display:flex;gap:34px;align-items:center" ${A("left", at(it[3]))} data-cur="1">
+      <div style="width:120px;height:120px;border-radius:32px;background:var(--acc);color:#fff;font-size:40px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none">${esc(it[0])}</div>
+      <div><div style="font-size:54px;font-weight:800">${esc(it[1])}</div><div style="font-size:36px;color:var(--mute);font-weight:600;margin-top:8px">${esc(it[2])}</div></div></div>`).join("")}`,
+  end: (s, at) => `<div style="position:absolute;left:60px;right:60px;top:300px;text-align:center">
+    <div class="title" style="font-size:96px" ${A("rise", at(0) + .1)}>${esc(s.title)}</div>
+    <div class="pill" style="margin-top:70px;font-size:50px;padding:30px 54px;background:var(--acc);color:#fff" ${A("pop", at(0) + .5)}>${esc(s.link)}</div>
+    <div class="subt" ${A("rise", at(0) + .8)}>톤카드 하네스로 제작</div></div>`,
+};
+
+// ===== 초기화 =====
+window.init = (scenes, timing) => {
+  DUR = timing.duration;
+  const stage = $("#stage");
+  scenes.forEach((s, i) => {
+    const tm = timing.scenes[i];
+    const at = x => {
+      if (typeof x === "string") x = +x.slice(1);
+      const sg = tm.segs[x]; return sg ? sg.start : tm.start;
+    };
+    const el = document.createElement("div");
+    el.className = "scene";
+    el.innerHTML = T[s.tpl](s, at) + (s.btn && !/class="next hot"/.test(T[s.tpl](s, at)) ? `<div class="next hot" ${A("pop", tm.start + .5)}>${esc(s.btn)}</div>` : "");
+    stage.appendChild(el);
+    const tracks = [...el.querySelectorAll("[data-a]")].map(n => ({ el: n, fx: n.dataset.a, t: +n.dataset.t, d: +(n.dataset.d || DURS[n.dataset.a] || .55) }));
+    const sc = { i, s, el, start: tm.start, end: tm.end, tracks, hot: el.querySelector(".hot"), curs: [] };
+    SC.push(sc);
+    tm.segs.forEach(g => SUBS.push(g));
+  });
+  // 위치 측정(모든 요소가 최종 상태일 때)
+  SC.forEach(sc => {
+    sc.el.style.visibility = "visible";
+    const r = n => { const b = n.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, w: b.width, h: b.height, l: b.left, t: b.top }; };
+    if (sc.hot) sc.hotR = r(sc.hot);
+    // 커서가 들르는 곳: 등장 시각에 맞춰 이동
+    [...sc.el.querySelectorAll("[data-cur]")].forEach(n => {
+      const tt = n.dataset.curt ? +n.dataset.curt : +(n.dataset.t || (n.closest("[data-t]") || {}).dataset?.t || sc.start);
+      const b = r(n); sc.curs.push({ t: Math.max(tt + .35, sc.start + .9), x: b.l + Math.min(b.w * .75, b.w - 40), y: b.y + 10, click: !!n.dataset.curt || n.classList.contains("ui-btn") });
+    });
+    sc.el.style.visibility = "hidden";
+  });
+  SC.forEach((sc, k) => {
+    const kf = [];
+    const rest = { x: 860, y: 1180 };
+    kf.push({ t: sc.start + .7, ...(sc.curs[0] && sc.curs[0].t < sc.start + 1.2 ? sc.curs[0] : rest) });
+    sc.curs.sort((a, b) => a.t - b.t).forEach(c => { if (c.t < sc.end - 1.3) kf.push(c); });
+    if (sc.hotR) kf.push({ t: sc.end - .42, x: sc.hotR.x, y: sc.hotR.y, click: true, hot: true });
+    sc.kf = kf.sort((a, b) => a.t - b.t);
+  });
+};
+
+function cursorAt(t) {
+  let all = [];
+  for (const sc of SC) all = all.concat(sc.kf);
+  let prev = { t: 0, x: 860, y: 1180 }, next = null;
+  for (const k of all) { if (k.t <= t) prev = k; else { next = k; break; } }
+  let x = prev.x, y = prev.y;
+  if (next) {
+    const md = Math.min(.65, (next.t - prev.t) * .8), p = clamp((t - (next.t - md)) / md);
+    x = lerp(prev.x, next.x, inout(p)); y = lerp(prev.y, next.y, inout(p));
+  }
+  // 살짝 떠 있는 느낌
+  x += Math.sin(t * 1.3) * 5; y += Math.cos(t * 1.1) * 4;
+  // 클릭
+  let press = 1, rip = null;
+  for (const k of all) if (k.click && t >= k.t - .12 && t < k.t + .5) {
+    const d = t - k.t;
+    press = d < 0 ? lerp(1, .82, (d + .12) / .12) : lerp(.82, 1, clamp(d / .15));
+    if (d >= 0) rip = { x: k.x, y: k.y, p: clamp(d / .45) };
+  }
+  const c = $("#cursor");
+  c.style.transform = `translate(${x - 8}px,${y - 6}px) scale(${press})`;
+  const r = $("#ripple");
+  if (rip) { r.style.visibility = "visible"; r.style.left = rip.x + "px"; r.style.top = rip.y + "px"; r.style.transform = `scale(${1 + rip.p * 2.4})`; r.style.opacity = 1 - rip.p; }
+  else r.style.visibility = "hidden";
+}
+
+function customAt(sc, t) {
+  const L = t - sc.start;
+  if (sc.s.tpl === "progress") sc.el.querySelectorAll(".pbar").forEach(b => {
+    const k = +b.dataset.k, span = (sc.end - sc.start - .8) / 3;
+    b.style.transform = `scaleX(${clamp((L - .6 - k * span * .6) / (span * 1.4))})`;
+  });
+  if (sc.s.tpl === "uidemo") {
+    const ct = sc.kf.find(k => k.click && !k.hot), p = ct ? ease(clamp((t - ct.t - .05) / .5)) : 0;
+    const a = sc.el.querySelector(".ui-a"), b = sc.el.querySelector(".ui-b");
+    a.style.transform = `translateX(${-p * 100}%)`; b.style.transform = `translateX(${(1 - p) * 100}%)`;
+  }
+  if (sc.s.tpl === "cutflow") {
+    const cols = ["#3B5BFD", "#FFB020", "#16A34A", "#E5484D"];
+    const l = sc.el.querySelector(".cf-l"), i = Math.floor(L / 1.2) % 4;
+    l.innerHTML = `<div style="position:absolute;inset:0;background:${cols[i]}"></div><div style="position:absolute;left:40px;top:${120 + i * 90}px;width:220px;height:60px;border-radius:14px;background:#fff"></div>`;
+    const r = sc.el.querySelector(".cf-r"), q = L * .45;
+    const c1 = cols[Math.floor(q) % 4], c2 = cols[(Math.floor(q) + 1) % 4], f = q % 1;
+    const cx = 190 + Math.sin(q * 2.1) * 90, cy = 300 + Math.cos(q * 1.7) * 160, rad = 90 + Math.sin(q * 3) * 30;
+    r.innerHTML = `<div style="position:absolute;inset:0;background:linear-gradient(${q * 60}deg,${c1},${c2})"></div>
+      <div style="position:absolute;left:${cx - rad}px;top:${cy - rad}px;width:${rad * 2}px;height:${rad * 2}px;border-radius:${30 + f * 70}%;background:#fff;opacity:.92"></div>`;
+  }
+  if (sc.s.tpl === "theater") {
+    const a = sc.el.querySelector(".th-a"), ph = (L % 3) / 3;
+    const drop = ph < .35 ? ease(ph / .35) : ph < .55 ? 1 : 1 - ease((ph - .55) / .3);
+    const set = Math.floor((L + .9) / 3) % 3, sc1 = ["#C7D2FE", "#FDE68A", "#BBF7D0"][set];
+    a.innerHTML = `<div style="position:absolute;inset:0;background:${sc1}"></div><div style="position:absolute;left:46%;bottom:40px;width:50px;height:110px;border-radius:25px;background:#0E1116"></div>
+      <div style="position:absolute;left:0;right:0;top:0;height:${drop * 100}%;background:#B42318"></div>`;
+    const b = sc.el.querySelector(".th-b"), w = (L * 120) % 1600;
+    b.innerHTML = ["#C7D2FE", "#FDE68A", "#BBF7D0", "#C7D2FE"].map((c, k) => `<div style="position:absolute;top:0;bottom:0;left:${k * 800 - w}px;width:800px;background:${c}"></div>`).join("")
+      + `<div style="position:absolute;left:${380 + Math.sin(L * 5) * 6}px;bottom:${40 + Math.abs(Math.sin(L * 5)) * 14}px;width:50px;height:110px;border-radius:25px;background:#0E1116"></div>`;
+  }
+}
+
+window.renderAt = (t) => {
+  $("#prog b").style.transform = `scaleX(${t / DUR})`;
+  for (const sc of SC) {
+    const vis = t >= sc.start - .02 && t < sc.end + TRANS * .5;
+    sc.el.style.visibility = vis ? "visible" : "hidden";
+    if (!vis) continue;
+    for (const k of sc.tracks) {
+      const p = ease(clamp((t - k.t) / k.d));
+      FX[k.fx](k.el, k.fx === "type" ? clamp((t - k.t) / k.d) : p);
+    }
+    // 다음 버튼은 살짝 숨 쉬기
+    if (sc.hot && t > sc.start + 1) sc.hot.style.transform = `scale(${1 + Math.sin((t - sc.start) * 3) * .02})`;
+    // 장면 퇴장: 버튼이 눌리면 내용이 사라짐
+    const out = clamp((t - (sc.end - TRANS + .05)) / (TRANS * .6));
+    sc.el.style.opacity = 1 - out;
+    customAt(sc, t);
+  }
+  // 포털: 눌린 버튼이 커져서 다음 장면의 판이 됨
+  const P = $("#portal"); P.style.visibility = "hidden";
+  for (const sc of SC) {
+    if (!sc.hotR) continue;
+    const t0 = sc.end - TRANS, t1 = sc.end + .05;
+    if (t >= t0 && t < t1 + .3) {
+      const g = ease(clamp((t - t0) / (t1 - t0))), f = clamp((t - t1) / .3);
+      const hr = sc.hotR, x = lerp(hr.l - STAGE.x, 0, g), y = lerp(hr.t - STAGE.y, 0, g);
+      P.style.visibility = "visible";
+      P.style.left = x + "px"; P.style.top = y + "px";
+      P.style.width = lerp(hr.w, STAGE.w, g) + "px"; P.style.height = lerp(hr.h, STAGE.h, g) + "px";
+      P.style.borderRadius = lerp(hr.h / 2, 44, g) + "px";
+      P.style.background = `rgb(${lerp(59, 244, g)},${lerp(91, 246, g)},${lerp(253, 250, g)})`;
+      P.style.opacity = 1 - f;
+    }
+  }
+  // 자막
+  let cur = null;
+  for (const g of SUBS) if (g.start - .05 <= t) cur = g; else break;
+  const sub = $("#sub");
+  if (cur && sub.dataset.k !== String(cur.start)) { sub.dataset.k = cur.start; sub.textContent = cur.text; }
+  if (cur) { const p = ease(clamp((t - cur.start + .05) / .18)); sub.style.opacity = p; sub.style.transform = `translateY(${(1 - p) * 14}px)`; }
+  if (t > SC[SC.length - 1].start) sub.style.opacity = 0;
+  cursorAt(t);
+};
+</script>
+</body>
+</html>
