@@ -114,6 +114,8 @@
 
 목표 숫자: `brightness 0.85~0.97` · `shot_sec 2.4` · `motion 3~9` · `loudness -15±1`
 
+> ⚠️ 2026-10-09 첫 제작 실측: brightness 0.88 ✅ · loudness -15.4 ✅ · motion 약 0.3 (목표와 10배 차이) · 하드컷 0회. **motion·shot_sec 목표는 아직 보정 전**이다. 잘 만든 미니멀 UI 영상을 직접 재서 바꿀 것.
+
 ## T05 · 시네마틱 3D
 
 | 결정 사항 | 내용 |

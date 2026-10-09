@@ -2,6 +2,7 @@
 import json, os, re, sys
 
 tmp, dur, tone = sys.argv[1], float(sys.argv[2]), sys.argv[3]
+timing = sys.argv[4] if len(sys.argv) > 4 else ""
 
 def read(name):
     p = os.path.join(tmp, name)
@@ -31,7 +32,18 @@ r = {
     "freeze_max": round(max(freezes), 2) if freezes else 0.0,
 }
 
+# 이어지기 톤은 하드컷이 없으므로 설계상 장면 수(timing.json)로도 본다 (mistake-log M007)
+if timing and os.path.exists(timing):
+    tj = json.load(open(timing, encoding="utf-8"))
+    sc = tj.get("scenes", [])
+    if sc:
+        r["scene_sec_design"] = round(dur / len(sc), 2)
+        segs = sum(len(x.get("segs", [])) for x in sc)
+        if segs: r["sentence_sec"] = round(dur / segs, 2)
+
 print(json.dumps(r, ensure_ascii=False, indent=2))
+if r["cuts"] == 0:
+    print("※ 하드컷 0회 — 이어지기 톤이면 scene_sec_design(설계상 장면 간격)을 함께 보세요")
 
 # 톤 목표 비교 (tone-cards.md의 '목표 숫자' 줄을 읽는다)
 if tone:

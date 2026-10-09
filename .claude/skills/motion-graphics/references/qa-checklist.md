@@ -44,6 +44,9 @@ bash .claude/skills/motion-graphics/scripts/measure_video.sh out/final.mp4
 | N4 | 장면 속도 (`shot_sec`) | **목표의 ±30% 안** (AI는 놔두면 급해진다 — 재생성 시 평균 1.7배 빨라짐) |
 | N5 | 움직임 (`motion`) | 톤카드 범위 안 |
 | N6 | 멈춘 화면 (`freeze_max`) | 1초 초과 시 경고 |
+| N7 | 목소리 대조 | 음성 인식 결과를 대본과 비교해 평균 일치율 0.8 이상. 미만이면 목소리 교체 (mistake-log M008) |
+
+> 이어지기 톤은 하드컷이 없어 `shot_sec`가 영상 전체 길이로 나온다. `measure_video.sh <영상> <톤> timing.json`으로 `scene_sec_design`도 함께 본다 (M007).
 
 ## 결과 보고 양식
 

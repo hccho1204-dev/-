@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # 2겹 숫자 검수: 밝기 · 장면 전환 속도 · 움직임 양 · 음량 · 멈춘 화면 측정
-# 사용법: measure_video.sh <영상.mp4> [톤코드]   (톤코드 주면 목표와 비교)
+# 사용법: measure_video.sh <영상.mp4> [톤코드] [timing.json]   (톤코드 주면 목표와 비교)
 set -euo pipefail
 IN="${1:?영상 파일 경로를 주세요}"
 TONE="${2:-}"
+TIMING="${3:-}"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
@@ -23,4 +24,4 @@ else
   : > "$TMP/loud.txt"
 fi
 
-python3 -I "$DIR/_summarize.py" "$TMP" "$DUR" "$TONE"
+python3 -I "$DIR/_summarize.py" "$TMP" "$DUR" "$TONE" "$TIMING"

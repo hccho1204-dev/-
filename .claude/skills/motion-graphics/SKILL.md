@@ -126,3 +126,4 @@ description: 대본·목소리·음악으로 AI 모션그래픽 영상을 만들
 | `scripts/contact_sheet.sh` | 24장 한 장 모아보기 |
 | `scripts/measure_video.sh` | 밝기·전환 속도·움직임·음량·정지 측정 |
 | `scripts/check_numbers.py` | 화면 숫자 ↔ 대본 숫자 대조 |
+| `scripts/check_voice.py` | 목소리 발음 ↔ 대본 대조 (음성 인식) |
