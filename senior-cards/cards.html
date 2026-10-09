@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF6E6;--ink:#1E2940;--sub:#4A5568;--acc:#E0662B;--acc2:#2F6F5E;--line:#EAD9BC;--box:#FFFFFF}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#ccc;font-family:'Noto Sans KR',sans-serif;color:var(--ink)}
+.card{width:1080px;height:1350px;background:var(--bg);padding:64px 72px 56px;display:flex;flex-direction:column;position:relative;margin-bottom:20px;overflow:hidden}
+.card::before{content:"";position:absolute;right:-140px;top:-140px;width:420px;height:420px;border-radius:50%;background:#FBE3C8}
+.brand{font-size:30px;font-weight:700;color:var(--acc);letter-spacing:1px;position:relative}
+.kicker{display:inline-block;margin-top:28px;background:var(--ink);color:#fff;font-size:34px;font-weight:700;padding:10px 26px;border-radius:12px;align-self:flex-start;position:relative}
+h1{font-size:84px;line-height:1.18;font-weight:900;margin-top:28px;letter-spacing:-2px;position:relative}
+h1 em{font-style:normal;color:var(--acc)}
+.list{margin-top:34px;display:flex;flex-direction:column;gap:16px;flex:1}
+.item{background:var(--box);border:3px solid var(--line);border-radius:22px;padding:18px 28px;display:flex;align-items:center;gap:26px}
+.num{flex:none;width:68px;height:68px;border-radius:50%;background:var(--acc);color:#fff;font-size:38px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.num.g{background:var(--acc2)}
+.t{font-size:40px;font-weight:700;line-height:1.25}
+.d{font-size:29px;font-weight:500;color:var(--sub);margin-top:4px;line-height:1.3}
+.big{font-size:52px;font-weight:900;color:var(--acc);flex:none;width:270px;letter-spacing:-1px}
+.foot{margin-top:28px;font-size:28px;color:var(--sub);font-weight:500;display:flex;justify-content:space-between}
+.foot b{color:var(--ink)}
+</style></head><body>
+
+<!-- 1 -->
+<div class="card" id="c1">
+ <div class="brand">오늘의 시니어 꿀팁</div>
+ <div class="kicker">만 65세부터</div>
+ <h1>모르면 손해!<br><em>무료·할인 혜택</em> 5가지</h1>
+ <div class="list">
+  <div class="item"><div class="num">1</div><div><div class="t">지하철 무료</div><div class="d">경로우대 교통카드 발급 (주민센터)</div></div></div>
+  <div class="item"><div class="num">2</div><div><div class="t">독감 예방접종 무료</div><div class="d">보건소·지정 병원, 신분증 지참</div></div></div>
+  <div class="item"><div class="num">3</div><div><div class="t">폐렴구균 예방접종 무료</div><div class="d">평생 1회, 가까운 보건소</div></div></div>
+  <div class="item"><div class="num">4</div><div><div class="t">KTX 30% 할인</div><div class="d">평일 기준 (주말·공휴일 제외)</div></div></div>
+  <div class="item"><div class="num">5</div><div><div class="t">고궁·종묘 무료 입장</div><div class="d">경복궁·창덕궁 등, 신분증 제시</div></div></div>
+ </div>
+ <div class="foot"><span>📌 <b>저장</b>해두고 부모님께 <b>공유</b>하세요</span><span>세부 조건은 기관 확인</span></div>
+</div>
+
+<!-- 2 -->
+<div class="card" id="c2">
+ <div class="brand">오늘의 시니어 꿀팁</div>
+ <div class="kicker">보이스피싱 주의</div>
+ <h1>전화에서 <em>이 말</em> 나오면<br>바로 끊으세요</h1>
+ <div class="list">
+  <div class="item"><div class="num">1</div><div><div class="t">"검찰·금감원입니다"</div><div class="d">수사기관은 전화로 돈을 요구하지 않아요</div></div></div>
+  <div class="item"><div class="num">2</div><div><div class="t">"안전계좌로 옮기세요"</div><div class="d">'안전계좌'라는 건 없습니다</div></div></div>
+  <div class="item"><div class="num">3</div><div><div class="t">"이 앱 설치해 주세요"</div><div class="d">설치 순간 휴대폰이 털릴 수 있어요</div></div></div>
+  <div class="item"><div class="num">4</div><div><div class="t">"엄마, 폰 고장났어"</div><div class="d">자녀 사칭 문자 → 꼭 직접 전화 확인</div></div></div>
+  <div class="item"><div class="num">5</div><div><div class="t">"저금리 대출 해드려요"</div><div class="d">먼저 수수료·기존 대출 상환 요구 = 사기</div></div></div>
+ </div>
+ <div class="foot"><span>의심되면 <b>112</b> 또는 <b>1332</b></span><span>📌 저장 · 공유</span></div>
+</div>
+
+<!-- 3 -->
+<div class="card" id="c3">
+ <div class="brand">오늘의 시니어 꿀팁</div>
+ <div class="kicker">낙상 예방</div>
+ <h1>넘어지는 사고,<br><em>집 안</em>에서 제일 많아요</h1>
+ <div class="list">
+  <div class="item"><div class="num g">✓</div><div><div class="t">욕실에 미끄럼 방지 매트</div><div class="d">변기·샤워기 옆엔 안전 손잡이</div></div></div>
+  <div class="item"><div class="num g">✓</div><div><div class="t">밤길 밝히는 수면등</div><div class="d">침실 → 화장실 가는 길에 하나씩</div></div></div>
+  <div class="item"><div class="num g">✓</div><div><div class="t">바닥의 전선·문턱 정리</div><div class="d">발에 걸리는 물건부터 치우기</div></div></div>
+  <div class="item"><div class="num g">✓</div><div><div class="t">일어날 땐 천천히</div><div class="d">앉았다 → 잠깐 쉬고 → 일어서기</div></div></div>
+  <div class="item"><div class="num g">✓</div><div><div class="t">실내화는 뒤꿈치 있는 것</div><div class="d">헐렁한 슬리퍼는 미끄러지기 쉬워요</div></div></div>
+ </div>
+ <div class="foot"><span>부모님 댁 <b>점검 체크리스트</b></span><span>📌 저장 · 공유</span></div>
+</div>
+
+<!-- 4 -->
+<div class="card" id="c4">
+ <div class="brand">오늘의 시니어 꿀팁</div>
+ <div class="kicker">휴대폰에 저장 필수</div>
+ <h1>급할 때 찾는<br><em>무료 상담 전화</em></h1>
+ <div class="list">
+  <div class="item"><div class="big">112</div><div><div class="t">경찰</div><div class="d">보이스피싱 피해 신고·지급정지</div></div></div>
+  <div class="item"><div class="big">1332</div><div><div class="t">금융감독원</div><div class="d">금융사기·대출 상담</div></div></div>
+  <div class="item"><div class="big">129</div><div><div class="t">보건복지상담센터</div><div class="d">복지 혜택·지원 제도 문의</div></div></div>
+  <div class="item"><div class="big" style="font-size:44px">1899-9988</div><div><div class="t">치매상담콜센터</div><div class="d">치매 관련 상담 (24시간)</div></div></div>
+  <div class="item"><div class="big" style="font-size:44px">1577-1389</div><div><div class="t">노인보호전문기관</div><div class="d">노인 학대 신고·상담</div></div></div>
+ </div>
+ <div class="foot"><span>📌 <b>캡처</b>해서 부모님 폰에 보내드리세요</span><span></span></div>
+</div>
+
+<!-- 5 -->
+<div class="card" id="c5">
+ <div class="brand">오늘의 시니어 꿀팁</div>
+ <div class="kicker">부모님 스마트폰</div>
+ <h1>휴대폰 <em>글씨 크게</em><br>10초면 됩니다</h1>
+ <div class="list">
+  <div class="item"><div class="num">1</div><div><div class="t">'설정' 앱 열기</div><div class="d">톱니바퀴 모양 ⚙️</div></div></div>
+  <div class="item"><div class="num">2</div><div><div class="t">갤럭시: '디스플레이'</div><div class="d">→ 글자 크기와 스타일 → 막대를 오른쪽으로</div></div></div>
+  <div class="item"><div class="num">3</div><div><div class="t">아이폰: '디스플레이 및 밝기'</div><div class="d">→ 텍스트 크기 → 막대를 오른쪽으로</div></div></div>
+  <div class="item"><div class="num">4</div><div><div class="t">'굵은 글꼴'도 켜기</div><div class="d">같은 화면에서 켜면 훨씬 또렷해요</div></div></div>
+  <div class="item"><div class="num">5</div><div><div class="t">화면 확대도 가능</div><div class="d">갤럭시 '화면 크기' / 아이폰 '확대 보기'</div></div></div>
+ </div>
+ <div class="foot"><span>오늘 부모님 폰 <b>바꿔드리기</b> 👍</span><span>📌 저장 · 공유</span></div>
+</div>
+</body></html>
