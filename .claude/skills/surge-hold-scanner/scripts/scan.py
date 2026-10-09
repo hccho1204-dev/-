@@ -74,6 +74,9 @@ def analyze(ticker, info):
             # 유지율: 3일 중 최저 종가가 급등분을 얼마나 지켰나 (1.0 = 하나도 안 내줌)
             r["retention"] = round((r["min_close_3d"] - prev) / gain, 2)
             r["since_signal_pct"] = round((closes[-1] / sig[4] - 1) * 100, 1)
+            if closes[-1] < line:
+                r["status"] = "failed"
+                r["reason"] = "신호 이후 절반선 아래로 하락 (손절 구간)"
         # 인수합병 가격 고정 의심
         post = bars[i:i + 1 + HOLD_DAYS]
         if len(post) >= 2 and all((b[2] - b[3]) / b[4] < PIN_RANGE for b in post):
@@ -93,19 +96,27 @@ def analyze(ticker, info):
 
 def flags_and_score(r):
     flags = []
-    if r.get("pinned") or "인수" in r.get("note", "") or "buyout" in r.get("note", "").lower():
+    note = r.get("note", "").lower()
+    if r.get("pinned") or "인수" in note or any(k in note for k in ("buyout", "acquisition", "acquired by")):
         flags.append("인수가 고정 의심(더 오를 여지 거의 없음)")
     if r["last_close"] < MIN_PRICE:
         flags.append("1달러 미만 동전주")
     if r["avg_dollar_vol"] < MIN_DOLLAR_VOL:
         flags.append("거래대금 너무 적음")
+    if r.get("since_signal_pct", 0) <= -20:
+        flags.append("신호 후 20% 넘게 하락")
     r["flags"] = flags
     if r["status"] != "pass":
         r["score"] = 0
         return r
     retention = min(max(r["retention"], 0), 2.0) / 2.0          # 버틴 힘 (0~1)
     chase = r["since_signal_pct"]
-    chase_pen = 0 if chase <= 30 else min((chase - 30) / 70, 1)  # 신호 후 너무 올라 '추격' 위험
+    if chase > 30:      # 신호 후 너무 올라 '추격' 위험
+        chase_pen = min((chase - 30) / 70, 1)
+    elif chase < -10:   # 신호 후 힘이 빠지는 중
+        chase_pen = min(-chase / 30, 1)
+    else:
+        chase_pen = 0
     liq = min(r["avg_dollar_vol"] / 20_000_000, 1)               # 유동성
     days_since = sum(1 for d, _ in r["path"] if d > r["signal_date"])
     fresh = max(0, 1 - days_since / 8)                           # 신호가 최근일수록 가점
@@ -121,8 +132,8 @@ def main():
     src, dst = sys.argv[1], sys.argv[2]
     asof = sys.argv[sys.argv.index("--asof") + 1] if "--asof" in sys.argv else str(date.today())
     data = json.load(open(src, encoding="utf-8"))
-    rows = [flags_and_score(analyze(t, d)) for t, d in data.items() if d.get("bars")]
-    rows = [r for r in rows if r["status"] != "no_surge"]
+    rows = [analyze(t, d) for t, d in data.items() if d.get("bars")]
+    rows = [flags_and_score(r) for r in rows if r["status"] != "no_surge"]
     picks = sorted([r for r in rows if r["status"] == "pass" and not r["flags"]],
                    key=lambda r: -r["score"])[:5]
     if len(picks) < 5:  # 깨끗한 종목이 5개 미만이면 경고 붙은 통과 종목으로 채움
