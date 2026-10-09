@@ -42,7 +42,7 @@ const grab = page => page.evaluate(() => document.getElementById("c").toDataURL(
 
 async function renderVideo(browser, port, ar) {
   const page = await openPage(browser, port, ar);
-  const file = path.join(OUT, `mobelix_day_${ar}.mp4`);
+  const file = path.join(OUT, `mobelix_day_v2_${ar}.mp4`);
   const ff = spawn("ffmpeg", ["-y", "-loglevel", "error",
     "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
     "-i", path.join(OUT, "music.wav"),
@@ -64,7 +64,7 @@ async function renderVideo(browser, port, ar) {
 // 장면별 대표 컷 10장을 한 장의 스토리보드로
 async function storyboard(browser, port, ar) {
   const page = await openPage(browser, port, ar);
-  const times = [1.6, 3.8, 5.8, 7.5, 9.8, 12.8, 15.4, 16.8, 18.6, 19.6];
+  const times = [1.6, 3.5, 5.6, 7.2, 9.5, 12.3, 15.4, 16.2, 18.2, 19.5];
   const dir = path.join(OUT, `sb_${ar}`);
   fs.mkdirSync(dir, { recursive: true });
   for (let i = 0; i < times.length; i++) {

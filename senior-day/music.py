@@ -1,22 +1,22 @@
 """
-70대 어르신의 모벨릭스 하루 — 따뜻하고 경쾌한 120 BPM 팝, 정확히 20초 (40비트, 1비트 = 0.5초)
+70대 어르신의 모벨릭스 하루 (에너지 버전) — 따뜻하고 신나는 132 BPM 팝, 정확히 20초 (44비트, 1비트 = 0.4545초)
 코드로 직접 합성 → 저작권 걱정 없음, 상업적 사용 가능.
 
-  b0~3   인트로   : 마림바 + '붕' 효과음
-  b4~33  메인     : 킥·박수·베이스 + 마림바 멜로디 + 장면마다 종소리
-  b34~37 엔딩     : 매 비트 팡!
-  b38    마지막 한 방
+  b0~3   인트로   : 우쿨렐레 스트럼 + 붕 효과음 + 박수 빌드업
+  b4~35  메인     : 4비트 킥 + 박수 + 탬버린 16분 + 통통 베이스 + 마림바 멜로디 + 우쿨렐레
+  b36~41 엔딩     : 매 비트 팡! + 종소리 계단
+  b42    마지막 한 방
 """
 import os
 import wave
 import numpy as np
 
 SR = 44100
-BPM = 120
+BPM = 132
 B = 60 / BPM
 DUR = 20.0
 N = int(SR * DUR)
-rng = np.random.default_rng(70)
+rng = np.random.default_rng(132)
 mix = np.zeros((N, 2))
 
 
@@ -173,61 +173,84 @@ def vroom(dur=0.35):
     return lowpass(s, 0.15) * np.minimum(1, t / 0.02) * np.exp(-t / 0.2)
 
 
-# C - G - Am - F (4비트씩)
-PROG = [([60, 64, 67], 36), ([55, 59, 62], 43), ([57, 60, 64], 45), ([53, 57, 60], 41)]
-MEL = [72, 76, 79, 76, 74, 76, 72, 67, 69, 72, 76, 74, 72, 71, 72, 79]
-K, C, H = kick(), clap(), hat()
 
-for b in range(40):
+def strum(ms, dur=0.35, down=True):
+    # 우쿨렐레 느낌: 짧은 플럭을 15ms 간격으로 긁기
+    out = np.zeros(int((dur + 0.08) * SR))
+    order = ms if down else ms[::-1]
+    for i, m in enumerate(order):
+        p = pluck(m, dur)
+        k = int(i * 0.015 * SR)
+        out[k:k + len(p)] += p[:len(out) - k]
+    return out / len(ms)
+
+
+def shaker():
+    n = int(0.05 * SR)
+    t = np.arange(n) / SR
+    s = np.diff(rng.standard_normal(n), prepend=0)
+    return s * np.exp(-t / 0.012) * np.minimum(1, t / 0.004 + 1e-9) * 0.25
+
+
+# C - Am - F - G (4비트씩), 따뜻한 메이저
+PROG = [([60, 64, 67, 72], 36), ([57, 60, 64, 69], 33), ([53, 57, 60, 65], 41), ([55, 59, 62, 67], 43)]
+MEL = [76, 74, 72, 74, 76, 79, 76, 72, 74, 72, 69, 72, 74, 76, 79, 81]
+K, C, H, SH = kick(), clap(), hat(), shaker()
+
+for b in range(44):
     t = b * B
     ch, root = PROG[(b // 4) % 4]
     pos = b % 4
-    # 마림바 멜로디 (8분음표)
-    if b < 38:
-        for k in range(2):
-            m = MEL[(b * 2 + k) % 16]
-            add(marimba(m), t + k * B / 2, 0.35 if b >= 4 else 0.45, 0.25 if k else -0.25)
+    # 우쿨렐레 스트럼 (다운-업)
+    if b < 42:
+        add(strum([m + 12 for m in ch[:3]] + [ch[0] + 24], 0.3, True), t, 0.32, -0.2)
+        add(strum([m + 12 for m in ch[:3]] + [ch[0] + 24], 0.2, False), t + B * 0.5, 0.2, -0.2)
     if b < 4:
         if b in (1, 3):
-            add(vroom(), t, 0.5)
+            add(vroom(), t, 0.45)
+        for k in range(b + 1):
+            add(C, t + k * B / (b + 1), 0.25 + 0.08 * b)
         continue
-    if b >= 34:
-        if b < 38:
-            add(K, t, 0.9)
-            add(C, t, 0.4)
-            add(pop(84 + (b - 34) * 3), t, 0.35, (b % 2) * 0.6 - 0.3)
-            add(bell(84 + (b - 34) * 2), t, 0.3)
+    if b >= 36:
+        if b < 42:
+            add(K, t, 0.95)
+            add(C, t, 0.45)
+            add(pop(84 + (b - 36) * 2), t, 0.3, (b % 2) * 0.6 - 0.3)
+            add(bell(84 + (b - 36) * 2), t, 0.3)
         continue
-    # 통통 튀는 4비트 킥
-    add(K, t, 0.85)
+    # 4비트 킥 + 2,4박 박수
+    add(K, t, 0.9)
     if pos in (1, 3):
-        add(C, t, 0.55, 0.1)
-    add(H, t + B / 2, 0.5, -0.3)
-    add(H, t + B / 4, 0.22, 0.3)
-    add(H, t + 3 * B / 4, 0.22, 0.3)
-    # 오프비트 베이스
-    add(bass(root, B * 0.45), t + B / 2, 0.5)
-    # 코드 스탭 (2, 4박)
-    if pos in (1, 3):
-        add(chord([m + 12 for m in ch], B * 0.4, 0.3), t, 0.22)
-    # 반짝이 종소리 (장면 시작마다)
+        add(C, t, 0.6, 0.1)
+    # 탬버린 16분 + 오프비트 하이햇
+    for k in range(4):
+        add(SH, t + k * B / 4, 0.5 if k % 2 else 0.3, 0.35)
+    add(H, t + B / 2, 0.4, -0.3)
+    # 통통 베이스 (8분 옥타브)
+    add(bass(root, B * 0.4), t, 0.45)
+    add(bass(root + 12, B * 0.3), t + B / 2, 0.35)
+    # 마림바 멜로디
+    for k in range(2):
+        add(marimba(MEL[(b * 2 + k) % 16]), t + k * B / 2, 0.33, 0.25 if k else -0.05)
+    # 장면 바뀔 때 종소리 + 붕
     if b % 6 == 4:
         add(bell(84), t, 0.35, 0.4)
-        add(boing(), t + B * 0.5, 0.25, -0.3)
+        add(boing(), t + B * 0.5, 0.22, -0.3)
 
-add(impact(1.0), 0.0, 0.5)
+add(impact(1.0), 0.0, 0.45)
 for sb in (4, 10, 16, 22, 28):
-    add(whoosh(B * 1.5), sb * B - B * 1.3, 0.25)
-add(impact(1.2), 34 * B, 0.6)
-add(impact(1.6), 38 * B, 0.85)
-add(chord([60, 64, 67, 72, 76], 1.0, 0.35), 38 * B, 0.45)
-add(bell(96, 1.0), 38 * B, 0.35)
+    add(whoosh(B * 1.5), sb * B - B * 1.3, 0.22)
+add(whoosh(B * 2), 34 * B, 0.35)
+add(impact(1.2), 36 * B, 0.6)
+add(impact(1.6), 42 * B, 0.85)
+add(chord([60, 64, 67, 72, 76], 1.0, 0.35), 42 * B, 0.45)
+add(bell(96, 1.0), 42 * B, 0.35)
 
 t = np.arange(N) / SR
-duck = 1 - 0.3 * np.exp(-((t % B) / 0.06)) * ((t > 4 * B) & (t < 34 * B))
+duck = 1 - 0.32 * np.exp(-((t % B) / 0.06)) * ((t > 4 * B) & (t < 36 * B))
 mix *= duck[:, None]
 mix /= np.max(np.abs(mix)) + 1e-9
-mix = np.tanh(mix * 1.4) / np.tanh(1.4) * 0.92
+mix = np.tanh(mix * 1.45) / np.tanh(1.45) * 0.92
 fade = np.ones(N)
 fade[-int(0.25 * SR):] = np.linspace(1, 0, int(0.25 * SR))
 mix *= fade[:, None]
@@ -237,4 +260,4 @@ with wave.open("out/music.wav", "wb") as w:
     w.setsampwidth(2)
     w.setframerate(SR)
     w.writeframes((mix * 32767).astype(np.int16).tobytes())
-print("out/music.wav 생성 완료 (정확히 20초, 120 BPM)")
+print("out/music.wav 생성 완료 (정확히 20초, 132 BPM)")
