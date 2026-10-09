@@ -1,0 +1,160 @@
+<title>급등 버티기 레이더</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* 레이아웃: 상단 규칙 띠 → 오늘의 5종목 카드(차트 포함) → 관찰 목록 표 → 탈락 목록 → 주의사항 */
+:root{
+  --bg:#f3f5f2; --panel:#ffffff; --fg:#17201c; --muted:#5d6a63; --line:#d9e0db;
+  --accent:#0f6b4f; --accent-soft:#dcefe6; --up:#c2362b; --down:#2456b8; --warn:#a86a00; --warn-soft:#fbf0d9;
+  --f-display:"Do Hyeon","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1513; --panel:#161e1b; --fg:#e4ebe7; --muted:#93a39a; --line:#26322d;
+  --accent:#4cc39a; --accent-soft:#18332a; --up:#ff7a6e; --down:#7aa5ff; --warn:#f0b54a; --warn-soft:#33280f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1513; --panel:#161e1b; --fg:#e4ebe7; --muted:#93a39a; --line:#26322d;
+  --accent:#4cc39a; --accent-soft:#18332a; --up:#ff7a6e; --down:#7aa5ff; --warn:#f0b54a; --warn-soft:#33280f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:28px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,5vw,44px);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0 0 12px}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+header{display:grid;gap:10px}
+.asof{font-family:var(--f-mono);font-size:13px;color:var(--muted);letter-spacing:.04em}
+.rule{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.rule div{background:var(--panel);padding:14px 16px}
+.rule b{display:block;font-size:12px;color:var(--accent);letter-spacing:.06em}
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rank{font-family:var(--f-display);font-size:26px;color:var(--accent);line-height:1}
+.tk{font-family:var(--f-mono);font-weight:600;font-size:20px}
+.nm{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.score{font-family:var(--f-mono);font-size:13px;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:99px;white-space:nowrap}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:13px}
+.kv span:nth-child(odd){color:var(--muted)}
+.kv span:nth-child(even){text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)}
+.note{font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--warn-soft);color:var(--warn)}
+svg.spark{width:100%;height:110px;display:block}
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.04em}
+td.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.pill.bad{background:var(--warn-soft);color:var(--warn)}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+summary{cursor:pointer;font-weight:500}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.caution{background:var(--warn-soft);border-radius:12px;padding:16px 18px;font-size:14px;display:grid;gap:6px}
+.caution b{color:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:5px}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--muted)}
+@media (max-width:640px){.rule{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="asof" id="asof"></div>
+    <h1>급등 버티기 레이더</h1>
+    <p class="muted" style="margin:0;max-width:62ch">하루에 20% 넘게 오른 뒤, 3일 동안 오른 폭의 절반도 내주지 않은 종목만 골라 점수순으로 5개를 보여줍니다.</p>
+    <div class="rule">
+      <div><b>1단계 · 급등 포착</b>하루 종가 상승률 +20% 이상</div>
+      <div><b>2단계 · 3일 버티기</b>3거래일 종가가 모두 <u>절반선</u> 위<br><span class="muted" style="font-size:13px">절반선 = 급등 전날 종가 + 상승폭÷2</span></div>
+      <div><b>3단계 · 신호</b>3일째 종가에서 매수 신호, 점수로 순위</div>
+    </div>
+  </header>
+
+  <section>
+    <h2>오늘의 5종목</h2>
+    <div class="legend" style="margin-bottom:10px">
+      <span><i style="background:var(--fg)"></i>종가</span>
+      <span><i style="background:var(--accent)"></i>절반선</span>
+      <span><i style="background:var(--muted)"></i>급등 전날 종가</span>
+      <span>● 급등일 &nbsp;◆ 매수 신호일</span>
+    </div>
+    <div class="picks" id="picks"></div>
+  </section>
+
+  <section>
+    <h2>관찰 중 (3일 검증 진행)</h2>
+    <div class="tbl"><table><thead><tr><th>종목</th><th>급등일</th><th style="text-align:right">급등률</th><th style="text-align:right">절반선</th><th style="text-align:right">현재가</th><th>진행</th></tr></thead><tbody id="watch"></tbody></table></div>
+  </section>
+
+  <section>
+    <details>
+      <summary id="failSum">탈락·제외 종목</summary>
+      <div class="tbl" style="border:0;margin-top:10px"><table><thead><tr><th>종목</th><th>급등일</th><th style="text-align:right">급등률</th><th>사유</th></tr></thead><tbody id="fail"></tbody></table></div>
+    </details>
+  </section>
+
+  <section class="caution">
+    <b>꼭 읽어주세요</b>
+    <div>이 규칙은 SNS에서 "모니시 파브라이가 버핏과의 점심에서 배운 방법"으로 퍼졌지만, 파브라이는 저평가 가치투자자이고 본인이 이런 단타 규칙을 말했다는 확인된 출처는 없습니다. 내용 자체는 오래된 '모멘텀 매매' 아이디어입니다.</div>
+    <div>급등주는 소형·동전주가 많아 하루에 수십 % 움직입니다. 이 화면은 공부용 자동 분류 결과이며 매수 권유가 아닙니다. 들어간다면 절반선 이탈 시 손절 같은 자기 규칙을 먼저 정하세요.</div>
+  </section>
+  <p class="muted" style="font-size:12px;margin:0" id="meta"></p>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const fmt = v => v >= 100 ? v.toFixed(2) : v >= 1 ? v.toFixed(2) : v.toFixed(4);
+const pct = v => (v > 0 ? "+" : "") + v.toFixed(1) + "%";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function spark(r){
+  const W=320,H=110,P={l:6,r:6,t:8,b:8};
+  const ys=r.path.map(p=>p[1]).concat([r.prev_close,r.half_line]);
+  const lo=Math.min(...ys),hi=Math.max(...ys),span=hi-lo||1;
+  const x=i=>P.l+i*(W-P.l-P.r)/Math.max(r.path.length-1,1);
+  const y=v=>P.t+(hi-v)*(H-P.t-P.b)/span;
+  const pts=r.path.map((p,i)=>`${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" ");
+  const si=r.path.findIndex(p=>p[0]===r.surge_date), gi=r.path.findIndex(p=>p[0]===r.signal_date);
+  const last=r.path.length-1;
+  const area=`${x(0)},${H-P.b} ${pts} ${x(last)},${H-P.b}`;
+  let s=`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(r.ticker)} 종가 흐름">`;
+  s+=`<polygon points="${area}" fill="var(--accent-soft)" opacity=".6"/>`;
+  s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(r.prev_close)}" y2="${y(r.prev_close)}" stroke="var(--muted)" stroke-dasharray="3 3" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(r.half_line)}" y2="${y(r.half_line)}" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  s+=`<polyline points="${pts}" fill="none" stroke="var(--fg)" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+  if(si>=0) s+=`<circle cx="${x(si)}" cy="${y(r.path[si][1])}" r="4" fill="var(--up)"/>`;
+  if(gi>=0) s+=`<rect x="${x(gi)-4}" y="${y(r.path[gi][1])-4}" width="8" height="8" transform="rotate(45 ${x(gi)} ${y(r.path[gi][1])})" fill="var(--accent)"/>`;
+  s+=`<circle cx="${x(last)}" cy="${y(r.path[last][1])}" r="3" fill="var(--fg)"/>`;
+  return s+"</svg>";
+}
+
+function render(){
+  if(!DATA){$("picks").innerHTML='<div class="empty">아직 스캔 결과가 없습니다. 스킬을 실행하면 이곳에 5종목이 채워집니다.</div>';return;}
+  $("asof").textContent = `기준일 ${DATA.asof} · 미국 주식 · 후보 ${DATA.universe}종목 스캔`;
+  $("picks").innerHTML = DATA.picks.length ? DATA.picks.map((r,i)=>`
+    <article class="card">
+      <div class="top"><div style="display:flex;gap:10px;align-items:baseline;min-width:0"><span class="rank">${i+1}</span><div style="min-width:0"><div class="tk">${esc(r.ticker)}</div><div class="nm">${esc(r.name)}</div></div></div><span class="score">점수 ${r.score}</span></div>
+      ${spark(r)}
+      <div class="kv">
+        <span>급등일</span><span>${r.surge_date} <b class="up">${pct(r.surge_pct)}</b></span>
+        <span>절반선</span><span>${fmt(r.half_line)}</span>
+        <span>매수 신호</span><span>${r.signal_date} @ ${fmt(r.signal_close)}</span>
+        <span>버틴 힘(유지율)</span><span>${Math.round(r.retention*100)}%</span>
+        <span>현재가</span><span>${fmt(r.last_close)} <b class="${r.since_signal_pct>=0?'up':'down'}">${pct(r.since_signal_pct)}</b></span>
+      </div>
+      ${(r.flags.length||r.chase_risk)?`<div class="chips">${r.flags.map(f=>`<span class="chip">${esc(f)}</span>`).join("")}${r.chase_risk?'<span class="chip">신호 뒤 이미 30%+ 상승 · 추격 주의</span>':''}</div>`:""}
+      ${r.note?`<div class="note">${esc(r.note)}</div>`:""}
+    </article>`).join("") : '<div class="empty">오늘은 규칙을 통과한 종목이 없습니다. 쉬는 것도 전략입니다.</div>';
+  $("watch").innerHTML = DATA.watch.length ? DATA.watch.map(r=>`<tr><td><b class="mono">${esc(r.ticker)}</b> <span class="muted">${esc(r.name)}</span>${r.flags.length?` <span class="pill bad">${esc(r.flags[0])}</span>`:""}</td><td class="mono">${r.surge_date}</td><td class="n up">${pct(r.surge_pct)}</td><td class="n">${fmt(r.half_line)}</td><td class="n">${fmt(r.last_close)}</td><td><span class="pill">${r.days_checked}/3일 통과</span></td></tr>`).join("") : '<tr><td colspan="6" class="muted">현재 검증 중인 종목이 없습니다.</td></tr>';
+  const fails=[...DATA.passed_other.map(r=>({...r,reason:"통과했지만 순위 밖 · "+(r.flags.join(", ")||"점수 낮음")})),...DATA.failed];
+  $("failSum").textContent=`탈락·제외 종목 ${fails.length}개 보기`;
+  $("fail").innerHTML = fails.map(r=>`<tr><td><b class="mono">${esc(r.ticker)}</b> <span class="muted">${esc(r.name)}</span></td><td class="mono">${r.surge_date}</td><td class="n up">${pct(r.surge_pct)}</td><td>${esc(r.reason)}</td></tr>`).join("");
+  $("meta").textContent = `규칙: +${DATA.rule.surge_pct}% 급등 · ${DATA.rule.hold_days}일 버티기 · 최근 ${DATA.rule.lookback}거래일 안의 급등만 · 데이터: 일봉 종가`;
+}
+render();
+</script>
