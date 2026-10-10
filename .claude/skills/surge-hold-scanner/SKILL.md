@@ -1,13 +1,13 @@
 ---
 name: surge-hold-scanner
-description: "급등 후 3일 버티기" 규칙으로 미국/한국 주식 중 하루 +20% 급등 뒤 3거래일 동안 상승분의 절반을 지킨 종목을 골라 매일 5개를 추천하고 대시보드로 보여준다. "급등주 스캔", "오늘의 5종목", "버티기 종목", "파브라이 규칙", "급등 버티기 대시보드" 요청에 사용.
+description: "급등 후 3일 버티기" 규칙으로 미국·한국 주식 중 하루 +20% 급등 뒤 3거래일 동안 상승분의 절반을 지킨 종목을 골라 매일 5개를 추천하고 대시보드로 보여준다. "급등주 스캔", "오늘의 5종목", "버티기 종목", "파브라이 규칙", "급등 버티기 대시보드" 요청에 사용.
 ---
 
 # surge-hold-scanner — 급등 버티기 레이더
 
 ## Trigger
 
-- "오늘의 5종목", "급등 버티기 종목 찾아줘", "급등주 스캔"
+- "오늘의 5종목", "급등 버티기 종목 찾아줘", "급등주 스캔", "한국 주식 5종목", "상한가 버티기"
 - "파브라이 규칙", "20% 급등 3일 버티기"
 - "급등 대시보드 업데이트"
 
@@ -45,6 +45,23 @@ description: "급등 후 3일 버티기" 규칙으로 미국/한국 주식 중 �
 3. **대시보드**: `python3 scripts/build_dashboard.py results.json dashboard.html`
 4. **게시**: Artifact 도구로 `dashboard.html`을 게시. 이미 있는 대시보드면 같은 URL로 업데이트(`url` 지정).
 5. **보고**: 5종목을 표(티커·회사·급등일/급등률·유지율·신호 후 수익률·경고)로 답하고 대시보드 링크를 준다.
+
+## 한국 주식 모드 (`--market kr`)
+
+| 항목 | 미국 | 한국 |
+|---|---|---|
+| 동전주 경고 | 1달러 미만 | 1,000원 미만 |
+| 거래대금 경고 | 100만 달러 미만 | 10억 원 미만 |
+| 유동성 만점 | 2천만 달러 | 300억 원 |
+| 후보 찾기 | "top gainers", "stock soars" | "상한가 종목 10월 O일", "EBN 데이터센터 상승 종목", "인포스탁 상한가" |
+| 시세 티커 | `AAPL` | 코스피 `005930.KS` / 코스닥 `XXXXXX.KQ` (빈 값이면 다른 쪽 시도) |
+| 대시보드 | https://claude.ai/artifact/WyXufmMJ1gaiL9XGfBfajW | https://claude.ai/artifact/KR_URL_PLACEHOLDER |
+| 데이터 파일 | `data/prices.json`, `data/results.json` | `data/prices_kr.json`, `data/results_kr.json` |
+
+- **날짜 주의**: 한국 종목 시세는 `2026-10-07T15:00:00Z` 처럼 오므로 **+9시간** 해서 날짜를 잡는다 (→ 2026-10-08).
+- prices_kr.json 키는 6자리 종목코드, `name`은 한글 회사명, `note`는 급등 이유(테마·공시) 한 줄. 공개매수·인수 발표면 note에 '인수'를 넣는다.
+- 상한가는 +30%라 하루 +20% 이상 종목이 자주 나온다. 후보는 최근 15거래일의 상한가·급등 종목 30개 안팎.
+- 실행: `python3 scripts/scan.py prices_kr.json results_kr.json --asof YYYY-MM-DD --market kr` → `python3 scripts/build_dashboard.py results_kr.json surge-dashboard-kr.html`
 
 ## 반드시 지킬 것
 

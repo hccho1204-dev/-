@@ -108,8 +108,9 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
 <script>
 const DATA = /*__DATA__*/null;
+const KR = !!(DATA && DATA.currency === "KRW");
 const $ = id => document.getElementById(id);
-const fmt = v => v >= 100 ? v.toFixed(2) : v >= 1 ? v.toFixed(2) : v.toFixed(4);
+const fmt = v => (DATA && DATA.currency === "KRW") ? Math.round(v).toLocaleString("ko-KR") + "원" : v >= 1 ? v.toFixed(2) : v.toFixed(4);
 const pct = v => (v > 0 ? "+" : "") + v.toFixed(1) + "%";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -136,10 +137,10 @@ function spark(r){
 
 function render(){
   if(!DATA){$("picks").innerHTML='<div class="empty">아직 스캔 결과가 없습니다. 스킬을 실행하면 이곳에 5종목이 채워집니다.</div>';return;}
-  $("asof").textContent = `기준일 ${DATA.asof} · 미국 주식 · 후보 ${DATA.universe}종목 스캔`;
+  $("asof").textContent = `기준일 ${DATA.asof} · ${esc(DATA.market || "미국 주식")} · 후보 ${DATA.universe}종목 스캔`;
   $("picks").innerHTML = DATA.picks.length ? DATA.picks.map((r,i)=>`
     <article class="card">
-      <div class="top"><div style="display:flex;gap:10px;align-items:baseline;min-width:0"><span class="rank">${i+1}</span><div style="min-width:0"><div class="tk">${esc(r.ticker)}</div><div class="nm">${esc(r.name)}</div></div></div><span class="score">점수 ${r.score}</span></div>
+      <div class="top"><div style="display:flex;gap:10px;align-items:baseline;min-width:0"><span class="rank">${i+1}</span><div style="min-width:0"><div class="tk">${esc(KR ? r.name : r.ticker)}</div><div class="nm">${esc(KR ? r.ticker : r.name)}</div></div></div><span class="score">점수 ${r.score}</span></div>
       ${spark(r)}
       <div class="kv">
         <span>급등일</span><span>${r.surge_date} <b class="up">${pct(r.surge_pct)}</b></span>

@@ -10,7 +10,7 @@
 입력: prices.json  {"TICK": {"name":..., "note":..., "bars": [[date,o,h,l,c,v], ...]}}
 출력: results.json (추천 5개 + 관찰 + 탈락 사유)
 
-사용법: python3 scan.py prices.json results.json [--asof 2026-10-09]
+사용법: python3 scan.py prices.json results.json [--asof 2026-10-09] [--market us|kr]
 """
 import json
 import sys
@@ -19,8 +19,14 @@ from datetime import date
 SURGE_PCT = 0.20      # 급등 기준 +20%
 HOLD_DAYS = 3         # 버티기 확인 기간
 LOOKBACK = 15         # 최근 몇 거래일 안의 급등만 볼지
-MIN_PRICE = 1.0       # 1달러 미만 동전주는 추천 제외
-MIN_DOLLAR_VOL = 1_000_000  # 하루 평균 거래대금 100만 달러 미만 제외
+# 시장별 기준: 동전주 가격, 최소 거래대금, 유동성 만점 거래대금
+MARKETS = {
+    "us": {"label": "미국 주식", "cur": "USD", "min_price": 1.0, "min_vol": 1_000_000, "full_vol": 20_000_000,
+           "penny": "1달러 미만 동전주", "thin": "거래대금 100만 달러 미만"},
+    "kr": {"label": "한국 주식", "cur": "KRW", "min_price": 1000, "min_vol": 1_000_000_000, "full_vol": 30_000_000_000,
+           "penny": "1,000원 미만 동전주", "thin": "거래대금 10억 원 미만"},
+}
+M = MARKETS["us"]
 PIN_RANGE = 0.015     # 급등 후 하루 변동폭이 1.5% 미만으로 굳으면 '인수가 고정' 의심
 
 
@@ -99,10 +105,10 @@ def flags_and_score(r):
     note = r.get("note", "").lower()
     if r.get("pinned") or "인수" in note or any(k in note for k in ("buyout", "acquisition", "acquired by")):
         flags.append("인수가 고정 의심(더 오를 여지 거의 없음)")
-    if r["last_close"] < MIN_PRICE:
-        flags.append("1달러 미만 동전주")
-    if r["avg_dollar_vol"] < MIN_DOLLAR_VOL:
-        flags.append("거래대금 너무 적음")
+    if r["last_close"] < M["min_price"]:
+        flags.append(M["penny"])
+    if r["avg_dollar_vol"] < M["min_vol"]:
+        flags.append(M["thin"])
     if r.get("since_signal_pct", 0) <= -20:
         flags.append("신호 후 20% 넘게 하락")
     r["flags"] = flags
@@ -117,7 +123,7 @@ def flags_and_score(r):
         chase_pen = min(-chase / 30, 1)
     else:
         chase_pen = 0
-    liq = min(r["avg_dollar_vol"] / 20_000_000, 1)               # 유동성
+    liq = min(r["avg_dollar_vol"] / M["full_vol"], 1)               # 유동성
     days_since = sum(1 for d, _ in r["path"] if d > r["signal_date"])
     fresh = max(0, 1 - days_since / 8)                           # 신호가 최근일수록 가점
     score = 45 * retention + 20 * liq + 20 * fresh + 15 * (1 - chase_pen)
@@ -130,6 +136,9 @@ def flags_and_score(r):
 
 def main():
     src, dst = sys.argv[1], sys.argv[2]
+    global M
+    if "--market" in sys.argv:
+        M = MARKETS[sys.argv[sys.argv.index("--market") + 1]]
     asof = sys.argv[sys.argv.index("--asof") + 1] if "--asof" in sys.argv else str(date.today())
     data = json.load(open(src, encoding="utf-8"))
     rows = [analyze(t, d) for t, d in data.items() if d.get("bars")]
@@ -142,6 +151,8 @@ def main():
         picks += extra[:5 - len(picks)]
     out = {
         "asof": asof,
+        "market": M["label"],
+        "currency": M["cur"],
         "rule": {"surge_pct": SURGE_PCT * 100, "hold_days": HOLD_DAYS, "lookback": LOOKBACK},
         "universe": len(data),
         "picks": picks,
