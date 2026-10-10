@@ -137,15 +137,15 @@ function spark(r){
 
 function render(){
   if(!DATA){$("picks").innerHTML='<div class="empty">아직 스캔 결과가 없습니다. 스킬을 실행하면 이곳에 5종목이 채워집니다.</div>';return;}
-  $("asof").textContent = `기준일 ${DATA.asof} · ${esc(DATA.market || "미국 주식")} · 후보 ${DATA.universe}종목 스캔`;
+  $("asof").textContent = `기준일 ${DATA.asof} · 마지막 종가 ${DATA.picks[0]?.last_date || DATA.asof} · ${esc(DATA.market || "미국 주식")} · 후보 ${DATA.universe}종목 스캔`;
   $("picks").innerHTML = DATA.picks.length ? DATA.picks.map((r,i)=>`
     <article class="card">
       <div class="top"><div style="display:flex;gap:10px;align-items:baseline;min-width:0"><span class="rank">${i+1}</span><div style="min-width:0"><div class="tk">${esc(KR ? r.name : r.ticker)}</div><div class="nm">${esc(KR ? r.ticker : r.name)}</div></div></div><span class="score">점수 ${r.score}</span></div>
       ${spark(r)}
       <div class="kv">
-        <span>급등일</span><span>${r.surge_date} <b class="up">${pct(r.surge_pct)}</b></span>
+        <span>급등일</span><span>${r.surge_date.slice(5)} <b class="up">${pct(r.surge_pct)}</b></span>
         <span>절반선</span><span>${fmt(r.half_line)}</span>
-        <span>매수 신호</span><span>${r.signal_date} @ ${fmt(r.signal_close)}</span>
+        <span>매수 신호</span><span>${r.signal_date.slice(5)} · ${fmt(r.signal_close)}</span>
         <span>버틴 힘(유지율)</span><span>${Math.round(r.retention*100)}%</span>
         <span>현재가</span><span>${fmt(r.last_close)} <b class="${r.since_signal_pct>=0?'up':'down'}">${pct(r.since_signal_pct)}</b></span>
       </div>

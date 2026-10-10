@@ -55,7 +55,7 @@ description: "급등 후 3일 버티기" 규칙으로 미국·한국 주식 중 
 | 유동성 만점 | 2천만 달러 | 300억 원 |
 | 후보 찾기 | "top gainers", "stock soars" | "상한가 종목 10월 O일", "EBN 데이터센터 상승 종목", "인포스탁 상한가" |
 | 시세 티커 | `AAPL` | 코스피 `005930.KS` / 코스닥 `XXXXXX.KQ` (빈 값이면 다른 쪽 시도) |
-| 대시보드 | https://claude.ai/artifact/WyXufmMJ1gaiL9XGfBfajW | https://claude.ai/artifact/KR_URL_PLACEHOLDER |
+| 대시보드 | https://claude.ai/artifact/WyXufmMJ1gaiL9XGfBfajW | https://claude.ai/artifact/5x8Yuwahc4kG3aZoQZ6S2R |
 | 데이터 파일 | `data/prices.json`, `data/results.json` | `data/prices_kr.json`, `data/results_kr.json` |
 
 - **날짜 주의**: 한국 종목 시세는 `2026-10-07T15:00:00Z` 처럼 오므로 **+9시간** 해서 날짜를 잡는다 (→ 2026-10-08).
