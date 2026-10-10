@@ -123,6 +123,7 @@ description: 대본·목소리·음악으로 AI 모션그래픽 영상을 만들
 | `references/task-sheet-template.md` | 과제지 양식 |
 | `references/qa-checklist.md` | 2겹 검수 체크리스트 |
 | `references/mistake-log.md` | 누적 실수 목록 → 과제지에 자동 포함 |
+| `references/lemo-opuscar-windows-ko.md` | lemo-opuscar 스킬을 윈도우 11·한국어로 돌릴 때 막힌 곳과 해결법 |
 | `scripts/contact_sheet.sh` | 24장 한 장 모아보기 |
 | `scripts/measure_video.sh` | 밝기·전환 속도·움직임·음량·정지 측정 |
 | `scripts/check_numbers.py` | 화면 숫자 ↔ 대본 숫자 대조 |
