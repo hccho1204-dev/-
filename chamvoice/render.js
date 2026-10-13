@@ -42,7 +42,7 @@ const grab = page => page.evaluate(() => document.getElementById("c").toDataURL(
 
 async function renderVideo(browser, port, ar) {
   const page = await openPage(browser, port, ar);
-  const file = path.join(OUT, `chamvoice_${ar}.mp4`);
+  const file = path.join(OUT, `charmvoice_${ar}.mp4`);
   const ff = spawn("ffmpeg", ["-y", "-loglevel", "error",
     "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
     "-i", path.join(OUT, "music.wav"),
