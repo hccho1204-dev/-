@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cham Voice Ensemble</title>
+<style>
+  @font-face { font-family: "Gowun"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Pen"; src: url("fonts/NanumPenScript-Regular.ttf"); }
+  @font-face { font-family: "Serif"; src: url("fonts/InstrumentSerif-Italic.ttf"); }
+  :root { --bg: #140c08; --fg: #fff4e6; --ac: #f0a35e; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Gowun", serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #2a1d16; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   참보이스앙상블 축하 — 마태오 형님의 독립 · 데레사 지휘자님 축하 / 모션그래픽 20초 / 90BPM (1비트 = 0.667초, 30비트)
+   사진: assets/p1~p5.jpg (카드 읽는 모습, 식탁 2컷, 박수, 촛불 앞 웃음)
+   색: 촛불의 호박색 + 크림 + 짙은 갈색 / 글꼴: 고운바탕(본문), 나눔손글씨 펜(카드 문구)
+   ===================================================================== */
+const CR = "#fff4e6", AM = "#f0a35e", GD = "#ffd38a", DK = "#140c08", BRN = "#3a2216", PNK = "#e86a8a";
+const B = 60 / 90, DUR = 20;
+const KR = "Gowun", PEN = "Pen", SF = "Serif";
+const params = new URLSearchParams(location.search);
+const INSTA = params.get("insta") || "@incarvip_bless";
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, U, P;
+function setSize(ar) {
+  [W, H] = ar === "16x9" ? [1920, 1080] : [1080, 1920];
+  cv.width = W; cv.height = H; U = Math.min(W, H) / 100; P = H > W;
+}
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+
+/* ---------- 사진 + 흐린 배경용 사본 ---------- */
+const IMG = {}, BLUR = {};
+const loadImg = n => new Promise(r => {
+  const i = new Image();
+  i.onload = () => {
+    IMG[n] = i;
+    const s = document.createElement("canvas"); s.width = 160; s.height = Math.round(160 * i.height / i.width);
+    const g = s.getContext("2d"); g.filter = "blur(5px)"; g.drawImage(i, -8, -8, s.width + 16, s.height + 16);
+    BLUR[n] = s; r();
+  };
+  i.src = `assets/${n}.jpg`;
+});
+const imgsReady = Promise.all([1, 2, 3, 4, 5, 6].map(i => loadImg("p" + i)));
+
+/* ---------- 수학 / 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const outBack = k => { const c = 1.3; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const bt = n => n * B;
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* ---------- 그리기 도우미 ---------- */
+function measure(s, size, font = KR) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function fit(s, font, maxW, maxSize) { const w = measure(s, maxSize, font); return w > maxW ? maxSize * maxW / w : maxSize; }
+function text(s, x, y, size, o = {}) {
+  const { color = CR, font = KR, align = "center", alpha = 1, rot = 0, sc = 1, shadow = true, sp = 0 } = o;
+  if (alpha <= 0 || sc <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sc, sc);
+  ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.letterSpacing = `${sp * size}px`;
+  if (shadow) { ctx.shadowColor = "rgba(0,0,0,0.65)"; ctx.shadowBlur = size * 0.35; ctx.shadowOffsetY = size * 0.06; }
+  ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+// 한 줄씩 부드럽게 떠오르는 글 (흐림 → 선명)
+function softLine(s, x, y, size, t, t0, o = {}) {
+  const k = outCubic(prog(t, t0, t0 + 0.9));
+  if (k <= 0) return;
+  ctx.save(); ctx.filter = k < 0.98 ? `blur(${(1 - k) * size * 0.12}px)` : "none";
+  text(s, x, y + (1 - k) * size * 0.5, size, { ...o, alpha: k * (o.alpha ?? 1) });
+  ctx.restore();
+}
+// 손글씨가 한 글자씩 써지는 효과
+function handwrite(s, x, y, size, t, t0, o = {}) {
+  const chars = [...s], per = o.per || 0.07, font = PEN;
+  const total = measure(s, size, font);
+  let px = o.align === "left" ? x : x - total / 2;
+  chars.forEach((c, i) => {
+    const k = outCubic(prog(t, t0 + i * per, t0 + i * per + 0.25));
+    const w = measure(c, size, font);
+    if (k > 0) text(c, px + w / 2, y + (1 - k) * size * 0.15, size, { font, color: o.color || CR, alpha: k, sc: 0.85 + 0.15 * k });
+    px += w;
+  });
+}
+// 사진을 영역에 꽉 채워 그리기 (초점 + 줌)
+function cover(src, x, y, w, h, fx = 0.5, fy = 0.5, zoom = 1) {
+  const k = Math.max(w / src.width, h / src.height) * zoom;
+  const dw = src.width * k, dh = src.height * k;
+  let ox = x + w / 2 - dw * fx, oy = y + h / 2 - dh * fy;
+  ox = Math.min(x, Math.max(x + w - dw, ox)); oy = Math.min(y, Math.max(y + h - dh, oy));
+  ctx.drawImage(src, ox, oy, dw, dh);
+}
+// 둥근 카드 사진 (흰 테두리 + 그림자)
+function card(name, cxp, cyp, w, h, o = {}) {
+  const { rot = 0, fx = 0.5, fy = 0.5, zoom = 1, alpha = 1, r = U * 1.6, border = U * 1.1 } = o;
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(cxp, cyp); ctx.rotate(rot);
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = U * 5; ctx.shadowOffsetY = U * 1.6;
+  ctx.fillStyle = "#fbf3e6"; ctx.beginPath(); ctx.roundRect(-w / 2 - border, -h / 2 - border, w + border * 2, h + border * 2, r + border); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, r); ctx.clip();
+  cover(IMG[name], -w / 2, -h / 2, w, h, fx, fy, zoom);
+  ctx.restore();
+}
+// 폴라로이드 (아래 여백에 손글씨)
+function polaroid(name, x, y, w, o = {}) {
+  const { rot = 0, s = 1, caption = "", fx = 0.5, fy = 0.45, alpha = 1 } = o;
+  if (s <= 0 || alpha <= 0) return;
+  const pad = w * 0.06, ph = w * 0.86, h = ph + pad + w * 0.22;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = U * 4; ctx.shadowOffsetY = U * 1.5;
+  ctx.fillStyle = "#fbf6ec"; ctx.fillRect(-w / 2, -h / 2, w, h); ctx.shadowColor = "transparent";
+  ctx.save(); ctx.beginPath(); ctx.rect(-w / 2 + pad, -h / 2 + pad, w - pad * 2, ph); ctx.clip();
+  cover(IMG[name], -w / 2 + pad, -h / 2 + pad, w - pad * 2, ph, fx, fy, 1.02); ctx.restore();
+  if (caption) text(caption, 0, h / 2 - w * 0.11, w * 0.11, { font: PEN, color: BRN, shadow: false });
+  ctx.restore();
+}
+// 따뜻한 빛망울 (위로 천천히)
+function bokeh(t, n, a = 1) {
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < n; i++) {
+    const sp = 0.02 + rand(i + 7) * 0.05;
+    const x = (rand(i) * 1.2 - 0.1) * W + Math.sin(t * 0.6 + i) * U * 2;
+    const y = ((rand(i + 30) - t * sp) % 1 + 1) % 1 * H * 1.2 - H * 0.1;
+    const r = U * (1.5 + rand(i + 3) * 5);
+    const tw = 0.5 + 0.5 * Math.sin(t * 1.7 + i * 2.1);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const c = i % 3 === 0 ? "255,190,120" : i % 3 === 1 ? "255,225,170" : "255,160,140";
+    g.addColorStop(0, `rgba(${c},${0.22 * tw * a})`); g.addColorStop(0.7, `rgba(${c},${0.12 * tw * a})`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+function vignette(a = 0.7) {
+  const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.6);
+  g.addColorStop(0, "rgba(20,10,5,0)"); g.addColorStop(1, `rgba(20,10,5,${a})`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+function warmWash(a) { if (a <= 0) return; ctx.save(); ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = `rgba(255,170,90,${a})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+// 따뜻한 빛 번짐 (장면 전환)
+function glow(x, y, r, a) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(255,220,160,${a})`); g.addColorStop(0.4, `rgba(255,160,80,${a * 0.5})`); g.addColorStop(1, "rgba(255,120,40,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+// 필름 그레인
+const grain = document.createElement("canvas"); grain.width = grain.height = 256;
+{ const g = grain.getContext("2d"), d = g.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = rand(i) * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 14; } g.putImageData(d, 0, 0); }
+function drawGrain(f) { ctx.save(); ctx.fillStyle = ctx.createPattern(grain, "repeat"); ctx.translate(-(rand(f) * 256) | 0, -(rand(f + 9) * 256) | 0); ctx.fillRect(0, 0, W + 256, H + 256); ctx.restore(); }
+
+/* ---------- 촛불 ---------- */
+function candle(x, y, h, t, lit) {
+  const w = h * 0.07;
+  // 분홍 줄무늬 초 (사진 속 그 초)
+  ctx.save(); ctx.beginPath(); ctx.roundRect(x - w / 2, y - h, w, h, w * 0.3); ctx.clip();
+  ctx.fillStyle = "#f6c6d2"; ctx.fillRect(x - w / 2, y - h, w, h);
+  ctx.strokeStyle = PNK; ctx.lineWidth = w * 0.35;
+  for (let i = -2; i < 16; i++) { ctx.beginPath(); ctx.moveTo(x - w, y - h + i * w * 1.4); ctx.lineTo(x + w, y - h + i * w * 1.4 - w * 1.2); ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = "#2a1a12"; ctx.lineWidth = w * 0.18; ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x, y - h - w * 0.8); ctx.stroke();
+  if (lit <= 0) return;
+  const fy = y - h - w * 0.6, fl = 1 + 0.08 * Math.sin(t * 23) + 0.05 * Math.sin(t * 37 + 1);
+  const fh = h * 0.22 * lit * fl, fw = fh * 0.38, sway = Math.sin(t * 5) * fw * 0.12;
+  glow(x, fy - fh * 0.4, h * 1.6 * lit, 0.55 * lit * (0.92 + 0.08 * fl));
+  ctx.save(); ctx.translate(x, fy);
+  const g = ctx.createRadialGradient(0, -fh * 0.25, 0, 0, -fh * 0.3, fh * 0.75);
+  g.addColorStop(0, "#fffbe8"); g.addColorStop(0.35, "#ffd77a"); g.addColorStop(0.75, "#ff8a2a"); g.addColorStop(1, "rgba(255,90,20,0)");
+  ctx.fillStyle = g; ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(fw, -fh * 0.05, fw * 0.9, -fh * 0.55, sway, -fh);
+  ctx.bezierCurveTo(-fw * 0.9, -fh * 0.55, -fw, -fh * 0.05, 0, 0);
+  ctx.fill();
+  ctx.fillStyle = "rgba(90,140,255,0.55)"; ctx.beginPath(); ctx.ellipse(0, -fh * 0.06, fw * 0.32, fh * 0.1, 0, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- 장면 정의 (비트 기준) ----------
+   S1 b0~6   촛불 인트로 + 오르골 '생일 축하합니다'
+   S2 b6~10  식탁에 마주 앉은 두 사람
+   S3 b10~15 카드를 읽는 모습
+   S4 b15~19 박수 치는 손
+   S5 b19~24 촛불 앞 웃음 (클라이맥스)
+   S6 b24~30 폴라로이드 + 카드 문구 엔딩                          */
+const XF = 0.55;   // 장면 겹침(크로스페이드) 시간
+const SHOTS = [
+  { name: "p1", t0: bt(6), t1: bt(9), lines: ["같은 자리에서", "같은 노래를 불러온 사람들"], fx: 0.45, fy: 0.45, z: [1.0, 1.08], aspP: 4 / 3 },
+  { name: "p3", t0: bt(9), t1: bt(12.5), lines: ["한 소리를 내기까지", "함께 쌓아온 시간들"], fx: 0.5, fy: 0.45, z: [1.0, 1.08], aspP: 4 / 3 },
+  { name: "p2", t0: bt(12.5), t1: bt(16), lines: ["마태오 형님의", "진정한 독립을 축하드립니다"], fx: 0.5, fy: 0.4, z: [1.0, 1.08], aspP: 4 / 3 },
+  { name: "p4", t0: bt(16), t1: bt(19), lines: ["데레사 지휘자 선생님도", "축하드립니다"], fx: 0.5, fy: 0.45, z: [1.02, 1.1], aspP: 4 / 3 },
+  { name: "p5", t0: bt(19), t1: bt(24), lines: ["다 함께,", "건배!"], sub: "우리의 노래는 계속됩니다 ♪", big: true, fx: 0.5, fy: 0.45, z: [1.0, 1.08], aspP: 4 / 3 },
+];
+
+function drawShot(sh, t) {
+  if (t < sh.t0 || t > sh.t1 + XF) return;
+  const a = inOut(prog(t, sh.t0, sh.t0 + XF));
+  const k = prog(t, sh.t0, sh.t1 + XF), zoom = lerp(sh.z[0], sh.z[1], k);
+  ctx.save(); ctx.globalAlpha = a;
+  let textX, textY, align, maxW;
+  if (P || sh.portrait) {
+    // 흐린 배경 + 가운데 사진 카드
+    cover(BLUR[sh.name], -U * 2, -U * 2, W + U * 4, H + U * 4, sh.fx, sh.fy, 1.05 + k * 0.05);
+    ctx.fillStyle = "rgba(20,10,5,0.45)"; ctx.fillRect(0, 0, W, H);
+    let cw, ch, ccx, ccy;
+    if (P) { cw = W * (sh.portrait ? 0.8 : 0.86); ch = cw / sh.aspP; ccx = W / 2; ccy = H * (sh.big ? 0.37 : 0.40); }
+    else { ch = H * 0.82; cw = ch * sh.aspP; ccx = W * 0.3; ccy = H / 2; }
+    const drift = Math.sin(t * 0.5 + sh.t0) * 0.012;
+    card(sh.name, ccx, ccy + (1 - outCubic(prog(t, sh.t0, sh.t0 + 1))) * U * 4, cw, ch, { fx: sh.fx, fy: sh.fy, zoom, rot: drift });
+    if (P) { textX = W / 2; textY = ccy + ch / 2 + U * (sh.big ? 17 : 15); align = "center"; maxW = W * 0.86; }
+    else { textX = W * 0.56; textY = H * 0.44; align = "left"; maxW = W * 0.38; }
+  } else {
+    // 가로: 사진을 화면 가득 + 아래 그라데이션
+    cover(IMG[sh.name], 0, 0, W, H, sh.fx, sh.fy, zoom);
+    const g = ctx.createLinearGradient(0, H * 0.45, 0, H);
+    g.addColorStop(0, "rgba(20,10,5,0)"); g.addColorStop(1, "rgba(20,10,5,0.85)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    textX = U * 9; textY = H - U * (sh.sub ? 34 : 27); align = "left"; maxW = W * 0.6;
+  }
+  warmWash(0.18);
+  ctx.restore();
+  // 글
+  const out = 1 - prog(t, sh.t1 - 0.05, sh.t1 + 0.35);
+  if (out <= 0) return;
+  const base = sh.big ? U * (P ? 10 : 9) : U * (P ? 7.4 : 6.2);
+  const lh = base * 1.45;
+  sh.lines.forEach((l, i) => {
+    const fs = Math.min(base, fit(l, KR, maxW, base));
+    softLine(l, textX, textY + i * lh, fs, t, sh.t0 + 0.35 + i * 0.45, { align, alpha: out, color: i === sh.lines.length - 1 && sh.big ? GD : CR });
+  });
+  if (sh.sub) softLine(sh.sub, textX, textY + sh.lines.length * lh + U * 1.5, U * (P ? 5.6 : 4.4), t, sh.t0 + 1.7, { font: PEN, align, alpha: out, color: CR });
+}
+
+function intro(t) {
+  if (t > bt(6) + XF) return;
+  const g = ctx.createRadialGradient(W / 2, H * 0.48, 0, W / 2, H * 0.48, Math.max(W, H) * 0.7);
+  g.addColorStop(0, "#3a2216"); g.addColorStop(1, DK);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const lit = outCubic(prog(t, 0.7, 1.4));
+  const push = inOut(prog(t, bt(5), bt(6) + XF));   // 마지막에 불꽃 쪽으로 다가감
+  const ch = P ? H * 0.2 : H * 0.3;
+  const cx0 = W / 2, cy0 = P ? H * 0.56 : H * 0.62;
+  ctx.save(); ctx.translate(cx0, cy0 - ch); ctx.scale(1 + push * 3, 1 + push * 3); ctx.translate(-cx0, -(cy0 - ch));
+  candle(cx0, cy0, ch, t, lit);
+  ctx.restore();
+  if (t < 1.0) { const s = prog(t, 0.6, 0.75) * (1 - prog(t, 0.75, 1.0)); glow(cx0, cy0 - ch, U * 10, s * 0.9); }  // 성냥 불꽃
+  const ta = 1 - prog(t, bt(5), bt(5) + 0.5);
+  softLine("CHAM VOICE ENSEMBLE", W / 2, P ? H * 0.2 : H * 0.14, U * (P ? 6 : 5), t, 1.3, { font: SF, color: GD, alpha: ta, sp: 0.12 });
+  softLine("참보이스앙상블, 축하의 밤", W / 2, P ? H * 0.68 : H * 0.8, U * (P ? 7 : 6), t, 2.0, { alpha: ta });
+  for (let i = 0; i < 7; i++) {   // 촛불 주위로 떠오르는 음표
+    const k = prog(t, 1.6 + i * 0.25, 4.5 + i * 0.25);
+    if (k <= 0 || k >= 1) continue;
+    const ang = -Math.PI / 2 + (i - 3) * 0.45, r = U * (P ? 12 + k * 22 : 10 + k * 13);
+    text(i % 2 ? "♪" : "♫", cx0 + Math.cos(ang) * r, cy0 - ch + Math.sin(ang) * r * 0.8, U * (4 + (i % 3)), { color: GD, alpha: Math.sin(k * Math.PI) * ta, font: KR });
+  }
+  glow(W / 2, cy0 - ch, Math.max(W, H) * 0.9, push * 0.8);
+}
+
+function outro(t) {
+  const t0 = bt(24);
+  if (t < t0) return;
+  const a = inOut(prog(t, t0, t0 + XF));
+  ctx.save(); ctx.globalAlpha = a;
+  cover(BLUR.p5, -U * 2, -U * 2, W + U * 4, H + U * 4, 0.5, 0.45, 1.1);
+  ctx.fillStyle = "rgba(20,10,5,0.62)"; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // 폴라로이드 3장
+  const pw = P ? W * 0.4 : W * 0.19;
+  const pc = P ? [[W * 0.27, H * 0.3, -0.13], [W * 0.73, H * 0.29, 0.11], [W * 0.5, H * 0.33, -0.02]]
+               : [[W * 0.16, H * 0.48, -0.14], [W * 0.42, H * 0.47, 0.12], [W * 0.29, H * 0.53, -0.03]];
+  const items = [["p1", "우리", 0.45, 0.45], ["p2", "축하", 0.5, 0.4], ["p5", "건배", 0.5, 0.45]];
+  items.forEach(([n, cap, fx, fy], i) => {
+    const ti = t0 + 0.15 + i * 0.35, k = outBack(prog(t, ti, ti + 0.7));
+    if (k <= 0) return;
+    const [x, y, r] = pc[i];
+    polaroid(n, x, y - (1 - k) * U * 12, pw * (i === 2 ? 1.08 : 1), { rot: r * (0.6 + 0.4 * k) + Math.sin(t * 0.8 + i) * 0.01, caption: cap, fx, fy, alpha: clamp(k * 1.5) });
+  });
+  // 손글씨 카드 문구 (사진 속 카드에 쓰인 그 말)
+  const tx = P ? W / 2 : W * 0.74, hs = U * (P ? 9.5 : 8.6);
+  handwrite("마태오 형님, 진정한 독립 축하드려요", tx, P ? H * 0.55 : H * 0.2, Math.min(hs * 0.95, fit("마태오 형님, 진정한 독립 축하드려요", PEN, P ? W * 0.9 : W * 0.44, hs)), t, t0 + 0.8, { per: 0.045, color: GD });
+  handwrite("데레사 선생님, 축하드립니다", tx, P ? H * 0.61 : H * 0.31, Math.min(hs * 0.9, fit("데레사 선생님, 축하드립니다", PEN, P ? W * 0.9 : W * 0.44, hs)), t, t0 + 1.6, { per: 0.045, color: CR });
+  handwrite("♪ 참보이스앙상블 ♪", tx, P ? H * 0.665 : H * 0.4, hs * 0.85, t, t0 + 2.3, { per: 0.05, color: CR });
+  // 하트
+  const hk = outBack(prog(t, t0 + 2.6, t0 + 3.1));
+  if (hk > 0) heart(P ? W / 2 : tx, P ? H * 0.715 : H * 0.5, U * 2.4 * hk * (1 + 0.06 * Math.sin(t * 8)), PNK);
+  softLine("Congratulations", tx, P ? H * 0.78 : H * 0.64, U * (P ? 10 : 9), t, t0 + 2.9, { font: SF, color: CR });
+  softLine("2026. 10 · 참보이스앙상블 일동", tx, P ? H * 0.84 : H * 0.74, U * (P ? 3.6 : 3.1), t, t0 + 3.3, { color: "rgba(255,244,230,0.8)", sp: 0.08 });
+  confetti(t, t0 + 0.2);
+}
+// 축하 종이 조각 (위에서 흩날림)
+function confetti(t, t0) {
+  if (t < t0) return;
+  const cols = [GD, PNK, CR, AM, "#9ad0ff"];
+  for (let i = 0; i < 70; i++) {
+    const st = t0 + rand(i + 40) * 1.2, k = t - st;
+    if (k < 0) continue;
+    const x = rand(i) * W + Math.sin(k * 2 + i) * U * 3, y = -U * 5 + k * H * (0.18 + rand(i + 9) * 0.14);
+    if (y > H + U * 5) continue;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(k * (2 + rand(i + 3) * 4) + i); ctx.scale(1, Math.cos(k * 5 + i));
+    ctx.fillStyle = cols[i % 5]; ctx.fillRect(-U * 0.8, -U * 0.4, U * 1.6, U * 0.8); ctx.restore();
+  }
+}
+function heart(x, y, s, c) {
+  ctx.save(); ctx.translate(x, y); ctx.fillStyle = c; ctx.shadowColor = "rgba(232,106,138,0.6)"; ctx.shadowBlur = s * 2;
+  ctx.beginPath(); ctx.moveTo(0, s * 0.9);
+  ctx.bezierCurveTo(-s * 1.6, -s * 0.1, -s * 0.8, -s * 1.3, 0, -s * 0.45);
+  ctx.bezierCurveTo(s * 0.8, -s * 1.3, s * 1.6, -s * 0.1, 0, s * 0.9); ctx.fill(); ctx.restore();
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = "none";
+  ctx.fillStyle = DK; ctx.fillRect(0, 0, W, H);
+  intro(t);
+  SHOTS.forEach(sh => drawShot(sh, t));
+  outro(t);
+  // 클라이맥스(웃음 장면) 시작: 따뜻한 빛 번짐
+  const c = bt(19); glow(W / 2, H * 0.35, Math.max(W, H) * 0.8, 0.5 * (1 - prog(t, c, c + 1.0)) * (t >= c ? 1 : 0));
+  bokeh(t, P ? 26 : 30, t < bt(19) ? 0.7 : 1);
+  vignette(0.65);
+  drawGrain(Math.floor(t * 30));
+  // 시작 페이드인
+  const f = 1 - prog(t, 0, 0.5);
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+window.ready = Promise.all([imgsReady, document.fonts.load(`10px ${KR}`), document.fonts.load(`10px ${PEN}`), document.fonts.load(`10px ${SF}`)]).then(() => document.fonts.ready);
+
+/* ---------- 미리보기 재생 ---------- */
+const audio = document.getElementById("music");
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2.5);
+});
+window.ready.then(() => { document.querySelector(`[data-ar="${params.get("ar") || "9x16"}"]`)?.classList.add("on"); renderFrame(2.5); });
+</script>
+</body>
+</html>
