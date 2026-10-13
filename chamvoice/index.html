@@ -270,8 +270,8 @@ function intro(t) {
   ctx.restore();
   if (t < 1.0) { const s = prog(t, 0.6, 0.75) * (1 - prog(t, 0.75, 1.0)); glow(cx0, cy0 - ch, U * 10, s * 0.9); }  // 성냥 불꽃
   const ta = 1 - prog(t, bt(5), bt(5) + 0.5);
-  softLine("CHAM VOICE ENSEMBLE", W / 2, P ? H * 0.2 : H * 0.14, U * (P ? 6 : 5), t, 1.3, { font: SF, color: GD, alpha: ta, sp: 0.12 });
-  softLine("참보이스앙상블, 축하의 밤", W / 2, P ? H * 0.68 : H * 0.8, U * (P ? 7 : 6), t, 2.0, { alpha: ta });
+  softLine("참보이스앙상블", W / 2, P ? H * 0.2 : H * 0.14, U * (P ? 7 : 6), t, 1.3, { color: GD, alpha: ta, sp: 0.08 });
+  softLine("함께 축하하는 밤", W / 2, P ? H * 0.68 : H * 0.8, U * (P ? 7 : 6), t, 2.0, { alpha: ta });
   for (let i = 0; i < 7; i++) {   // 촛불 주위로 떠오르는 음표
     const k = prog(t, 1.6 + i * 0.25, 4.5 + i * 0.25);
     if (k <= 0 || k >= 1) continue;
@@ -308,7 +308,7 @@ function outro(t) {
   // 하트
   const hk = outBack(prog(t, t0 + 2.6, t0 + 3.1));
   if (hk > 0) heart(P ? W / 2 : tx, P ? H * 0.715 : H * 0.5, U * 2.4 * hk * (1 + 0.06 * Math.sin(t * 8)), PNK);
-  softLine("Congratulations", tx, P ? H * 0.78 : H * 0.64, U * (P ? 10 : 9), t, t0 + 2.9, { font: SF, color: CR });
+  softLine("축하합니다", tx, P ? H * 0.78 : H * 0.64, U * (P ? 10 : 9), t, t0 + 2.9, { color: CR });
   softLine("2026. 10 · 참보이스앙상블 일동", tx, P ? H * 0.84 : H * 0.74, U * (P ? 3.6 : 3.1), t, t0 + 3.3, { color: "rgba(255,244,230,0.8)", sp: 0.08 });
   confetti(t, t0 + 0.2);
 }
