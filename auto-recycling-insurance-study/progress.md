@@ -10,5 +10,6 @@
 | 6 | 2026-10-11 | 한국 제도 | [day06](./lessons/day06.md) |
 | 7 | 2026-10-12 | 1주차 복습 퀴즈 | [day07](./lessons/day07.md) |
 | 8 | 2026-10-13 | 시장 규모 | [day08](./lessons/day08.md) |
+| 9 | 2026-10-14 | 대표 기업 LKQ·Copart·IAA | [day09](./lessons/day09.md) |
 
-다음 강의: **9일차 — LKQ·Copart·IAA**
+다음 강의: **10일차 — 전기차 배터리**
