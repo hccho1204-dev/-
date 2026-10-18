@@ -114,7 +114,7 @@
 | 주장 | 신뢰도 | 출처 / 비고 |
 |---|---|---|
 | 유럽 재생 플라스틱 중 20%는 폐차·사용 중 탈거 부품 출신 → **차량 플라스틱 기준 2032년 3%, 2036년 5%에 해당** | ⚠️ 2차 자료(원문 미확인) | [Rematec](https://www.rematec.com/news/industry-players-and-markets/regulation-1738), [BKV](https://bkv-gmbh.de/news-reader-4/eu-end-of-life-vehicles-regulation-adopted-by-plenary.html) — 12일차의 "문구 차이"는 같은 내용을 다르게 표현한 것으로 보임(15%×20%=3%, 25%×20%=5%) |
-| 관보 2026.7.24 게재, 8.13 발효 | ✅ 복수 출처 | [Euromoulders](https://euromoulders.org/2026/07/eu-elvr-now-published-in-the-eu-official-journal/), 12일차 |
+| 관보 2026년 7월 게재, 8월 13일 발효 | ✅ 복수 출처 | [Euromoulders](https://euromoulders.org/2026/07/eu-elvr-now-published-in-the-eu-official-journal/), 12일차 |
 | 복습 문제 정답 15개 | ✅ 8~13일차 본문·자기점검표와 대조 | 9일차 정정(80% 점유 삭제, 전손 24.2%) 반영 |
 | 2주차 지도 표의 숫자 | ✅/⚠️ | 각 일차 자기점검표의 신뢰도 그대로 유지(시장 규모·화재 건수는 ⚠️) |
 
