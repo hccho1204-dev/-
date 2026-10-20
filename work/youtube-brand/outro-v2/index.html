@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"><title>outro-v2 키네틱 타이포</title>
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/TextPlugin.min.js"></script>
+<style>
+@font-face{font-family:Pretendard;font-weight:500;src:url(assets/fonts/Pretendard-Medium.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:700;src:url(assets/fonts/Pretendard-Bold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:800;src:url(assets/fonts/Pretendard-ExtraBold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:900;src:url(assets/fonts/Pretendard-Black.woff2) format('woff2');}
+html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#0A0A0A;}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:Pretendard,sans-serif;}
+#root *{box-sizing:border-box;}
+
+#root{background:#F5F5F5;}
+.card{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 400px/1 Pretendard;letter-spacing:-.05em;opacity:0;}
+.c1{background:#F5F5F5;color:#0A0A0A;}
+.c2{background:#0A0A0A;color:#F5F5F5;}
+.c3{background:#F5F5F5;color:#0A0A0A;font-size:330px;}
+.final{position:absolute;inset:0;background:#0A0A0A;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#F5F5F5;}
+.final .lead{font:500 52px Pretendard;color:#8A8A8A;}
+.final .words{margin-top:26px;font:900 130px/1 Pretendard;letter-spacing:-.03em;display:flex;gap:46px;align-items:center;}
+.final .dot{width:22px;height:22px;border-radius:50%;background:#F5F5F5;}
+.final .ul{margin-top:40px;width:1100px;height:8px;background:#F5F5F5;transform-origin:center;}
+
+</style></head>
+<body>
+<div id="root" data-composition-id="master" data-width="1920" data-height="1080" data-start="0" data-duration="5.0">
+
+<div class="card c1">구독</div>
+<div class="card c2">좋아요</div>
+<div class="card c3">알림 설정</div>
+<div class="final">
+  <div class="lead">영상이 도움이 되셨다면</div>
+  <div class="words"><span class="w">구독</span><i class="dot"></i><span class="w">좋아요</span><i class="dot"></i><span class="w">알림 설정</span></div>
+  <div class="ul"></div>
+</div>
+<script>
+gsap.registerPlugin(TextPlugin);
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({paused:true});
+
+[['.c1',0],['.c2',.85],['.c3',1.7]].forEach(([s,t])=>{
+  tl.set(s,{opacity:1},t);
+  tl.fromTo(s,{scale:1.25,letterSpacing:'0.08em'},{scale:1,letterSpacing:'-0.05em',duration:.6,ease:'expo.out'},t);
+});
+tl.set('.final',{opacity:1},2.6);
+tl.fromTo('.final',{clipPath:'circle(0% at 50% 50%)'},{clipPath:'circle(75% at 50% 50%)',duration:.5,ease:'expo.inOut'},2.6);
+tl.fromTo('.final .lead',{opacity:0,y:20},{opacity:1,y:0,duration:.4},2.95);
+tl.fromTo('.final .w, .final .dot',{opacity:0,y:60},{opacity:1,y:0,duration:.45,ease:'back.out(1.8)',stagger:.08},3.05);
+tl.fromTo('.final .ul',{scaleX:0},{scaleX:1,duration:.6,ease:'expo.out'},3.5);
+tl.fromTo('.final .words',{scale:1},{scale:1.03,duration:1.4,ease:'none'},3.6);
+
+tl.set({},{},5.0);
+window.__timelines["master"] = tl;
+</script>
+</div>
+</body></html>

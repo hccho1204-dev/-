@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"><title>intro-v3 반전 스플릿</title>
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/TextPlugin.min.js"></script>
+<style>
+@font-face{font-family:Pretendard;font-weight:500;src:url(assets/fonts/Pretendard-Medium.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:700;src:url(assets/fonts/Pretendard-Bold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:800;src:url(assets/fonts/Pretendard-ExtraBold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:900;src:url(assets/fonts/Pretendard-Black.woff2) format('woff2');}
+html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#0A0A0A;}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:Pretendard,sans-serif;}
+#root *{box-sizing:border-box;}
+
+#root{background:#0A0A0A;}
+.panel{position:absolute;top:0;left:0;height:1080px;width:960px;background:#F5F5F5;}
+.txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#F5F5F5;mix-blend-mode:difference;}
+.label{font:700 36px Pretendard;letter-spacing:.5em;margin-left:.5em;}
+.title{font:900 230px/1.05 Pretendard;letter-spacing:-.03em;margin-top:10px;}
+.title .ch{display:inline-block;}
+
+</style></head>
+<body>
+<div id="root" data-composition-id="master" data-width="1920" data-height="1080" data-start="0" data-duration="3.0">
+
+<div class="panel"></div>
+<div class="txt">
+  <div class="label">CHAPTER 01</div>
+  <div class="title"><span class="ch">핵</span><span class="ch">심</span><span class="ch">&nbsp;</span><span class="ch">정</span><span class="ch">리</span></div>
+</div>
+<script>
+gsap.registerPlugin(TextPlugin);
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({paused:true});
+
+tl.fromTo('.panel',{x:-960},{x:0,duration:.5,ease:'expo.out'},0);
+tl.fromTo('.title .ch',{opacity:0,scale:.6},{opacity:1,scale:1,duration:.4,ease:'back.out(2)',stagger:.05},.25);
+tl.fromTo('.label',{opacity:0},{opacity:1,duration:.3},.4);
+tl.to('.panel',{x:960,duration:.7,ease:'power4.inOut'},.95);
+tl.to('.panel',{x:0,width:1920,duration:.6,ease:'expo.inOut'},2.0);
+tl.fromTo('.txt',{scale:1},{scale:1.05,duration:2.4,ease:'none'},.6);
+
+tl.set({},{},3.0);
+window.__timelines["master"] = tl;
+</script>
+</div>
+</body></html>

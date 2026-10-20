@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"><title>intro-v4 그리드 카운터</title>
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/TextPlugin.min.js"></script>
+<style>
+@font-face{font-family:Pretendard;font-weight:500;src:url(assets/fonts/Pretendard-Medium.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:700;src:url(assets/fonts/Pretendard-Bold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:800;src:url(assets/fonts/Pretendard-ExtraBold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:900;src:url(assets/fonts/Pretendard-Black.woff2) format('woff2');}
+html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#0A0A0A;}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:Pretendard,sans-serif;}
+#root *{box-sizing:border-box;}
+
+#root{background:#0A0A0A;}
+.gv{position:absolute;top:0;width:1px;height:1080px;background:#262626;transform-origin:top;}
+.gh{position:absolute;left:0;height:1px;width:1920px;background:#262626;transform-origin:left;}
+.counter{position:absolute;left:160px;top:180px;height:360px;overflow:hidden;font:900 360px/1 Pretendard;color:#F5F5F5;letter-spacing:-.04em;font-variant-numeric:tabular-nums;}
+.counter .roll{display:flex;flex-direction:column;}
+.label{position:absolute;left:170px;top:146px;font:500 28px Pretendard;letter-spacing:.45em;color:#8A8A8A;}
+.title{position:absolute;left:160px;top:600px;font:900 200px/1 Pretendard;color:#F5F5F5;letter-spacing:-.03em;}
+.title .ch{display:inline-block;}
+.prog{position:absolute;left:160px;bottom:120px;width:1600px;height:4px;background:#262626;}
+.prog i{position:absolute;inset:0;background:#F5F5F5;transform-origin:left;}
+
+</style></head>
+<body>
+<div id="root" data-composition-id="master" data-width="1920" data-height="1080" data-start="0" data-duration="3.0">
+
+<div class="gv" style="left:160px"></div><div class="gv" style="left:480px"></div><div class="gv" style="left:800px"></div><div class="gv" style="left:1120px"></div><div class="gv" style="left:1440px"></div><div class="gv" style="left:1760px"></div><div class="gh" style="top:180px"></div><div class="gh" style="top:360px"></div><div class="gh" style="top:540px"></div><div class="gh" style="top:720px"></div><div class="gh" style="top:900px"></div>
+<div class="label">CHAPTER</div>
+<div class="counter"><div class="roll"><span>00</span><span>01</span></div></div>
+<div class="title"><span class="ch">핵</span><span class="ch">심</span><span class="ch">&nbsp;</span><span class="ch">정</span><span class="ch">리</span></div>
+<div class="prog"><i></i></div>
+<script>
+gsap.registerPlugin(TextPlugin);
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({paused:true});
+
+tl.fromTo('.gv',{scaleY:0},{scaleY:1,duration:.5,ease:'power3.out',stagger:.04},0);
+tl.fromTo('.gh',{scaleX:0},{scaleX:1,duration:.5,ease:'power3.out',stagger:.04},.05);
+tl.fromTo('.label',{opacity:0},{opacity:1,duration:.3},.3);
+tl.fromTo('.counter',{opacity:0},{opacity:1,duration:.15},.3);
+tl.fromTo('.counter .roll',{y:0},{y:-360,duration:.45,ease:'expo.inOut'},.45);
+tl.fromTo('.title .ch',{y:-160,opacity:0},{y:0,opacity:1,duration:.45,ease:'bounce.out',stagger:.07},.85);
+tl.fromTo('.prog i',{scaleX:0},{scaleX:1,duration:2.8,ease:'none'},.2);
+
+tl.set({},{},3.0);
+window.__timelines["master"] = tl;
+</script>
+</div>
+</body></html>

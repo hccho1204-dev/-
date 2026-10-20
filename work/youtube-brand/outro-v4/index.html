@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"><title>outro-v4 벨 링 미니멀</title>
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/TextPlugin.min.js"></script>
+<style>
+@font-face{font-family:Pretendard;font-weight:500;src:url(assets/fonts/Pretendard-Medium.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:700;src:url(assets/fonts/Pretendard-Bold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:800;src:url(assets/fonts/Pretendard-ExtraBold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:900;src:url(assets/fonts/Pretendard-Black.woff2) format('woff2');}
+html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#0A0A0A;}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:Pretendard,sans-serif;}
+#root *{box-sizing:border-box;}
+
+#root{background:#F5F5F5;}
+.bell{position:absolute;left:810px;top:170px;width:300px;height:300px;fill:#0A0A0A;}
+.wave{position:absolute;left:810px;top:170px;width:300px;height:300px;border-radius:50%;border:4px solid #0A0A0A;}
+.lead{position:absolute;top:560px;width:1920px;text-align:center;font:800 76px Pretendard;color:#0A0A0A;letter-spacing:-.02em;}
+.chips{position:absolute;top:700px;width:1920px;display:flex;justify-content:center;gap:30px;}
+.chip{height:100px;padding:0 54px;border-radius:50px;background:#0A0A0A;color:#F5F5F5;font:700 48px/100px Pretendard;}
+.chip.o{background:transparent;color:#0A0A0A;box-shadow:inset 0 0 0 4px #0A0A0A;}
+
+</style></head>
+<body>
+<div id="root" data-composition-id="master" data-width="1920" data-height="1080" data-start="0" data-duration="5.0">
+
+<div class="wave w1"></div><div class="wave w2"></div><div class="wave w3"></div>
+<svg class="bell" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+<div class="lead">영상이 도움이 되셨다면</div>
+<div class="chips"><div class="chip">구독</div><div class="chip o">좋아요</div><div class="chip o">알림 설정</div></div>
+<script>
+gsap.registerPlugin(TextPlugin);
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({paused:true});
+
+tl.fromTo('.bell',{scale:0},{scale:1,duration:.5,ease:'back.out(2)',transformOrigin:'50% 50%'},.3);
+tl.fromTo('.bell',{rotate:0},{keyframes:[{rotate:22},{rotate:-20},{rotate:15},{rotate:-10},{rotate:6},{rotate:0}],duration:1.1,ease:'power1.out',transformOrigin:'50% 8%'},.8);
+['.w1','.w2','.w3'].forEach((s,i)=>tl.fromTo(s,{scale:.8,opacity:.6},{scale:2.1,opacity:0,duration:1.2,ease:'power2.out'},.8+i*.25));
+tl.fromTo('.lead',{opacity:0,y:30},{opacity:1,y:0,duration:.5,ease:'power3.out'},1.6);
+tl.fromTo('.chip',{opacity:0,y:40,scale:.8},{opacity:1,y:0,scale:1,duration:.45,ease:'back.out(2)',stagger:.15},2.0);
+tl.fromTo('.bell',{y:0},{y:-12,duration:1.2,ease:'sine.inOut',yoyo:true,repeat:1},2.4);
+
+tl.set({},{},5.0);
+window.__timelines["master"] = tl;
+</script>
+</div>
+</body></html>

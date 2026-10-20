@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"><title>intro-v2 빅 넘버</title>
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/TextPlugin.min.js"></script>
+<style>
+@font-face{font-family:Pretendard;font-weight:500;src:url(assets/fonts/Pretendard-Medium.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:700;src:url(assets/fonts/Pretendard-Bold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:800;src:url(assets/fonts/Pretendard-ExtraBold.woff2) format('woff2');}
+@font-face{font-family:Pretendard;font-weight:900;src:url(assets/fonts/Pretendard-Black.woff2) format('woff2');}
+html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#0A0A0A;}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:Pretendard,sans-serif;}
+#root *{box-sizing:border-box;}
+
+#root{background:#F5F5F5;}
+.num{position:absolute;left:150px;top:150px;font:900 760px/1 Pretendard;letter-spacing:-.06em;}
+.num .o{color:transparent;-webkit-text-stroke:5px #0A0A0A;}
+.num .f{position:absolute;inset:0;color:#0A0A0A;clip-path:inset(100% 0 0 0);}
+.side{position:absolute;left:1060px;top:410px;}
+.label{font:700 34px Pretendard;letter-spacing:.42em;color:#0A0A0A;}
+.rule{width:520px;height:6px;background:#0A0A0A;margin:22px 0 26px;transform-origin:left;}
+.title{font:900 150px/1 Pretendard;color:#0A0A0A;letter-spacing:-.03em;overflow:hidden;}
+.title span{display:inline-block;}
+
+</style></head>
+<body>
+<div id="root" data-composition-id="master" data-width="1920" data-height="1080" data-start="0" data-duration="3.0">
+
+<div class="num"><span class="o">01</span><span class="f">01</span></div>
+<div class="side">
+  <div class="label">CHAPTER</div>
+  <div class="rule"></div>
+  <div class="title"><span>핵심 정리</span></div>
+</div>
+<script>
+gsap.registerPlugin(TextPlugin);
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({paused:true});
+
+tl.fromTo('.num',{scale:1.9,opacity:0,transformOrigin:'30% 50%'},{scale:1,opacity:1,duration:.55,ease:'expo.out'},0);
+tl.fromTo('.num .f',{clipPath:'inset(100% 0 0 0)'},{clipPath:'inset(0% 0 0 0)',duration:.6,ease:'power3.inOut'},.5);
+tl.fromTo('.label',{opacity:0,x:40},{opacity:1,x:0,duration:.35,ease:'power3.out'},.85);
+tl.fromTo('.rule',{scaleX:0},{scaleX:1,duration:.45,ease:'expo.out'},.9);
+tl.fromTo('.title span',{xPercent:110},{xPercent:0,duration:.55,ease:'expo.out'},1.0);
+tl.fromTo('.num',{x:0},{x:-30,duration:1.9,ease:'none'},1.1);
+tl.fromTo('.side',{x:0},{x:20,duration:1.9,ease:'none'},1.1);
+
+tl.set({},{},3.0);
+window.__timelines["master"] = tl;
+</script>
+</div>
+</body></html>
