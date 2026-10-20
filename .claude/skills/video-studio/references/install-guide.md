@@ -63,6 +63,9 @@ py -3 -m venv .venv; .\.venv\Scripts\Activate.ps1; python -m pip install -r requ
 | 윈도우 `.ps1 cannot be loaded` | PowerShell 관리자: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | 스킬 설치했는데 클로드가 모름 | Claude Code 재시작 |
 | 한글 자막이 네모(□)로 나옴 | 한글 폰트(Pretendard, Noto Sans KR) 설치 후 코드에서 폰트 지정 |
+| HyperFrames 렌더 시 `Chrome Headless Shell is required` | `npx hyperframes browser ensure` (setup.sh가 자동 실행) |
+| 렌더 실패 `sub_timeline_script_failure ... gsap.min.js` | 외부 CDN이 막힌 환경(회사망·클라우드 세션). `npm i gsap` 후 HTML의 jsdelivr 주소를 로컬 `assets/vendor/gsap.min.js`로 바꾸면 해결 |
+| HyperFrames 설치 후 내 `motion-graphics` 스킬이 바뀜 | 이름이 겹친 것. setup.sh가 자동 복구하고 HyperFrames 것은 `hyperframes-motion-graphics`로 둔다 |
 | 명령이 바뀐 것 같음 | 기억 말고 각 공식 GitHub README를 읽고 따라 하기 |
 
 ## 토큰 아끼는 팁

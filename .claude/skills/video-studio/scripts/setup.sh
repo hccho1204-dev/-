@@ -38,6 +38,25 @@ if command -v npx >/dev/null; then
   step "HyperFrames 스킬"
   if has_skill hyperframes; then echo "이미 있음"
   else npx --yes skills add heygen-com/hyperframes --full-depth --yes || FAIL+=("hyperframes-skill"); fi
+
+  # HyperFrames에도 'motion-graphics' 스킬이 있어 우리 톤카드 스킬 자리를 링크로 덮어쓴다.
+  # → 우리 스킬을 되살리고, HyperFrames 것은 'hyperframes-motion-graphics' 이름으로 따로 둔다.
+  MG=.claude/skills/motion-graphics
+  if [ -L "$MG" ]; then
+    rm "$MG"
+    git checkout -- "$MG" 2>/dev/null && echo "기존 motion-graphics(톤카드) 스킬 복구" || FAIL+=("motion-graphics-restore")
+  fi
+  HF_MG=.agents/skills/motion-graphics
+  if [ -f "$HF_MG/SKILL.md" ] && [ ! -d .claude/skills/hyperframes-motion-graphics ]; then
+    cp -r "$HF_MG" .claude/skills/hyperframes-motion-graphics
+    sed -i.bak '0,/^name: motion-graphics$/s//name: hyperframes-motion-graphics/' .claude/skills/hyperframes-motion-graphics/SKILL.md \
+      && rm -f .claude/skills/hyperframes-motion-graphics/SKILL.md.bak
+    echo "HyperFrames motion-graphics → hyperframes-motion-graphics 로 설치"
+  fi
+
+  # HyperFrames 렌더용 브라우저 (Chrome Headless Shell)
+  step "HyperFrames 렌더 브라우저"
+  npx --yes hyperframes browser ensure 2>&1 | tail -1 || FAIL+=("hyperframes-browser")
 fi
 
 # 4) OpenMontage

@@ -25,6 +25,10 @@ description: 클로드로 영상 편집·모션그래픽을 자동으로 만드�
 
 이 스킬은 필요하면 위 두 스킬을 불러서 쓴다. 검수 스크립트는 `motion-graphics/scripts/`를 그대로 재사용한다.
 
+> **이름 겹침 주의**: HyperFrames에도 `motion-graphics`라는 스킬이 있다. 이 저장소에서는 우리 톤카드 스킬이 `motion-graphics`이고,
+> HyperFrames 것은 **`hyperframes-motion-graphics`**로 설치된다. HyperFrames 안내가 `/motion-graphics`로 보내면 `hyperframes-motion-graphics`를 쓴다.
+> 설치된 외부 스킬(Remotion·HyperFrames, `.agents/`)은 저장소에 넣지 않는다 — 새 컴퓨터·새 세션에서는 `setup.sh`로 다시 받는다.
+
 ---
 
 ## 전체 흐름 (7단계)
