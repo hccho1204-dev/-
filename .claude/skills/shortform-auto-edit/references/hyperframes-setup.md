@@ -7,12 +7,33 @@ HyperFrames = HeyGen이 공개한 **HTML 기반 영상 제작 도구**. 웹페�
 
 > 하이퍼프레임 스킬 설치해 줘
 
-1. AI가 설치를 시도한다.
-2. **외부 프로그램 설치라서 권한 검사에서 한 번 막힌다** → 정상이다.
-3. 화면에 뜬 권한 요청에서 **"허용"을 한 번 눌러 준다.**
-4. 그다음 단계가 자동으로 진행된다.
+이 저장소에는 **이미 설치돼 있다** (`.claude/skills/hyperframes*`, `media-use`). 새 컴퓨터나 다른 프로젝트에 설치할 때만 아래를 쓴다.
 
-> 설치 위치·명령은 HyperFrames 공식 저장소(HeyGen GitHub) 안내를 따른다. 버전이 바뀌면 명령이 달라질 수 있으니 기억에 의존하지 말고 설치 시점의 README를 읽고 진행한다.
+| 방법 | 명령 |
+|---|---|
+| Claude Code 플러그인 (추천, 자동 업데이트) | `claude plugin marketplace add heygen-com/hyperframes` → `claude plugin install hyperframes@hyperframes` |
+| 핵심 스킬만 설치 | `npx hyperframes skills update` |
+| 고르면서 설치 | `npx skills add heygen-com/hyperframes` (Core Skills 그룹 선택) |
+
+- 외부 프로그램 설치라서 **권한 검사에서 한 번 막힌다** → 권한 요청에서 **"허용"을 한 번** 눌러 준다.
+- 공식 저장소: https://github.com/heygen-com/hyperframes (Apache 2.0)
+- 필요한 것: Node.js 22 이상, ffmpeg
+- ⚠️ HyperFrames에도 `motion-graphics`라는 스킬이 있다. 이 저장소의 기존 `motion-graphics`(톤카드 하네스)와 이름이 겹치므로 **HyperFrames 쪽 motion-graphics는 설치하지 않는다.**
+
+## 설치된 스킬
+
+| 스킬 | 이 편집 흐름에서 쓰는 곳 |
+|---|---|
+| `/hyperframes` | 시작점. 영상 작업 요청을 알맞은 스킬로 연결 |
+| `/hyperframes-core` | 컷 영상 위에 그래픽을 얹는 합성 구조 |
+| `/hyperframes-animation` | 팝 효과·차트 상승·칩 순차 등장 등 움직임 |
+| `/hyperframes-keyframes` | 확대(펀치인)·줌·카메라 이동 |
+| `/hyperframes-creative` | 색·폰트·스타일 변형 (예: 애플 키노트 느낌) |
+| `/hyperframes-registry` | 막대 그래프·카드 등 기성 블록 약 400개 검색·설치 |
+| `/hyperframes-audio` | 효과음·배경음 음량 조절, 말소리 위 덕킹 |
+| `/media-use` | 효과음·배경음·아이콘 찾기, 받아쓰기·자막 |
+| `/hyperframes-cli` | 미리보기·검사·렌더 명령 |
+| `/hyperframes-studio` | 스튜디오에서 함께 수정할 때 |
 
 ## 사용 순서
 1. `STYLE_GUIDE.md`의 "4. 모션그래픽" 기준으로 그래픽 종류·색·주기를 맞춘다.
