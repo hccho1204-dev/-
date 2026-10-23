@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퇴직금 일시금 vs 연금 수령 — FC 교육자료</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --navy:#1B3A6B; --navy-d:#0F2447; --gold:#C9A961; --gold-l:#F6F0E2;
+  --text:#222222; --sub:#5B6475; --line:#E3E6EC; --red:#C0392B; --cream:#FAF7F0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0b1220;overflow:hidden}
+body{font-family:'Pretendard',sans-serif;color:var(--text);word-break:keep-all;-webkit-font-smoothing:antialiased}
+#stage{width:1920px;height:1080px;position:absolute;top:50%;left:50%;transform-origin:center center;background:var(--bg);overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,.5)}
+.slide{position:absolute;inset:0;padding:96px 140px 90px;display:none;flex-direction:column}
+.slide.active{display:flex;animation:fadeIn .5s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.serif{font-family:'Noto Serif KR',serif}
+
+/* 공통 헤더 */
+.kicker{font-size:26px;font-weight:700;letter-spacing:.12em;color:var(--gold);margin-bottom:14px}
+.ttl{font-size:30px;font-weight:600;color:var(--sub);margin-bottom:22px}
+.msg{font-family:'Noto Serif KR',serif;font-size:64px;font-weight:900;line-height:1.3;color:var(--navy);margin:0 0 48px}
+.msg em{font-style:normal;color:var(--gold);}
+.msg .red{color:var(--red)}
+.rule{height:4px;width:120px;background:var(--gold);margin-bottom:26px}
+.page{position:absolute;top:44px;right:64px;font-size:26px;font-weight:700;color:var(--navy);letter-spacing:.06em}
+.page b{color:var(--gold)}
+.foot{position:absolute;left:140px;right:140px;bottom:36px;font-size:20px;color:#8A93A3;line-height:1.5}
+.brand{position:absolute;left:64px;top:48px;font-size:20px;font-weight:700;color:#9AA3B2;letter-spacing:.1em}
+
+/* 단계 등장 */
+.step{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.step.on{opacity:1;transform:none}
+
+/* 진행바 */
+#bar{position:absolute;left:0;bottom:0;height:8px;background:var(--gold);transition:width .4s;z-index:5}
+#hint{position:fixed;right:16px;bottom:12px;color:#7d8799;font:13px 'Pretendard';z-index:10}
+
+/* 표지 */
+.cover{background:radial-gradient(ellipse at 70% 40%,#22467f 0%,var(--navy-d) 55%,#081530 100%);color:#fff;justify-content:center}
+.cover .badge{display:inline-block;padding:14px 34px;border-radius:40px;background:rgba(201,169,97,.16);border:1px solid rgba(201,169,97,.5);color:var(--gold);font-size:26px;font-weight:700;letter-spacing:.2em;margin-bottom:46px;align-self:flex-start}
+.cover h1{font-family:'Noto Serif KR',serif;font-size:104px;line-height:1.25;margin:0 0 40px;font-weight:900}
+.cover h1 em{font-style:normal;color:var(--gold)}
+.cover p{font-size:34px;color:#B8C3D9;margin:0}
+.cover .meta{margin-top:70px;display:flex;gap:18px}
+.cover .meta span{padding:12px 24px;border-radius:10px;background:rgba(255,255,255,.08);font-size:24px;color:#D7DEEA}
+.orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.55;pointer-events:none}
+.o1{width:560px;height:560px;right:120px;top:140px;border:2px solid rgba(201,169,97,.45);animation:spin 28s linear infinite}
+.o2{width:380px;height:380px;right:210px;top:230px;border:2px dashed rgba(255,255,255,.25);animation:spin 18s linear infinite reverse}
+.o3{width:200px;height:200px;right:300px;top:320px;background:radial-gradient(circle,rgba(201,169,97,.65),transparent 70%);animation:pulse 4s ease-in-out infinite}
+.flow-line{position:absolute;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);width:600px;opacity:.5;animation:slide 6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{transform:scale(.85);opacity:.4}50%{transform:scale(1.15);opacity:.8}}
+@keyframes slide{from{transform:translateX(-700px)}to{transform:translateX(2100px)}}
+
+/* 카드 공통 */
+.grid{display:grid;gap:36px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--cream);border-radius:20px;padding:40px 44px;border-top:6px solid var(--navy)}
+.card h3{font-size:36px;margin:0 0 18px;color:var(--navy)}
+.card p,.card li{font-size:27px;line-height:1.6;margin:0;color:#333}
+.card ul{margin:0;padding-left:30px}
+.card.gold{border-top-color:var(--gold)}
+.big{font-size:84px;font-weight:900;color:var(--navy);line-height:1;letter-spacing:-.02em}
+.big small{font-size:36px;font-weight:700;margin-left:6px}
+.label{font-size:24px;font-weight:700;color:var(--sub);margin-bottom:14px}
+
+/* 계산 흐름 */
+.flow{display:flex;align-items:stretch;gap:0;margin-top:10px}
+.fbox{flex:1;background:var(--cream);border-radius:16px;padding:30px 22px;text-align:center;position:relative}
+.fbox .n{display:inline-block;width:44px;height:44px;line-height:44px;border-radius:50%;background:var(--navy);color:#fff;font-weight:800;font-size:22px;margin-bottom:14px}
+.fbox h4{font-size:29px;margin:0 0 10px;color:var(--navy)}
+.fbox p{font-size:22px;color:var(--sub);margin:0;line-height:1.5}
+.fbox .v{margin-top:16px;font-size:30px;font-weight:800;color:var(--gold)}
+.arrow{width:44px;display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--gold);font-weight:900}
+
+/* 표 */
+table{border-collapse:collapse;width:100%;font-size:28px}
+th{background:var(--navy);color:#fff;padding:20px 18px;font-weight:700}
+td{padding:20px 18px;border-bottom:1px solid var(--line);text-align:center}
+td:first-child{text-align:left;font-weight:700;color:var(--navy)}
+tr.hl td{background:var(--gold-l);font-weight:800;font-size:32px}
+
+/* 막대 */
+.bars{display:flex;align-items:flex-end;gap:60px;height:560px;padding:0 20px;border-bottom:3px solid var(--navy)}
+.bcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bval{font-size:40px;font-weight:900;color:var(--navy);margin-bottom:12px}
+.bar{width:100%;max-width:220px;border-radius:12px 12px 0 0;background:var(--navy);height:0;transition:height 1.1s cubic-bezier(.2,.8,.2,1)}
+.bar.g{background:var(--gold)}
+.bname{font-size:26px;font-weight:700;color:var(--sub);margin-top:16px;text-align:center;line-height:1.4}
+.hbars .row{display:flex;align-items:center;gap:24px;margin-bottom:30px}
+.hbars .k{width:200px;font-size:30px;font-weight:800;color:var(--navy)}
+.hbars .track{flex:1;height:64px;background:#F1F3F7;border-radius:10px;overflow:hidden}
+.hbars .fill{height:100%;width:0;background:var(--navy);border-radius:10px;transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+.hbars .fill.r{background:var(--red)}
+.hbars .val{width:260px;font-size:40px;font-weight:900;color:var(--navy);text-align:right}
+
+/* 케이스 */
+.case{display:grid;grid-template-columns:640px 1fr;gap:48px;flex:1}
+.case .left{background:var(--navy-d);color:#fff;border-radius:22px;padding:44px}
+.case .tag{display:inline-block;background:#fff;color:var(--navy);font-weight:800;font-size:24px;padding:8px 18px;border-radius:8px}
+.case .type{color:var(--gold);font-size:22px;margin:18px 0 10px;font-weight:700}
+.case .ctitle{font-size:34px;font-weight:800;line-height:1.4;margin-bottom:28px}
+.case blockquote{margin:0;border-left:5px solid var(--gold);background:rgba(255,255,255,.07);padding:24px 28px;font-size:23px;line-height:1.7;color:#D6DDEA}
+.case .right{display:flex;flex-direction:column;gap:22px}
+.pt{background:var(--cream);border-radius:16px;padding:24px 32px;border-left:6px solid var(--gold)}
+.pt h4{margin:0 0 8px;font-size:27px;color:var(--navy)}
+.pt p{margin:0;font-size:25px;line-height:1.55;color:#333}
+.pt.warn{border-left-color:var(--red)}
+
+/* 호버 아코디언 */
+.acc{display:grid;gap:30px;align-items:start}
+.acc .item{background:var(--cream);border-radius:20px;padding:36px 40px;border-top:6px solid var(--gold);transition:transform .35s,box-shadow .35s,opacity .35s;cursor:pointer}
+.acc:hover .item{opacity:.45}
+.acc .item:hover,.acc .item.open{opacity:1!important;transform:scale(1.03);box-shadow:0 24px 50px rgba(15,36,71,.18)}
+.acc .item .who{font-size:22px;font-weight:800;color:var(--gold);letter-spacing:.06em;margin-bottom:12px}
+.acc .item h3{font-size:34px;line-height:1.4;margin:0;color:var(--navy)}
+.acc .item .detail{max-height:0;overflow:hidden;transition:max-height .5s ease,margin .5s}
+.acc .item:hover .detail,.acc .item.open .detail{max-height:600px;margin-top:22px}
+.acc .item .detail p{font-size:25px;line-height:1.65;margin:0 0 14px;color:#333}
+.acc .item .detail b{color:var(--navy)}
+.tip{font-size:22px;color:#8A93A3;margin-top:22px}
+
+/* 체크리스트 */
+.chk{display:flex;gap:30px;align-items:flex-start;padding:34px 0;border-bottom:1px solid var(--line)}
+.chk .box{flex:0 0 56px;height:56px;border:4px solid var(--navy);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--gold);font-weight:900;cursor:pointer;user-select:none}
+.chk h3{margin:0 0 8px;font-size:36px;color:var(--navy)}
+.chk p{margin:0;font-size:26px;line-height:1.6;color:#444}
+
+/* 보험 연결 */
+.scn{background:var(--navy-d);color:#fff;border-radius:20px;padding:34px 40px}
+.scn h4{color:var(--gold);font-size:28px;margin:0 0 12px}
+.scn p{font-size:25px;line-height:1.6;margin:0;color:#D6DDEA}
+
+.quote{font-family:'Noto Serif KR',serif;font-size:34px;line-height:1.7;color:var(--navy);background:var(--gold-l);border-radius:20px;padding:36px 48px;margin:0}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1. 표지 -->
+<section class="slide cover">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="flow-line" style="top:820px"></div><div class="flow-line" style="top:880px;animation-delay:-3s"></div>
+  <div class="badge">TAX CONSULTING · FC 교육</div>
+  <h1>퇴직금, <em>일시금 vs 연금</em><br>세금 차이 이렇게 납니다</h1>
+  <p>같은 퇴직금, 받는 방식 하나로 세금이 달라집니다</p>
+  <div class="meta"><span>연금·퇴직</span><span>개인 고객편</span><span>보험 간접 연결형</span><span>2026년 10월 기준</span></div>
+</section>
+
+<!-- 2. 오늘의 핵심 -->
+<section class="slide">
+  <div class="kicker">TODAY'S POINT</div>
+  <div class="ttl">오늘 교육의 한 줄</div>
+  <div class="rule"></div>
+  <h2 class="msg">퇴직금 3억 원.<br>받는 방식 하나로 <em>세금이 수백만 원</em> 달라집니다.</h2>
+  <div class="grid g3" style="margin-top:10px">
+    <div class="card step"><div class="label">일시금으로 받으면</div><div class="big"><span data-count="1804">0</span><small>만 원</small></div><p style="margin-top:16px">퇴직소득세를 바로 원천징수</p></div>
+    <div class="card gold step"><div class="label">연금 실제 수령연차 10년 이하</div><div class="big"><span data-count="1263">0</span><small>만 원</small></div><p style="margin-top:16px">일시금 세액의 70% 수준</p></div>
+    <div class="card gold step"><div class="label">연금 실제 수령연차 21년 이후</div><div class="big"><span data-count="902">0</span><small>만 원</small></div><p style="margin-top:16px">일시금 세액의 50% 수준</p></div>
+  </div>
+  <div class="foot">※ 20년 근속, 비과세 퇴직급여 없음, 지방소득세 별도 단순 예시. 각 비율을 세액 전체에 적용한 단순 비교입니다.</div>
+</section>
+
+<!-- 3. 두 갈래 길 -->
+<section class="slide">
+  <div class="kicker">01 · 이슈 핵심</div>
+  <div class="ttl">퇴직금을 받는 두 갈래 길</div>
+  <div class="rule"></div>
+  <h2 class="msg">IRP로 옮기면 세금이 <em>사라지는 게 아니라 미뤄집니다.</em></h2>
+  <div class="grid g2">
+    <div class="card step">
+      <div class="label">A. 일시금 수령</div>
+      <h3>퇴직소득세 즉시 원천징수</h3>
+      <ul><li>회사가 세금을 떼고 나머지를 지급</li><li>한 번에 목돈 확보</li><li>세율 완화 혜택 없음</li></ul>
+    </div>
+    <div class="card gold step">
+      <div class="label">B. IRP 등 연금계좌 이체</div>
+      <h3>과세이연 → 연금으로 나눠 수령</h3>
+      <ul><li>연금계좌로 지급받거나, <b>지급일부터 60일 이내</b> 이체</li><li>연금수령 요건 충족 시 원래 세액의 <b>70%·60%·50%</b></li><li>연금 외 인출 시 원래 퇴직소득세 과세</li></ul>
+    </div>
+  </div>
+  <div class="foot">근거: 소득세법 제20조의3, 제22조, 제146조</div>
+</section>
+
+<!-- 4. 계산 구조 -->
+<section class="slide">
+  <div class="kicker">02 · 퇴직소득세 구조</div>
+  <div class="ttl">퇴직금 3억 원 · 근속 20년 기준</div>
+  <div class="rule"></div>
+  <h2 class="msg">오래 일할수록 <em>공제가 커지는</em> 구조입니다.</h2>
+  <div class="flow">
+    <div class="fbox step"><div class="n">1</div><h4>퇴직소득</h4><p>받은 퇴직금</p><div class="v">3억</div></div>
+    <div class="arrow step">›</div>
+    <div class="fbox step"><div class="n">2</div><h4>근속연수공제</h4><p>20년 근속</p><div class="v">−4,000만</div></div>
+    <div class="arrow step">›</div>
+    <div class="fbox step"><div class="n">3</div><h4>환산급여</h4><p>÷근속연수×12</p><div class="v">1억 5,600만</div></div>
+    <div class="arrow step">›</div>
+    <div class="fbox step"><div class="n">4</div><h4>환산급여공제</h4><p>구간별 공제</p><div class="v">−8,690만</div></div>
+    <div class="arrow step">›</div>
+    <div class="fbox step"><div class="n">5</div><h4>과세표준</h4><p>세율 적용 후<br>×근속연수÷12</p><div class="v">6,910만</div></div>
+  </div>
+  <div class="step" style="margin-top:50px;display:flex;align-items:center;gap:30px">
+    <div style="font-size:32px;font-weight:800;color:var(--navy)">일시금 퇴직소득세 =</div>
+    <div class="big" style="color:var(--red)">약 <span data-count="1804">0</span><small>만 원</small></div>
+  </div>
+  <div class="foot">※ 2026년 10월 현재 국세청 퇴직소득세 계산 구조 기준, 지방소득세 별도</div>
+</section>
+
+<!-- 5. 일시금 표 -->
+<section class="slide">
+  <div class="kicker">03 · 수치 시뮬레이션 ①</div>
+  <div class="ttl">일시금 수령 시 퇴직소득세 (근속 20년)</div>
+  <div class="rule"></div>
+  <h2 class="msg">퇴직금이 커질수록 <span class="red">세금은 더 가파르게</span> 늘어납니다.</h2>
+  <div class="hbars" id="hb1">
+    <div class="row step"><div class="k">퇴직금 1억</div><div class="track"><div class="fill" data-v="112"></div></div><div class="val">약 112만</div></div>
+    <div class="row step"><div class="k">퇴직금 3억</div><div class="track"><div class="fill" data-v="1804"></div></div><div class="val">약 1,804만</div></div>
+    <div class="row step"><div class="k">퇴직금 5억</div><div class="track"><div class="fill r" data-v="5308"></div></div><div class="val" style="color:var(--red)">약 5,308만</div></div>
+  </div>
+  <table class="step" style="margin-top:14px;font-size:24px">
+    <tr><th>구분</th><th>1억 원</th><th>3억 원</th><th>5억 원</th></tr>
+    <tr><td>근속연수공제</td><td>4,000만</td><td>4,000만</td><td>4,000만</td></tr>
+    <tr><td>환산급여 → 환산급여공제</td><td>3,600만 → 2,480만</td><td>1억 5,600만 → 8,690만</td><td>2억 7,600만 → 1억 4,090만</td></tr>
+    <tr><td>퇴직소득 과세표준</td><td>1,120만</td><td>6,910만</td><td>1억 3,510만</td></tr>
+  </table>
+  <div class="foot">※ 퇴직금 5배(1억→5억) 차이에 세금은 약 47배 차이. 지방소득세 별도.</div>
+</section>
+
+<!-- 6. 연금 막대 -->
+<section class="slide">
+  <div class="kicker">03 · 수치 시뮬레이션 ②</div>
+  <div class="ttl">퇴직금 3억 원 · 수령 방식별 세부담</div>
+  <div class="rule"></div>
+  <h2 class="msg" style="margin-bottom:30px">연금으로 받으면 <em>30~50% 가볍게</em> 냅니다.</h2>
+  <div class="bars" id="bars1">
+    <div class="bcol step"><div class="bval">1,804만</div><div class="bar" data-v="1804"></div></div>
+    <div class="bcol step"><div class="bval">1,263만</div><div class="bar g" data-v="1263"></div></div>
+    <div class="bcol step"><div class="bval">1,082만</div><div class="bar g" data-v="1082"></div></div>
+    <div class="bcol step"><div class="bval">902만</div><div class="bar g" data-v="902"></div></div>
+  </div>
+  <div style="display:flex;gap:60px;padding:0 20px">
+    <div class="bname" style="flex:1">일시금<br>100%</div>
+    <div class="bname" style="flex:1">연금 1~10년차<br>70%</div>
+    <div class="bname" style="flex:1">연금 11~20년차<br>60%</div>
+    <div class="bname" style="flex:1">연금 21년차~<br>50%</div>
+  </div>
+  <div class="foot">※ 50% 구간은 2026.1.1 이후 연금수령분부터 적용(소득세법 제129조 제1항 제5호의3). 실제로는 70%→60%→50%가 순차 적용되며, 처음부터 50%를 받을 수는 없습니다.</div>
+</section>
+
+<!-- 7. 오해 주의 -->
+<section class="slide">
+  <div class="kicker">03 · 수치 시뮬레이션 ③</div>
+  <div class="ttl">숫자를 설명할 때 꼭 지킬 3가지</div>
+  <div class="rule"></div>
+  <h2 class="msg">"무조건 50% 절세"라고 <span class="red">말하면 안 됩니다.</span></h2>
+  <div class="grid g3">
+    <div class="card step"><h3>① 순차 적용</h3><p>연금 <b>실제 수령연차</b>에 따라 70%→60%→50%. 연차는 실제로 연금을 받은 해만 셉니다.</p></div>
+    <div class="card step"><h3>② 재원 구분</h3><p>3.3~5.5%는 세액공제 받은 납입액·운용수익의 세율. 퇴직금에서 넘어온 <b>이연퇴직소득</b>과 다릅니다.</p></div>
+    <div class="card step"><h3>③ 1,500만 원 기준</h3><p>사적연금 연 1,500만 원 초과 시 종합과세 또는 15% 분리과세 선택. 이연퇴직소득 재원과는 구분합니다.</p></div>
+  </div>
+  <div class="foot">※ 실제 세액은 근속월수, 비과세 퇴직급여, 중간정산 이력, 연금수령 한도, 나이 등에 따라 달라집니다.</div>
+</section>
+
+<!-- 8. 용어 -->
+<section class="slide">
+  <div class="kicker">04 · 핵심 용어</div>
+  <div class="ttl">고객에게 쉽게 풀어 말하기 (카드에 마우스를 올리거나 탭하세요)</div>
+  <div class="rule"></div>
+  <h2 class="msg">어려운 단어는 <em>한 문장</em>으로 바꿔 말합니다.</h2>
+  <div class="acc g3" style="grid-template-columns:repeat(3,1fr)">
+    <div class="item step"><div class="who">TERM 1</div><h3>과세이연</h3><div class="detail"><p>퇴직금을 IRP로 옮기면 세금을 바로 내지 않고 나중에 인출할 때 내는 구조.</p><p><b>고객 언어 →</b> "세금을 없앤 게 아니라 나중으로 미룬 것"</p></div></div>
+    <div class="item step"><div class="who">TERM 2</div><h3>이연퇴직소득</h3><div class="detail"><p>연금계좌로 이체되어 과세가 미뤄진 퇴직소득. 연금으로 받으면 원래 세율보다 낮게 적용.</p><p><b>고객 언어 →</b> "연금으로 받으면 세금이 30~50% 낮아질 수 있는 퇴직금"</p></div></div>
+    <div class="item step"><div class="who">TERM 3</div><h3>근속연수공제</h3><div class="detail"><p>오래 근무할수록 퇴직소득에서 더 많이 빼주는 공제.</p><p><b>고객 언어 →</b> "20년 근속이면 4,000만 원을 먼저 빼고 세금 계산"</p></div></div>
+  </div>
+</section>
+
+<!-- 9. 케이스 1 -->
+<section class="slide">
+  <div class="kicker">05 · 예규·심사결정례 케이스 1</div>
+  <div class="ttl">명예퇴직금의 근속연수 기산점</div>
+  <div class="rule"></div>
+  <div class="case">
+    <div class="left step">
+      <span class="tag">재조세-1540</span>
+      <div class="type">질의 | 세법해석례</div>
+      <div class="ctitle">퇴직소득세 국세부과제척기간 및 명예퇴직금 근속연수 기산</div>
+      <blockquote>"…퇴직금을 중간정산한 근로자에게 최종퇴직시 퇴직금과 명예퇴직금을 함께 지급하는 경우 명예퇴직금의 퇴직소득세 산정시 근속연수 기산시점을 최초 입사일부터 기산하는 것이라고 결정한 바 있음."</blockquote>
+    </div>
+    <div class="right">
+      <div class="pt step"><h4>📌 핵심 판단 기준</h4><p>명예퇴직금의 근속연수는 중간정산 시점이 아니라 <b>최초 입사일부터</b> 기산.</p></div>
+      <div class="pt warn step"><h4>⚠️ 위험 트리거</h4><p>중간정산 시점부터 기산하면 퇴직소득세를 <b>과다 납부</b>할 수 있음.</p></div>
+      <div class="pt step"><h4>🎯 현장 화법</h4><p>"중간정산 이력이 있으시면 명예퇴직금의 근속연수 기산점을 꼭 확인하셔야 합니다."</p></div>
+      <div class="pt step"><h4>📎 현행 적용 시 유의</h4><p>과거 해석례. 퇴직소득 세액정산 특례(소득세법 제148조)와 함께 비교 검토. 과다 원천징수 의심 시 경정청구 여부는 세무전문가 확인.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10. 케이스 2 -->
+<section class="slide">
+  <div class="kicker">05 · 예규·심사결정례 케이스 2</div>
+  <div class="ttl">중간정산 후 최종 퇴직 시 근속연수</div>
+  <div class="rule"></div>
+  <div class="case">
+    <div class="left step">
+      <span class="tag">서이46013-10988</span>
+      <div class="type">질의 | 세법해석례</div>
+      <div class="ctitle">퇴직금 중간정산 시 퇴직소득세 계산을 위한 근속연수 적용</div>
+      <blockquote>"퇴직금중간정산하는 경우 퇴직소득세 계산을 위하여 적용하는 근속연수는 중간정산기간으로 하는 것이며 이후 실제 퇴직 시에 퇴직소득세 계산을 위한 근속연수는 중간정산 이후의 근속기간을 적용하는 것임."</blockquote>
+    </div>
+    <div class="right">
+      <div class="pt step"><h4>📌 핵심 판단 기준</h4><p>최종 퇴직 시 근속연수 = <b>중간정산 이후 기간</b>. 근속연수가 짧아지면 공제가 줄어 세금이 커짐.</p></div>
+      <div class="pt warn step"><h4>⚠️ 위험 트리거</h4><p>"중간정산 받았으니 세금은 이미 정리됐다"는 생각이 위험.</p></div>
+      <div class="pt step"><h4>✅ 안전 요건</h4><p>중간정산 당시 원천징수영수증 제출 시 합산 정산하는 <b>세액정산 특례</b>(소득세법 제148조) 선택 가능 → 두 방식 세액 비교.</p></div>
+      <div class="pt step"><h4>🎯 현장 화법</h4><p>"과거 중간정산 받으신 적 있으시면, 합산 정산 특례가 유리한지도 함께 확인해 드리겠습니다."</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 11. 케이스 3 -->
+<section class="slide">
+  <div class="kicker">05 · 예규·심사결정례 케이스 3</div>
+  <div class="ttl">재입사 시 전 근무처 근속기간 통산 여부</div>
+  <div class="rule"></div>
+  <div class="case">
+    <div class="left step">
+      <span class="tag">심사소득1999-0622</span>
+      <div class="type">심사 | 판례·결정례</div>
+      <div class="ctitle">퇴직소득세 계산 시 전 근무처의 근속기간 통산 여부</div>
+      <blockquote>"근무지를 변경한 것은 현실적인 퇴직에 해당한다 할 것이며, 전 근무처의 근속기간을 통산하여 계산한 퇴직급여를 지급받는 경우 퇴직소득세 계산상 근속연수는 현근무처의 근속기간으로 하는 것임."</blockquote>
+    </div>
+    <div class="right">
+      <div class="pt step"><h4>📌 결정의 핵심 논리</h4><p>퇴직금은 통산해 받아도, <b>세금 계산상 근속연수는 현 근무처 기간</b>만. 두 근속연수가 다를 수 있음.</p></div>
+      <div class="pt warn step"><h4>⚠️ 위험 트리거</h4><p>"전체 기간으로 받았으니 세금도 전체 기간"이라는 오해 → 예상보다 높은 세금.</p></div>
+      <div class="pt step"><h4>🎯 현장 화법</h4><p>"이직·전적·재입사 이력이 있으시면 세금 계산상 근속연수를 별도로 확인하셔야 합니다."</p></div>
+      <div class="pt step"><h4>📎 현행 적용 시 유의</h4><p>1999년 결정례. 현행 시행령 제105조, 세액정산 특례(제148조) 적용 여부를 함께 확인.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12. 타깃 고객 -->
+<section class="slide">
+  <div class="kicker">06 · 타깃 고객</div>
+  <div class="ttl">이런 고객에게 꼭 필요합니다 (마우스를 올리거나 탭하세요)</div>
+  <div class="rule"></div>
+  <h2 class="msg">퇴직 <em>1~3년 전</em> 고객이 핵심 대상입니다.</h2>
+  <div class="acc" style="grid-template-columns:repeat(3,1fr)">
+    <div class="item step"><div class="who">TYPE A</div><h3>50대 후반 대기업<br>30년 근속 임원</h3><div class="detail"><p>퇴직금 <b>5억 원 이상</b> 예상. 수령 방식에 따른 세금 차이가 수천만 원.</p><p>임원 퇴직소득 한도(소득세법 제22조 제3항) 초과분은 근로소득 과세 가능 → 함께 점검.</p></div></div>
+    <div class="item step"><div class="who">TYPE B</div><h3>40대 중반 중견기업 과장<br>중간정산 이력 있음</h3><div class="detail"><p>중간정산으로 근속연수가 짧아져 최종 퇴직 시 <b>세금이 예상보다 높아질 수</b> 있음.</p><p>세액정산 특례(합산 정산) 적용 여부를 사전에 확인.</p></div></div>
+    <div class="item step"><div class="who">TYPE C</div><h3>55세 공기업 퇴직 예정자<br>명예+법정퇴직금 동시 수령</h3><div class="detail"><p>명예·법정퇴직금의 <b>근속연수 기산점이 다를 수</b> 있음 → 원천징수 세액 적정성 확인.</p><p>IRP 이체 후 연금수령 전략도 함께 검토.</p></div></div>
+  </div>
+</section>
+
+<!-- 13. 상담 화법 -->
+<section class="slide">
+  <div class="kicker">07 · 상담 화법</div>
+  <div class="ttl">공감 → 수치 → 제안 3단계 (마우스를 올리거나 탭하세요)</div>
+  <div class="rule"></div>
+  <h2 class="msg">질문으로 열고, <em>숫자로 보여주고</em>, 점검을 제안합니다.</h2>
+  <div class="acc" style="grid-template-columns:repeat(3,1fr)">
+    <div class="item step"><div class="who">SCRIPT 1 · 퇴직 예정</div><h3>"퇴직금 받는 방법에 따라 세금이 달라지는 거 알고 계셨어요?"</h3><div class="detail"><p><b>수치</b> "퇴직금 3억이면 일시금과 연금 사이 세금 차이가 수백만 원 날 수 있어요. 실제 차이는 근속연수·중간정산 이력·수령 기간에 따라 달라집니다."</p><p><b>제안</b> "퇴직 전에 IRP 이체와 연금수령 구조를 미리 점검해 보실까요?"</p></div></div>
+    <div class="item step"><div class="who">SCRIPT 2 · 중간정산 이력</div><h3>"혹시 예전에 퇴직금 중간정산 받으신 적 있으세요?"</h3><div class="detail"><p><b>수치</b> "중간정산을 받으셨으면 최종 퇴직 때 근속연수가 짧아져 세금이 높아질 수 있어요. 다만 합산해 다시 계산하는 특례도 있어서 비교해 볼 수 있습니다."</p><p><b>제안</b> "지금 미리 확인해 두시면 퇴직 때 당황하지 않으세요."</p></div></div>
+    <div class="item step"><div class="who">SCRIPT 3 · 명예퇴직 예정</div><h3>"명예퇴직금 세금이 어떻게 계산되는지 확인해 보신 적 있으세요?"</h3><div class="detail"><p><b>수치</b> "국세청 해석에서 명예퇴직금 근속연수 기산점을 최초 입사일로 본 사례가 있습니다."</p><p><b>제안</b> "원천징수 세액이 적정한지 미리 확인하시면 과다 납부를 막을 수 있어요."</p></div></div>
+  </div>
+</section>
+
+<!-- 14. 보험 연결 -->
+<section class="slide">
+  <div class="kicker">08 · 활용 포인트</div>
+  <div class="ttl">보험 간접 연결 — "세금 부담이 생길 때 재원이 없다면?"</div>
+  <div class="rule"></div>
+  <h2 class="msg" style="margin-bottom:34px">보험은 세금 해결책이 아니라 <em>재원 대비 수단</em>입니다.</h2>
+  <div class="grid g3" style="gap:28px">
+    <div class="scn step"><h4>시나리오 1 · 건보료</h4><p>퇴직 후 지역가입자 전환 시 재산·다른 소득에 따라 건보료 부담 발생 가능. (퇴직소득 자체는 부과 대상 아님)</p></div>
+    <div class="scn step"><h4>시나리오 2 · 중도 목돈</h4><p>자녀 결혼·주거 이전 등으로 연금 외 인출 시 원래 세율 적용. (6개월 이상 요양 의료비 등 부득이한 사유는 예외)</p></div>
+    <div class="scn step"><h4>시나리오 3 · 건강 문제</h4><p>퇴직 후 소득 공백기에 의료비와 생활비를 동시에 감당해야 하는 상황.</p></div>
+  </div>
+  <div class="grid g3 step" style="gap:28px;margin-top:28px">
+    <div class="card gold" style="padding:28px 34px"><h3 style="font-size:30px">종신·연금보험</h3><p style="font-size:24px">소득 공백기 생활자금·의료비 재원을 미리 마련</p></div>
+    <div class="card gold" style="padding:28px 34px"><h3 style="font-size:30px">질병·실손보험</h3><p style="font-size:24px">의료비 부담 완화. 단체실손 가입자는 개인실손 전환 가능 여부 확인</p></div>
+    <div class="card gold" style="padding:28px 34px"><h3 style="font-size:30px">연금저축·IRP 추가납입</h3><p style="font-size:24px">세액공제(연 최대 900만 원 한도)와 노후 연금 재원 확보</p></div>
+  </div>
+  <div class="foot">※ 보험 가입으로 세무 문제가 해결되는 것은 아닙니다. 세무 상담은 세무전문가와 별도로 진행하도록 안내합니다.</div>
+</section>
+
+<!-- 15. 연결 화법 -->
+<section class="slide">
+  <div class="kicker">08 · 자연스러운 연결 화법</div>
+  <div class="ttl">세금 이야기에서 재원 이야기로</div>
+  <div class="rule"></div>
+  <h2 class="msg">"그 기간에 <em>갑자기 목돈</em>이 필요하시면요?"</h2>
+  <p class="quote step">"퇴직금을 연금으로 받으시면 세부담은 줄어들 수 있는데,<br>그 기간 동안 갑자기 목돈이 필요하시면 어떻게 하실 건지도 함께 생각해 보셔야 해요."</p>
+  <p class="quote step" style="margin-top:24px">"연금을 중도에 꺼내시면, 장기 요양 의료비 같은 부득이한 사유가 아닌 한<br>세금 혜택이 줄어들 수 있거든요."</p>
+  <p class="quote step" style="margin-top:24px">"그래서 퇴직 전에 연금수령 계획과 함께, 혹시 모를 상황에 대비한<br>별도 재원도 미리 점검해 두시는 게 좋습니다. 한번 같이 살펴볼까요?"</p>
+</section>
+
+<!-- 16. 체크리스트 -->
+<section class="slide">
+  <div class="kicker">09 · 5분 사전 체크리스트</div>
+  <div class="ttl">상담 전 고객과 함께 확인 (네모를 누르면 체크됩니다)</div>
+  <div class="rule"></div>
+  <h2 class="msg" style="margin-bottom:10px">상담 전 <em>이 3가지</em>만 확인하세요.</h2>
+  <div class="chk step"><div class="box"></div><div><h3>퇴직금 중간정산 이력</h3><p>받은 적 있는지, 언제인지. 세액정산 특례 적용 시 세액도 비교 (중간정산 당시 원천징수영수증 필요).</p></div></div>
+  <div class="chk step"><div class="box"></div><div><h3>IRP 계좌 개설 여부</h3><p>퇴직 전 IRP 계좌가 있는지, 이체 절차를 아는지. 과세이연은 연금계좌로 지급받거나 <b>60일 이내 이체</b> 시 적용.</p></div></div>
+  <div class="chk step"><div class="box"></div><div><h3>연금수령 계획</h3><p>연차별 비율(70·60·50%), 연금수령 한도, 다른 연금소득과의 합산 여부. 이연퇴직소득과 사적연금소득을 구분해 확인.</p></div></div>
+</section>
+
+<!-- 17. FAQ -->
+<section class="slide">
+  <div class="kicker">10 · 자주 묻는 질문</div>
+  <div class="ttl">고객 질문에 이렇게 답하세요 (마우스를 올리거나 탭하세요)</div>
+  <div class="rule"></div>
+  <h2 class="msg">세 가지 질문이 <em>가장 많이</em> 나옵니다.</h2>
+  <div class="acc" style="grid-template-columns:repeat(3,1fr)">
+    <div class="item step"><div class="who">Q1</div><h3>IRP로 옮기면 세금이 없어지나요?</h3><div class="detail"><p><b>아닙니다.</b> 납부 시점이 뒤로 미뤄지는 것입니다. 연금수령 요건 충족 시 70·60·50% 수준으로 완화, 연금 외 인출 시 원래 세금.</p><p style="font-size:21px;color:#888">근거: 소득세법 제20조의3, 제22조, 제146조</p></div></div>
+    <div class="item step"><div class="who">Q2</div><h3>중간정산 받았는데, 최종 퇴직 시 근속연수는요?</h3><div class="detail"><p>원칙은 <b>중간정산 이후 기간</b>. 예) 입사 10년 차 중간정산, 20년 차 퇴직 → 근속연수 10년. 단, 합산 정산 <b>세액정산 특례</b> 선택 가능.</p><p style="font-size:21px;color:#888">근거: 소득세법 제22조, 제148조, 시행령 제105조</p></div></div>
+    <div class="item step"><div class="who">Q3</div><h3>연금으로 받으면 무조건 유리한가요?</h3><div class="detail"><p><b>반드시 그렇지는 않습니다.</b> 현금 필요성, 수령기간, 연령, 다른 소득과의 합산을 함께 비교. 중도 인출 시 혜택이 줄 수 있음.</p><p style="font-size:21px;color:#888">근거: 소득세법 제14조 제3항 제9호, 제64조의4</p></div></div>
+  </div>
+</section>
+
+<!-- 18. 정리 -->
+<section class="slide cover">
+  <div class="orb o1" style="opacity:.3"></div><div class="orb o3" style="opacity:.4"></div>
+  <div class="badge">SUMMARY</div>
+  <h1 style="font-size:76px;margin-bottom:50px">오늘의 정리</h1>
+  <div style="display:flex;flex-direction:column;gap:30px;font-size:38px;line-height:1.5;color:#E6EBF3;max-width:1300px">
+    <div class="step"><b style="color:var(--gold)">1.</b> IRP 이체 = 세금을 <b>없애는 게 아니라 미루는 것</b></div>
+    <div class="step"><b style="color:var(--gold)">2.</b> 연금 수령 시 세액 70% → 60% → 50%, <b>연차에 따라 순차 적용</b></div>
+    <div class="step"><b style="color:var(--gold)">3.</b> 중간정산·명예퇴직·재입사 이력은 <b>근속연수부터 확인</b></div>
+    <div class="step"><b style="color:var(--gold)">4.</b> 보험은 <b>재원·유동성 대비 수단</b>, 세무 판단은 세무전문가와</div>
+  </div>
+</section>
+
+<div id="bar"></div>
+<div class="page" id="page"></div>
+</div>
+<div id="hint">Enter·Space·→ 다음 / ← 이전 / F 전체화면 · 화면 좌우 탭으로도 이동</div>
+
+<script>
+const stage=document.getElementById('stage');
+function fitStage(){const s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform=`translate(-50%,-50%) scale(${s})`}
+addEventListener('resize',fitStage);fitStage();
+
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+const steps=s=>[...s.querySelectorAll('.step')];
+
+function countUp(el){
+  const to=+el.dataset.count;if(el._done)return;el._done=1;
+  const t0=performance.now(),d=1200;
+  (function f(t){const p=Math.min((t-t0)/d,1),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(to*e).toLocaleString('ko-KR');if(p<1)requestAnimationFrame(f)})(t0);
+}
+function activate(el){
+  el.classList.add('on');
+  el.querySelectorAll('[data-count]').forEach(countUp);
+  if(el.matches('[data-count]'))countUp(el);
+  // 막대: 같은 그룹의 최댓값 기준으로 정확한 비율 계산
+  el.querySelectorAll('.bar,.fill').forEach(b=>{
+    const group=b.closest('.bars,.hbars');
+    const max=Math.max(...[...group.querySelectorAll('[data-v]')].map(x=>+x.dataset.v));
+    const pct=(+b.dataset.v/max*100)+'%';
+    if(b.classList.contains('bar'))b.style.height=pct;else b.style.width=pct;
+  });
+}
+function reset(s){
+  steps(s).forEach(x=>x.classList.remove('on'));
+  s.querySelectorAll('[data-count]').forEach(x=>{x._done=0;x.textContent='0'});
+  s.querySelectorAll('.bar').forEach(b=>b.style.height='0');
+  s.querySelectorAll('.fill').forEach(b=>b.style.width='0');
+  s.querySelectorAll('.item.open').forEach(x=>x.classList.remove('open'));
+}
+function show(i,allOn){
+  slides[cur].classList.remove('active');
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  const s=slides[cur];reset(s);s.classList.add('active');
+  // 단계 없는 카운트업은 진입 즉시
+  s.querySelectorAll('[data-count]').forEach(c=>{if(!c.closest('.step'))countUp(c)});
+  if(allOn)steps(s).forEach(activate);
+  document.getElementById('page').style.color=s.classList.contains('cover')?'#fff':'';
+  document.getElementById('page').innerHTML=`<b>${String(cur+1).padStart(2,'0')}</b> / ${String(slides.length).padStart(2,'0')}`;
+  document.getElementById('bar').style.width=((cur+1)/slides.length*100)+'%';
+}
+function next(){const rest=steps(slides[cur]).filter(x=>!x.classList.contains('on'));
+  if(rest.length)activate(rest[0]);else if(cur<slides.length-1)show(cur+1)}
+function prev(){const on=steps(slides[cur]).filter(x=>x.classList.contains('on'));
+  if(on.length)on[on.length-1].classList.remove('on');else if(cur>0)show(cur-1,true)}
+
+addEventListener('keydown',e=>{
+  if(['ArrowRight','Enter',' ','PageDown'].includes(e.key)){e.preventDefault();next()}
+  else if(['ArrowLeft','Backspace','PageUp'].includes(e.key)){e.preventDefault();prev()}
+  else if(e.key==='Home')show(0);
+  else if(e.key==='End')show(slides.length-1,true);
+  else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+});
+// 탭/클릭: 카드·체크박스는 자체 동작, 그 외 화면 좌측 1/3 이전, 나머지 다음
+addEventListener('click',e=>{
+  const box=e.target.closest('.box');
+  if(box){box.textContent=box.textContent?'':'✓';return}
+  const item=e.target.closest('.acc .item');
+  if(item){item.classList.toggle('open');return}
+  if(e.clientX<innerWidth/3)prev();else next();
+});
+show(0);
+</script>
+</body>
+</html>
