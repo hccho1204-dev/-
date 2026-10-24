@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Five Lines</title>
+<style>
+  @font-face { font-family: "BHS"; src: url("fonts/BlackHanSans.ttf"); }
+  @font-face { font-family: "Gowun"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Serif"; src: url("fonts/InstrumentSerif-Italic.ttf"); }
+  :root { --bg: #000; --fg: #f5f5f0; --ac: #ffd23f; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "BHS", sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #222; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   버팀에 관한 다섯 문장 — 명언 쇼츠 모션그래픽 20초 / 72BPM (1마디 = 3.33초, 장면 1개 = 1마디)
+   사진: assets/p1~p5.jpg (벼 들판, 호수 위 집, 나무 데크길, 장독대, 호수와 도시)
+   형식: 위 고정 제목 + 가운데 사진 + 노란 자막이 한 글자씩 써지는 쇼츠 스타일
+   ===================================================================== */
+const YL = "#ffd23f", WH = "#ffffff", BK = "#000000";
+const BAR = 4 * 60 / 72, DUR = 20;
+const KR = "BHS", SB = "Gowun";
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, U, P;
+function setSize(ar) {
+  [W, H] = ar === "16x9" ? [1920, 1080] : [1080, 1920];
+  cv.width = W; cv.height = H; U = Math.min(W, H) / 100; P = H > W;
+}
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+const IMG = {};
+const loadImg = n => new Promise(r => { const i = new Image(); i.onload = () => { IMG[n] = i; r(); }; i.src = `assets/${n}.jpg`; });
+const imgsReady = Promise.all([1, 2, 3, 4, 5].map(i => loadImg("p" + i)));
+
+/* ---------- 다섯 문장 (사진 순서대로) ---------- */
+const SCENES = [
+  { img: "p1", fx: 0.5, fy: 0.55, lines: ["익을수록 고개를 숙이는 벼처럼,", "버틴 시간은 조용히 여문다."] },
+  { img: "p2", fx: 0.72, fy: 0.62, lines: ["물결이 흔들려도", "집은 제자리를 지킨다."] },
+  { img: "p3", fx: 0.5, fy: 0.42, lines: ["끝이 보이지 않는 길도", "한 걸음씩 가면 결국 닿는다."] },
+  { img: "p4", fx: 0.5, fy: 0.5, lines: ["깊은 맛은 모두", "시간을 견딘 것들이다."] },
+  { img: "p5", fx: 0.5, fy: 0.45, lines: ["“운명은 흔들리는 사람을 밀고,", "버티는 사람을 비켜 간다.”"], big: true },
+];
+
+/* ---------- 수학 / 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const outBack = k => { const c = 1.8; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* ---------- 그리기 도우미 ---------- */
+function measure(s, size, font = KR) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function fit(s, font, maxW, maxSize) { const w = measure(s, maxSize, font); return w > maxW ? maxSize * maxW / w : maxSize; }
+function text(s, x, y, size, o = {}) {
+  const { color = WH, font = KR, align = "center", alpha = 1, sc = 1, stroke = 0, sp = 0, shadow = false } = o;
+  if (alpha <= 0 || sc <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.letterSpacing = `${sp * size}px`;
+  if (shadow) { ctx.shadowColor = "rgba(0,0,0,0.8)"; ctx.shadowBlur = size * 0.3; ctx.shadowOffsetY = size * 0.05; }
+  if (stroke) { ctx.lineJoin = "round"; ctx.lineWidth = size * stroke; ctx.strokeStyle = BK; ctx.strokeText(s, 0, 0); ctx.shadowColor = "transparent"; }
+  ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+function cover(src, x, y, w, h, fx = 0.5, fy = 0.5, zoom = 1) {
+  const k = Math.max(w / src.width, h / src.height) * zoom;
+  const dw = src.width * k, dh = src.height * k;
+  let ox = x + w / 2 - dw * fx, oy = y + h / 2 - dh * fy;
+  ox = Math.min(x, Math.max(x + w - dw, ox)); oy = Math.min(y, Math.max(y + h - dh, oy));
+  ctx.drawImage(src, ox, oy, dw, dh);
+}
+// 한 글자씩 써지는 노란 자막 (검은 테두리)
+function typeLine(s, x, y, size, t, t0, per, color) {
+  const chars = [...s], ws = chars.map(c => measure(c, size)), total = ws.reduce((a, b) => a + b, 0);
+  let px = x - total / 2;
+  chars.forEach((c, i) => {
+    const k = outBack(prog(t, t0 + i * per, t0 + i * per + 0.22));
+    if (k > 0 && c !== " ") text(c, px + ws[i] / 2, y + (1 - k) * size * 0.25, size, { color, stroke: 0.2, sc: 0.7 + 0.3 * k, alpha: clamp(k * 2), shadow: true });
+    px += ws[i];
+  });
+  return t0 + chars.length * per;
+}
+
+/* ---------- 레이아웃 ---------- */
+function layout() {
+  return P ? { ty1: H * 0.125, ty2: H * 0.18, ts: U * 8.6, py: H * 0.25, ph: H * 0.53, dotsY: H * 0.825, brandY: H * 0.885 }
+           : { ty1: H * 0.07, ty2: H * 0.145, ts: U * 6.4, py: H * 0.21, ph: H * 0.79, dotsY: null, brandY: null };
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = "none";
+  ctx.fillStyle = BK; ctx.fillRect(0, 0, W, H);
+  const L = layout();
+  const si = Math.min(5, Math.floor(t / BAR));   // 0~4: 문장 장면, 5: 엔딩 카드
+
+  // 사진 (장면 전환은 0.45초 크로스페이드)
+  ctx.save(); ctx.beginPath(); ctx.rect(0, L.py, W, L.ph); ctx.clip();
+  for (let i = 0; i < 5; i++) {
+    const s0 = i * BAR, s1 = i === 4 ? DUR : (i + 1) * BAR + 0.45;
+    if (t < s0 || t > s1) continue;
+    const sc = SCENES[i], a = i === 0 ? 1 : inOut(prog(t, s0, s0 + 0.45));
+    const k = prog(t, s0, s1), zoom = lerp(1.04, i === 4 ? 1.2 : 1.13, k);
+    ctx.globalAlpha = a;
+    cover(IMG[sc.img], 0, L.py, W, L.ph, sc.fx + (i % 2 ? 0.03 : -0.03) * k, sc.fy, zoom);
+  }
+  ctx.globalAlpha = 1;
+  // 자막이 잘 보이게 아래쪽 어둡게
+  const g = ctx.createLinearGradient(0, L.py + L.ph * 0.45, 0, L.py + L.ph);
+  g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.7)");
+  ctx.fillStyle = g; ctx.fillRect(0, L.py, W, L.ph);
+  // 엔딩 카드: 사진을 어둡게
+  const ek = prog(t, 5 * BAR, 5 * BAR + 0.6);
+  if (ek > 0) { ctx.fillStyle = `rgba(0,0,0,${0.62 * ek})`; ctx.fillRect(0, L.py, W, L.ph); }
+  // 위아래 경계에 은은한 그림자
+  const e1 = ctx.createLinearGradient(0, L.py, 0, L.py + U * 6); e1.addColorStop(0, "rgba(0,0,0,0.6)"); e1.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = e1; ctx.fillRect(0, L.py, W, U * 6);
+  ctx.restore();
+
+  // 고정 제목 (쇼츠 상단)
+  const tk = outExpo(prog(t, 0.05, 0.6)), tk2 = outExpo(prog(t, 0.25, 0.8));
+  const ts1 = fit("오늘 걷다가 마음에 새긴", KR, W * 0.88, L.ts), ts2 = fit("버팀에 관한 다섯 문장", KR, W * 0.88, L.ts * 1.06);
+  text("오늘 걷다가 마음에 새긴", W / 2, L.ty1 + (1 - tk) * U * 3, ts1, { color: YL, alpha: tk });
+  text("버팀에 관한 다섯 문장", W / 2, L.ty2 + (1 - tk2) * U * 3, ts2, { color: WH, alpha: tk2 });
+
+  // 문장 번호 (사진 왼쪽 위)
+  if (si < 5) {
+    const nk = outBack(prog(t, si * BAR + 0.1, si * BAR + 0.45));
+    const nx = U * (P ? 9 : 6), ny = L.py + U * (P ? 6 : 5), ns = U * (P ? 3.6 : 3);
+    if (nk > 0) {
+      ctx.save(); ctx.translate(nx, ny); ctx.scale(nk, nk);
+      ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.beginPath(); ctx.roundRect(-ns * 1.6, -ns * 0.9, ns * 3.2, ns * 1.8, ns * 0.9); ctx.fill();
+      text(`${si + 1} / 5`, 0, ns * 0.05, ns, { color: si === 4 ? YL : WH });
+      ctx.restore();
+    }
+  }
+
+  // 자막 (한 글자씩)
+  if (si < 5) {
+    const sc = SCENES[si], s0 = si * BAR;
+    const out = 1 - prog(t, (si + 1) * BAR - 0.12, (si + 1) * BAR + 0.15);
+    if (out > 0) {
+      ctx.save(); ctx.globalAlpha = out;
+      const base = U * (sc.big ? (P ? 7.4 : 6.2) : (P ? 6.6 : 5.4));
+      const fs = Math.min(...sc.lines.map(l => fit(l, KR, W * 0.9, base)));
+      const lh = fs * 1.35, y0 = L.py + L.ph - U * (P ? 9 : 8) - lh;
+      let tn = s0 + 0.35;
+      sc.lines.forEach((l, j) => { tn = typeLine(l, W / 2, y0 + j * lh, fs, t, tn + (j ? 0.1 : 0), sc.big ? 0.05 : 0.04, j === sc.lines.length - 1 || sc.big ? YL : WH); });
+      ctx.restore();
+    }
+  } else {
+    // 엔딩 카드 문구
+    const t0 = 5 * BAR, cy = L.py + L.ph * 0.45;
+    const k1 = outBack(prog(t, t0 + 0.2, t0 + 0.6)), k2 = outBack(prog(t, t0 + 0.55, t0 + 0.95));
+    const es = U * (P ? 8.5 : 7);
+    text("오늘도 버티는 당신을", W / 2, cy - es * 0.75, es, { color: WH, stroke: 0.18, sc: k1, shadow: true });
+    text("응원합니다", W / 2, cy + es * 0.75, es * 1.2, { color: YL, stroke: 0.18, sc: k2, shadow: true });
+    const bk = outCubic(prog(t, t0 + 1.0, t0 + 1.6));
+    if (bk > 0) {
+      ctx.fillStyle = YL; ctx.globalAlpha = bk;
+      ctx.fillRect(W / 2 - U * 12 * bk, cy + es * 1.85, U * 24 * bk, U * 0.35);
+      ctx.globalAlpha = 1;
+      text("BLESS INSIGHT", W / 2, cy + es * 2.55, U * (P ? 3.6 : 3), { color: WH, alpha: bk, sp: 0.25 });
+    }
+  }
+
+  // 아래 진행 점 + 채널 이름 (세로형)
+  if (P) {
+    for (let i = 0; i < 5; i++) {
+      const on = i <= Math.min(si, 4), cur = i === si;
+      ctx.fillStyle = on ? YL : "rgba(255,255,255,0.25)";
+      ctx.beginPath(); ctx.roundRect(W / 2 + (i - 2) * U * 6 - (cur ? U * 2.2 : U * 0.9), L.dotsY - U * 0.9, cur ? U * 4.4 : U * 1.8, U * 1.8, U * 0.9); ctx.fill();
+    }
+    text("BLESS INSIGHT", W / 2, L.brandY, U * 3, { color: "rgba(255,255,255,0.55)", sp: 0.3, alpha: 1 - ek });
+  }
+  // 시작 페이드인
+  const f = 1 - prog(t, 0, 0.25);
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+window.ready = Promise.all([imgsReady, document.fonts.load("10px BHS"), document.fonts.load("10px Gowun"), document.fonts.load("10px Serif")]).then(() => document.fonts.ready);
+
+/* ---------- 미리보기 재생 ---------- */
+const audio = document.getElementById("music");
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2.5);
+});
+window.ready.then(() => { document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x.dataset.ar === (params.get("ar") || "9x16"))); renderFrame(2.5); });
+</script>
+</body>
+</html>
