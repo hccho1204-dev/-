@@ -1,0 +1,459 @@
+<title>BLESS 주간회의 보드</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;800&display=swap">
+<style>
+/* 레이아웃: 위에 주차 이동 + 탭, 아래 한 화면 작업 영역 (입력 / 회의실 / 보고서). 보고서는 종이 문서처럼. */
+:root {
+  --paper: #f4f3ef; --surface: #ffffff; --ink: #1c2230; --muted: #5d6474; --line: #dcdad3;
+  --accent: #23489e; --accent-soft: #e5ebf8; --done: #1f7a4d; --done-soft: #e2f2e9;
+  --doing: #9a6a00; --doing-soft: #fbf0d3; --late: #b3362b; --late-soft: #f8e3e0;
+  --sheet: #fffefb; --shadow: 0 1px 2px rgba(28,34,48,.06), 0 4px 16px rgba(28,34,48,.06);
+  --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-doc: "Noto Serif KR", "Batang", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #13161d; --surface: #1b1f28; --ink: #e8e9ed; --muted: #a0a6b4; --line: #2e3442;
+  --accent: #8aa9f5; --accent-soft: #1f2a45; --done: #6fcf9b; --done-soft: #17301f;
+  --doing: #e6b84c; --doing-soft: #33290f; --late: #f08a7f; --late-soft: #3a1c19;
+  --sheet: #1e222b; --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #13161d; --surface: #1b1f28; --ink: #e8e9ed; --muted: #a0a6b4; --line: #2e3442;
+  --accent: #8aa9f5; --accent-soft: #1f2a45; --done: #6fcf9b; --done-soft: #17301f;
+  --doing: #e6b84c; --doing-soft: #33290f; --late: #f08a7f; --late-soft: #3a1c19;
+  --sheet: #1e222b; --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.brand h1 { margin: 0; font-family: var(--f-doc); font-size: 1.45rem; font-weight: 800; letter-spacing: -.01em; }
+.brand .sub { color: var(--muted); font-size: .85rem; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--muted); }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.live.on i { background: var(--done); box-shadow: 0 0 0 3px var(--done-soft); }
+.weeknav { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.weeknav button { border: 0; background: transparent; color: var(--ink); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 1rem; }
+.weeknav button:hover { background: var(--accent-soft); }
+.weeknav .label { min-width: 190px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.weeknav .label small { display: block; font-weight: 400; color: var(--muted); font-size: .78rem; }
+nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+nav.tabs button { border: 0; background: none; color: var(--muted); padding: 10px 14px; font: inherit; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); border-color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.notice { background: var(--doing-soft); color: var(--ink); border-radius: 10px; padding: 10px 14px; font-size: .9rem; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); min-width: 0; }
+.panel h2 { margin: 0 0 12px; font-size: 1.05rem; }
+.cols { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+form.entry { display: grid; gap: 12px; }
+label.f { display: grid; gap: 5px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%; }
+textarea { min-height: 70px; resize: vertical; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--late); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 2px 9px; font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.s-완료 { background: var(--done-soft); color: var(--done); }
+.s-진행 { background: var(--doing-soft); color: var(--doing); }
+.s-지연 { background: var(--late-soft); color: var(--late); }
+.cat { font-size: .75rem; color: var(--accent); font-weight: 700; }
+.item { border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 11px 13px; background: var(--surface); display: grid; gap: 4px; min-width: 0; }
+.item.st-완료 { border-left-color: var(--done); } .item.st-진행 { border-left-color: var(--doing); } .item.st-지연 { border-left-color: var(--late); }
+.item .head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.item .title { font-weight: 600; overflow-wrap: anywhere; }
+.item .detail { color: var(--muted); font-size: .88rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.item .meta { color: var(--muted); font-size: .75rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.item .meta button { border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; padding: 0; }
+.item.example { border-style: dashed; opacity: .75; }
+.list { display: grid; gap: 10px; }
+.summary { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.summary .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-variant-numeric: tabular-nums; }
+.summary .stat b { font-size: 1.2rem; margin-left: 6px; }
+.board { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.person { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.person .who { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.person .who img { width: 26px; height: 26px; border-radius: 50%; }
+.person .who span.count { margin-left: auto; font-weight: 500; color: var(--muted); font-size: .8rem; }
+.empty { border: 1px dashed var(--line); border-radius: 12px; padding: 22px; color: var(--muted); display: grid; gap: 12px; }
+.empty strong { color: var(--ink); }
+.fmt { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.fmt button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 13px; font: inherit; font-size: .88rem; cursor: pointer; }
+.fmt button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.sheet-wrap { overflow-x: auto; }
+.sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: 34px 38px; min-width: 640px; box-shadow: var(--shadow); font-family: var(--f-body); color: var(--ink); }
+.sheet h1 { font-family: var(--f-doc); font-size: 1.35rem; text-align: center; margin: 0 0 4px; }
+.sheet .dmeta { text-align: center; color: var(--muted); font-size: .85rem; margin-bottom: 20px; }
+.sheet h2 { font-family: var(--f-doc); font-size: 1rem; margin: 18px 0 8px; border-bottom: 2px solid var(--ink); padding-bottom: 4px; }
+.sheet table { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.sheet th, .sheet td { border: 1px solid var(--line); padding: 6px 8px; vertical-align: top; text-align: left; white-space: pre-wrap; }
+.sheet th { background: var(--accent-soft); font-weight: 700; }
+.sheet ul { margin: 0; padding-left: 20px; } .sheet li { margin: 3px 0; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 10px; font-size: .9rem; z-index: 20; }
+.how { font-size: .85rem; color: var(--muted); display: grid; gap: 4px; }
+@media (prefers-reduced-motion: no-preference) { .item { transition: border-color .2s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>BLESS 주간회의 보드</h1>
+      <span class="sub">각자 입력 → 회의실 한 화면 → 보고서 자동 정리</span>
+      <span class="live" id="live"><i></i><span id="liveText">연결 중…</span></span>
+    </div>
+    <div class="weeknav" role="group" aria-label="주차 선택">
+      <button id="prevW" aria-label="이전 주">◀</button>
+      <div class="label" id="weekLabel"></div>
+      <button id="nextW" aria-label="다음 주">▶</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="input" aria-selected="false">내 업무 입력</button>
+    <button role="tab" data-tab="room" aria-selected="true">회의실 화면</button>
+    <button role="tab" data-tab="report" aria-selected="false">보고서 만들기</button>
+  </nav>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <!-- 1. 내 업무 입력 -->
+  <section id="tab-input" hidden>
+    <div class="cols">
+      <div class="panel">
+        <h2 id="formTitle">이번 주 업무 등록</h2>
+        <form class="entry" id="entryForm">
+          <div class="row2">
+            <label class="f" for="fCat">구분
+              <select id="fCat"></select>
+            </label>
+            <label class="f" for="fStatus">상태
+              <select id="fStatus"><option>진행</option><option>완료</option><option>지연</option></select>
+            </label>
+          </div>
+          <label class="f" for="fTitle">업무 내용
+            <input id="fTitle" required maxlength="120" placeholder="예: 신규 고객 보장분석 상담">
+          </label>
+          <label class="f" for="fProgress">진행 상황 · 결과
+            <textarea id="fProgress" maxlength="1000" placeholder="예: 상담 6건 중 2건 청약 진행"></textarea>
+          </label>
+          <label class="f" for="fNext">다음 주 계획
+            <textarea id="fNext" maxlength="600" placeholder="예: 청약 2건 마무리, 소개 요청"></textarea>
+          </label>
+          <div class="actions">
+            <button class="btn primary" type="submit" id="saveBtn">등록하기</button>
+            <button class="btn ghost" type="button" id="cancelEdit" hidden>수정 취소</button>
+          </div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>내가 등록한 업무 <span class="sub" id="myCount" style="color:var(--muted);font-weight:400"></span></h2>
+        <div class="list" id="myList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 회의실 화면 -->
+  <section id="tab-room">
+    <div class="summary" id="summary"></div>
+    <div class="board" id="board" style="margin-top:14px"></div>
+  </section>
+
+  <!-- 3. 보고서 -->
+  <section id="tab-report" hidden>
+    <div class="panel" style="display:grid;gap:14px">
+      <div class="fmt" role="group" aria-label="보고서 서식">
+        <button data-fmt="weekly" aria-pressed="true">주간회의 자료</button>
+        <button data-fmt="exec" aria-pressed="false">경영회의 보고</button>
+        <button data-fmt="monthly" aria-pressed="false">월간 보고서</button>
+        <span style="flex:1"></span>
+        <button class="btn primary" id="copyBtn">한글·워드용 복사</button>
+        <button class="btn" id="saveFile" hidden>파일로 저장</button>
+      </div>
+      <div class="how">복사한 뒤 한글이나 워드에 붙여넣으면 표와 제목이 그대로 들어갑니다. 내용은 등록된 업무에서 자동으로 채워집니다.</div>
+      <div class="sheet-wrap"><div class="sheet" id="sheet"></div></div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const CATS = ["영업·계약", "상담·고객관리", "리크루팅", "교육·코칭", "조직운영", "이슈·건의"];
+const STATUSES = ["완료", "진행", "지연"];
+const $ = s => document.querySelector(s);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- 주차 계산 (월요일 시작, 그 주 목요일이 속한 달 기준 'n월 n주차') ---------- */
+const pad = n => String(n).padStart(2, "0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+function parseYmd(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function weekInfo(key) {
+  const mon = parseYmd(key), thu = new Date(mon), sun = new Date(mon);
+  thu.setDate(mon.getDate() + 3); sun.setDate(mon.getDate() + 6);
+  const nth = Math.ceil(thu.getDate() / 7);
+  return { key, month: `${thu.getFullYear()}-${pad(thu.getMonth() + 1)}`, label: `${thu.getMonth() + 1}월 ${nth}주차`,
+    range: `${mon.getMonth() + 1}.${mon.getDate()} ~ ${sun.getMonth() + 1}.${sun.getDate()}`, year: thu.getFullYear() };
+}
+function shiftWeek(key, n) { const d = parseYmd(key); d.setDate(d.getDate() + 7 * n); return ymd(d); }
+
+/* ---------- 상태 ---------- */
+const store = (() => { try { return window.localStorage; } catch { return null; } })();
+const remember = (k, v) => { try { store?.setItem("bless-board:" + k, v); } catch {} };
+const recall = k => { try { return store?.getItem("bless-board:" + k); } catch { return null; } };
+let week = ymd(mondayOf(new Date()));
+let tab = recall("tab") || "room";
+let fmt = "weekly";
+let items = [];            // { id, ...data }
+let myId = null, db = null, userCap = null, downloads = null, writable = true, editing = null;
+let names = {};
+
+/* ---------- 화면 ---------- */
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2200); }
+function setTab(t) {
+  tab = t; remember("tab", t);
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  ["input", "room", "report"].forEach(n => $("#tab-" + n).hidden = n !== t);
+  render();
+}
+const weekItems = () => items.filter(i => i.week === week);
+const nameOf = id => (names[id]?.name) || "구성원";
+
+async function resolveNames() {
+  if (!userCap) return;
+  const ids = [...new Set(items.flatMap(i => [i.author, i.updatedBy]).filter(Boolean))];
+  if (myId) ids.push(myId);
+  if (!ids.length) return;
+  names = await userCap.profiles(ids);
+}
+
+function itemCard(it, { mine = false } = {}) {
+  const c = el("div", "item st-" + it.status);
+  const head = el("div", "head");
+  head.append(el("span", "cat", it.cat), el("span", "pill s-" + it.status, it.status));
+  c.append(head, el("div", "title", it.title));
+  if (it.progress) c.append(el("div", "detail", it.progress));
+  if (it.next) { const n = el("div", "detail"); n.textContent = "다음 주 · " + it.next; c.append(n); }
+  const meta = el("div", "meta");
+  if (!mine) meta.append(el("span", "", nameOf(it.author)));
+  if (it.updatedBy && it.updatedBy !== it.author) meta.append(el("span", "", "수정 " + nameOf(it.updatedBy)));
+  if (db && writable) {
+    const e = el("button", "", "수정"); e.onclick = () => startEdit(it);
+    meta.append(e);
+    if (mine) { const d = el("button", "", "삭제"); d.style.color = "var(--late)"; d.onclick = () => removeItem(it); meta.append(d); }
+  }
+  c.append(meta);
+  return c;
+}
+
+function exampleCard() {
+  const c = itemCard({ cat: "상담·고객관리", status: "진행", title: "예시) 신규 고객 보장분석 상담", progress: "상담 6건 중 2건 청약 진행", next: "청약 2건 마무리", author: null });
+  c.classList.add("example"); c.querySelector(".meta").textContent = "예시 카드 · 실제 데이터 아님";
+  return c;
+}
+
+function renderWeek() {
+  const w = weekInfo(week);
+  $("#weekLabel").innerHTML = "";
+  $("#weekLabel").append(document.createTextNode(`${w.year}년 ${w.label}`), el("small", "", w.range));
+}
+
+function renderInput() {
+  const mine = weekItems().filter(i => i.author === myId);
+  $("#myCount").textContent = mine.length ? `${mine.length}건` : "";
+  const list = $("#myList"); list.replaceChildren();
+  if (!mine.length) {
+    const e = el("div", "empty");
+    e.append(el("strong", "", "이번 주에 등록한 업무가 아직 없습니다."), el("span", "", "왼쪽에서 업무를 등록하면 여기와 회의실 화면에 바로 나타납니다."), exampleCard());
+    list.append(e);
+  } else mine.forEach(i => list.append(itemCard(i, { mine: true })));
+  $("#entryForm").querySelectorAll("input,select,textarea,button").forEach(x => x.disabled = !db || !writable);
+}
+
+function renderRoom() {
+  const wi = weekItems();
+  const cnt = s => wi.filter(i => i.status === s).length;
+  const sum = $("#summary"); sum.replaceChildren();
+  const stat = (label, n, cls) => { const s = el("div", "stat"); if (cls) s.append(el("span", "pill " + cls, label)); else s.append(document.createTextNode(label)); s.append(el("b", "", n)); return s; };
+  sum.append(stat("전체 업무", wi.length), stat("완료", cnt("완료"), "s-완료"), stat("진행", cnt("진행"), "s-진행"), stat("지연", cnt("지연"), "s-지연"));
+  const board = $("#board"); board.replaceChildren();
+  if (!wi.length) {
+    const e = el("div", "empty");
+    e.append(el("strong", "", "이번 주 등록된 업무가 없습니다."),
+      el("span", "", "팀원이 '내 업무 입력'에서 업무를 올리면 이 화면에 사람별로 실시간으로 모입니다. 회의 중에도 담당자가 바로 수정할 수 있습니다."),
+      exampleCard());
+    board.append(e); return;
+  }
+  const by = {};
+  wi.forEach(i => (by[i.author] ||= []).push(i));
+  const order = s => ({ 지연: 0, 진행: 1, 완료: 2 }[s] ?? 3);
+  Object.keys(by).sort((a, b) => nameOf(a).localeCompare(nameOf(b), "ko")).forEach(aid => {
+    const p = el("div", "person");
+    const who = el("div", "who");
+    if (names[aid]?.avatarUrl) { const img = el("img"); img.src = names[aid].avatarUrl; img.alt = ""; who.append(img); }
+    who.append(el("span", "", nameOf(aid)), el("span", "count", by[aid].length + "건"));
+    p.append(who);
+    by[aid].sort((a, b) => order(a.status) - order(b.status)).forEach(i => p.append(itemCard(i)));
+    board.append(p);
+  });
+}
+
+/* ---------- 보고서 ---------- */
+function rowsFor(list) {
+  return list.slice().sort((a, b) => nameOf(a.author).localeCompare(nameOf(b.author), "ko") || CATS.indexOf(a.cat) - CATS.indexOf(b.cat));
+}
+function buildReport() {
+  const w = weekInfo(week);
+  const today = new Date(), stamp = `작성일 ${today.getFullYear()}.${today.getMonth() + 1}.${today.getDate()}`;
+  if (fmt === "weekly") {
+    const list = rowsFor(weekItems());
+    const rows = list.map(i => `<tr><td>${esc(nameOf(i.author))}</td><td>${esc(i.cat)}</td><td>${esc(i.title)}</td><td>${esc(i.progress)}</td><td>${esc(i.status)}</td><td>${esc(i.next)}</td></tr>`).join("");
+    return `<h1>BLESS본부 주간회의 자료</h1><div class="dmeta">${w.year}년 ${w.label} (${w.range}) · ${stamp}</div>
+      <table><thead><tr><th style="width:11%">담당자</th><th style="width:12%">구분</th><th>업무 내용</th><th>진행 상황</th><th style="width:7%">상태</th><th>다음 주 계획</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="6">이번 주 등록된 업무가 없습니다.</td></tr>`}</tbody></table>`;
+  }
+  if (fmt === "exec") {
+    const list = rowsFor(weekItems());
+    const li = arr => arr.length ? `<ul>${arr.map(i => `<li>[${esc(nameOf(i.author))}] ${esc(i.title)}${i.progress ? ` — ${esc(i.progress)}` : ""}</li>`).join("")}</ul>` : `<ul><li>해당 없음</li></ul>`;
+    const nexts = list.filter(i => i.next);
+    return `<h1>BLESS본부 경영회의 보고</h1><div class="dmeta">${w.year}년 ${w.label} (${w.range}) · ${stamp}</div>
+      <table><thead><tr><th>전체</th><th>완료</th><th>진행</th><th>지연</th></tr></thead><tbody><tr>
+      <td>${list.length}건</td><td>${list.filter(i => i.status === "완료").length}건</td><td>${list.filter(i => i.status === "진행").length}건</td><td>${list.filter(i => i.status === "지연").length}건</td></tr></tbody></table>
+      <h2>1. 주요 성과</h2>${li(list.filter(i => i.status === "완료"))}
+      <h2>2. 진행 중 과제</h2>${li(list.filter(i => i.status === "진행"))}
+      <h2>3. 이슈 · 지연 · 건의</h2>${li(list.filter(i => i.status === "지연" || i.cat === "이슈·건의"))}
+      <h2>4. 다음 주 계획</h2>${nexts.length ? `<ul>${nexts.map(i => `<li>[${esc(nameOf(i.author))}] ${esc(i.next)}</li>`).join("")}</ul>` : "<ul><li>해당 없음</li></ul>"}`;
+  }
+  // 월간: 선택한 주가 속한 달의 모든 주차
+  const month = w.month, [yy, mm] = month.split("-").map(Number);
+  const list = items.filter(i => weekInfo(i.week).month === month);
+  const weeks = [...new Set(list.map(i => i.week))].sort();
+  const head = `<tr><th>구분</th>${STATUSES.map(s => `<th>${s}</th>`).join("")}<th>합계</th></tr>`;
+  const body = CATS.map(c => { const r = list.filter(i => i.cat === c); return `<tr><td>${c}</td>${STATUSES.map(s => `<td>${r.filter(i => i.status === s).length}</td>`).join("")}<td>${r.length}</td></tr>`; }).join("");
+  const total = `<tr><th>합계</th>${STATUSES.map(s => `<th>${list.filter(i => i.status === s).length}</th>`).join("")}<th>${list.length}</th></tr>`;
+  const byWeek = weeks.map(k => { const done = rowsFor(list.filter(i => i.week === k && i.status === "완료")); const wk = weekInfo(k);
+    return `<tr><td>${wk.label}<br>(${wk.range})</td><td>${done.length ? done.map(i => `· [${esc(nameOf(i.author))}] ${esc(i.title)}`).join("<br>") : "-"}</td></tr>`; }).join("");
+  const late = rowsFor(list.filter(i => i.status === "지연"));
+  return `<h1>BLESS본부 ${yy}년 ${mm}월 월간 보고서</h1><div class="dmeta">집계 ${weeks.length}개 주차 · 업무 ${list.length}건 · ${stamp}</div>
+    <h2>1. 업무 현황 (구분 × 상태)</h2><table><thead>${head}</thead><tbody>${body}${total}</tbody></table>
+    <h2>2. 주차별 주요 성과</h2><table><thead><tr><th style="width:22%">주차</th><th>완료 업무</th></tr></thead><tbody>${byWeek || `<tr><td colspan="2">이 달에 등록된 업무가 없습니다.</td></tr>`}</tbody></table>
+    <h2>3. 지연 · 보완 필요</h2>${late.length ? `<ul>${late.map(i => `<li>[${esc(nameOf(i.author))}] ${esc(i.title)} (${weekInfo(i.week).label})</li>`).join("")}</ul>` : "<ul><li>해당 없음</li></ul>"}`;
+}
+// 붙여넣기용: 한글·워드가 읽는 인라인 스타일 문서
+function exportHtml() {
+  return `<html><head><meta charset="utf-8"><title>BLESS 보고서</title></head><body style="font-family:'맑은 고딕',sans-serif;font-size:10pt">` +
+    buildReport().replace(/<h1>/g, '<h1 style="font-size:16pt;text-align:center">').replace(/<h2>/g, '<h2 style="font-size:12pt;border-bottom:2px solid #000">')
+      .replace(/<table>/g, '<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:9.5pt">')
+      .replace(/<th( style="[^"]*")?>/g, (m, s) => `<th style="background:#e5ebf8;${s ? s.slice(8, -1) : ""}">`)
+      .replace(/<div class="dmeta">/g, '<p style="text-align:center;color:#555">').replace(/<\/div>/g, "</p>") + "</body></html>";
+}
+function renderReport() {
+  document.querySelectorAll(".fmt [data-fmt]").forEach(b => b.setAttribute("aria-pressed", b.dataset.fmt === fmt));
+  $("#sheet").innerHTML = buildReport();
+}
+
+async function render() {
+  renderWeek();
+  await resolveNames();
+  if (tab === "input") renderInput();
+  if (tab === "room") renderRoom();
+  if (tab === "report") renderReport();
+}
+
+/* ---------- 입력 / 수정 / 삭제 ---------- */
+function fillForm(it) {
+  $("#fCat").value = it?.cat || CATS[0]; $("#fStatus").value = it?.status || "진행";
+  $("#fTitle").value = it?.title || ""; $("#fProgress").value = it?.progress || ""; $("#fNext").value = it?.next || "";
+}
+function startEdit(it) {
+  editing = it; fillForm(it);
+  $("#formTitle").textContent = it.author === myId ? "내 업무 수정" : `${nameOf(it.author)} 님 업무 수정`;
+  $("#saveBtn").textContent = "수정 저장"; $("#cancelEdit").hidden = false;
+  setTab("input"); $("#fTitle").focus();
+}
+function endEdit() { editing = null; fillForm(null); $("#formTitle").textContent = "이번 주 업무 등록"; $("#saveBtn").textContent = "등록하기"; $("#cancelEdit").hidden = true; }
+
+async function saveEntry(ev) {
+  ev.preventDefault();
+  if (!db) return;
+  const data = { cat: $("#fCat").value, status: $("#fStatus").value, title: $("#fTitle").value.trim(), progress: $("#fProgress").value.trim(), next: $("#fNext").value.trim(), updatedAt: Date.now() };
+  if (!data.title) { toast("업무 내용을 입력해 주세요."); return; }
+  $("#saveBtn").disabled = true;
+  try {
+    if (editing) { await db.doc("items/" + editing.id).update({ ...data, updatedBy: myId }); toast("수정했습니다."); }
+    else { await db.collection("items").add({ ...data, week, author: myId, createdAt: Date.now() }); toast("등록했습니다. 회의실 화면에 바로 반영됩니다."); }
+    endEdit();
+  } catch (e) {
+    if (e?.code === "invalid_argument") { writable = false; showNotice("이 계정은 보기 권한만 있어 업무를 저장할 수 없습니다. 보드 주인에게 편집 권한을 요청해 주세요."); }
+    else if (e?.code === "quota_exceeded") toast("저장 공간이 가득 찼습니다. 오래된 업무를 정리해 주세요.");
+    else toast("저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  } finally { $("#saveBtn").disabled = !writable; render(); }
+}
+const pendingDelete = new Set();
+async function removeItem(it) {
+  if (!pendingDelete.has(it.id)) { pendingDelete.add(it.id); toast("한 번 더 누르면 삭제됩니다."); setTimeout(() => pendingDelete.delete(it.id), 3000); return; }
+  pendingDelete.delete(it.id);
+  try { await db.doc("items/" + it.id).delete(); toast("삭제했습니다."); } catch { toast("삭제하지 못했습니다."); }
+}
+
+/* ---------- 복사 / 저장 ---------- */
+async function copyReport() {
+  const html = exportHtml(), text = $("#sheet").innerText;
+  try {
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([text], { type: "text/plain" }) })]);
+    } else await navigator.clipboard.writeText(text);
+    toast("복사했습니다. 한글이나 워드에 붙여넣으세요.");
+  } catch {
+    const r = document.createRange(); r.selectNodeContents($("#sheet")); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    toast("자동 복사가 막혀 있어 내용을 선택해 두었습니다. Ctrl+C로 복사하세요.");
+  }
+}
+async function saveReport() {
+  if (!downloads) return;
+  const w = weekInfo(week), name = { weekly: `주간회의_${w.label}`, exec: `경영회의_${w.label}`, monthly: `월간보고_${w.month}` }[fmt];
+  try { await downloads.save({ filename: `BLESS_${name.replace(/\s/g, "")}.html`, data: exportHtml() }); toast("저장했습니다. 워드나 한글에서 열 수 있습니다."); }
+  catch (e) { if (e?.code !== "declined") toast("파일을 저장하지 못했습니다."); }
+}
+
+function showNotice(msg) { const n = $("#notice"); n.textContent = msg; n.hidden = !msg; }
+
+/* ---------- 시작 ---------- */
+$("#fCat").append(...CATS.map(c => { const o = el("option", "", c); return o; }));
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+document.querySelectorAll(".fmt [data-fmt]").forEach(b => b.onclick = () => { fmt = b.dataset.fmt; renderReport(); });
+$("#prevW").onclick = () => { week = shiftWeek(week, -1); endEdit(); render(); };
+$("#nextW").onclick = () => { week = shiftWeek(week, 1); endEdit(); render(); };
+$("#entryForm").addEventListener("submit", saveEntry);
+$("#cancelEdit").onclick = endEdit;
+$("#copyBtn").onclick = copyReport;
+$("#saveFile").onclick = saveReport;
+setTab(tab);
+
+(async () => {
+  const use = n => window.claude?.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  [db, userCap, downloads] = await Promise.all([use("db"), use("user"), use("downloads")]);
+  if (downloads) $("#saveFile").hidden = false;
+  if (userCap) {
+    myId = await userCap.id();
+    const can = await userCap.can("data.write");
+    if (can === false) writable = false;
+  }
+  if (!db) {
+    $("#liveText").textContent = "저장 연결 안 됨";
+    showNotice("이 화면에서는 공유 저장소에 연결되지 않았습니다. claude.ai에 로그인한 상태에서 공유받은 링크로 열어 주세요.");
+    render(); return;
+  }
+  if (!myId) writable = false;
+  if (!writable) showNotice("보기 전용으로 열려 있습니다. 업무를 입력하려면 보드 주인에게 편집 권한을 요청해 주세요.");
+  db.collection("items").onSnapshot(snap => {
+    items = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(i => i.week && i.title);
+    $("#live").classList.add("on"); $("#liveText").textContent = "실시간 연결됨";
+    render();
+  }, () => { $("#live").classList.remove("on"); $("#liveText").textContent = "연결 끊김 · 새로고침해 주세요"; });
+})();
+</script>
