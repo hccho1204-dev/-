@@ -84,6 +84,28 @@ tr:last-child td { border-bottom: 0; }
 td:first-child { font-weight: 700; white-space: nowrap; }
 
 .note { font-size: 13px; color: var(--muted); margin: 0; }
+
+section.install { display: grid; gap: 16px; }
+section.install > h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 0; }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+.steps li::marker { color: var(--accent); font-weight: 700; }
+.how { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 10px; min-width: 0; }
+.how h3 { margin: 0; font-size: 17px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.how h3 small { font-family: var(--font-mono); font-weight: 500; font-size: 12.5px; color: var(--muted); }
+.how p { margin: 0; font-size: 14.5px; color: var(--muted); }
+.cmd { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.cmd code {
+  flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 13.5px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 9px 12px; user-select: all;
+}
+.cmd button {
+  flex: none; font: 500 13px var(--font-body); cursor: pointer;
+  background: var(--accent); color: var(--surface); border: 0; border-radius: 6px; padding: 0 14px;
+}
+.cmd button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.where { font-size: 12.5px; font-weight: 500; color: var(--accent); }
 </style>
 
 <div class="wrap">
@@ -166,4 +188,69 @@ td:first-child { font-weight: 700; white-space: nowrap; }
     </div>
     <p class="note">별 개수 등 숫자는 원고 기준이며, 시점에 따라 달라집니다.</p>
   </section>
+
+  <section class="install">
+    <h2>설치 방법</h2>
+    <ol class="steps">
+      <li>내 컴퓨터에서 Claude Code를 엽니다.</li>
+      <li>아래 명령어를 <b>한 줄씩</b> 복사해 입력창에 붙여넣고 엔터를 누릅니다.</li>
+      <li>Claude Code를 껐다가 다시 켭니다.</li>
+    </ol>
+    <p class="note">첫 줄은 "이 저장소를 목록에 추가해", 둘째 줄은 "거기서 이 스킬을 설치해"라는 뜻입니다.</p>
+
+    <div class="how">
+      <h3>슈퍼파워즈 <small>obra/superpowers</small></h3>
+      <div class="cmd"><code>/plugin marketplace add obra/superpowers-marketplace</code><button type="button">복사</button></div>
+      <div class="cmd"><code>/plugin install superpowers@superpowers-marketplace</code><button type="button">복사</button></div>
+      <p>설치 후: "같이 기획부터 해 보자"처럼 말하면 알아서 작동합니다.</p>
+    </div>
+
+    <div class="how">
+      <h3>앤트로픽 공식 스킬 <small>anthropics/skills</small></h3>
+      <div class="cmd"><code>/plugin marketplace add anthropics/skills</code><button type="button">복사</button></div>
+      <div class="cmd"><code>/plugin install document-skills@anthropic-agent-skills</code><button type="button">복사</button></div>
+      <p>설치 후: "이 내용 PPT로 만들어 줘", "엑셀로 정리해 줘"라고 말하면 됩니다.</p>
+    </div>
+
+    <div class="how">
+      <h3>UI UX Pro Max <small>nextlevelbuilder/ui-ux-pro-max-skill</small></h3>
+      <div class="cmd"><code>/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill</code><button type="button">복사</button></div>
+      <div class="cmd"><code>/plugin install ui-ux-pro-max@ui-ux-pro-max-skill</code><button type="button">복사</button></div>
+      <p>설치 후: 화면·디자인을 부탁하면 자동으로 켜집니다.</p>
+    </div>
+
+    <div class="how">
+      <h3>케이브맨 <small>JuliusBrussee/caveman</small></h3>
+      <div class="cmd"><code>/plugin marketplace add JuliusBrussee/caveman</code><button type="button">복사</button></div>
+      <div class="cmd"><code>/plugin install caveman@caveman</code><button type="button">복사</button></div>
+      <p>설치 후: <b>/caveman</b> 입력 또는 "원시인처럼 말해". 강도는 lite · full · ultra 세 단계입니다.</p>
+    </div>
+
+    <div class="how">
+      <h3>테이스트 스킬 <small>Leonxlnx/taste-skill</small></h3>
+      <span class="where">Claude Code 입력창이 아니라 명령창(터미널)에 입력 · Node.js 필요</span>
+      <div class="cmd"><code>npx skills add Leonxlnx/taste-skill</code><button type="button">복사</button></div>
+      <p>설치 후: "AI 티 안 나게 홈페이지 만들어 줘"라고 말하면 됩니다. 이름이 비슷한 복사본이 많으니 꼭 Leonxlnx 원본으로 설치하세요.</p>
+    </div>
+
+    <p class="note">설치는 내 컴퓨터의 Claude Code에서 해야 남습니다. 클라우드 작업 공간은 작업이 끝나면 지워집니다.</p>
+  </section>
 </div>
+
+<script>
+document.querySelectorAll(".cmd button").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var code = btn.previousElementSibling;
+    var done = function () { btn.textContent = "복사됨"; setTimeout(function () { btn.textContent = "복사"; }, 1500); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents(code);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = "선택됨";
+      setTimeout(function () { btn.textContent = "복사"; }, 1500);
+    };
+    try {
+      navigator.clipboard.writeText(code.textContent).then(done, fallback);
+    } catch (e) { fallback(); }
+  });
+});
+</script>
