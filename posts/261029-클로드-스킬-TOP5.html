@@ -1,0 +1,169 @@
+<title>클로드 스킬 TOP 5</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 깃허브 저장소 카드처럼 생긴 세로 리스트 + 맨 아래 한눈 비교표 */
+:root {
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --ink: #141a2e;
+  --muted: #5a6382;
+  --line: #d6dbe8;
+  --accent: #1f5fd6;
+  --star: #c98a00;
+  --chip: #e3eaf9;
+  --font-display: "Black Han Sans", "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1424; --surface: #171e33; --ink: #e8ecf6; --muted: #9aa4c2;
+    --line: #2a3350; --accent: #7aa5ff; --star: #f0b93a; --chip: #22305a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1424; --surface: #171e33; --ink: #e8ecf6; --muted: #9aa4c2;
+  --line: #2a3350; --accent: #7aa5ff; --star: #f0b93a; --chip: #22305a;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.65;
+}
+.wrap {
+  max-width: 760px; margin: 0 auto;
+  padding-block: 48px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px;
+}
+header { display: grid; gap: 10px; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 13px; letter-spacing: .06em;
+  color: var(--accent);
+}
+h1 {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(34px, 7vw, 52px); line-height: 1.15; margin: 0;
+  text-wrap: balance;
+}
+.lede { margin: 0; color: var(--muted); max-width: 60ch; }
+
+.list { display: grid; gap: 14px; list-style: none; padding: 0; margin: 0; }
+.repo {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px 22px; display: grid; gap: 10px; min-width: 0;
+}
+.repo-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.rank {
+  font-family: var(--font-display); font-size: 30px; line-height: 1; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.repo h2 { margin: 0; font-size: 21px; font-weight: 700; }
+.tag {
+  margin-left: auto; font-size: 12.5px; font-weight: 500;
+  background: var(--chip); color: var(--accent);
+  padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+}
+.what { margin: 0; font-size: 17px; font-weight: 500; }
+.when { margin: 0; color: var(--muted); font-size: 15px; }
+.when b { color: var(--ink); font-weight: 700; }
+.meta { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.meta .s { color: var(--star); }
+
+section.compare { display: grid; gap: 12px; }
+section.compare h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 0; }
+.table-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 15px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12.5px; letter-spacing: .05em; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 700; white-space: nowrap; }
+
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GITHUB · CLAUDE SKILLS</div>
+    <h1>요즘 깃허브에서 제일 많이 쓰는 클로드 스킬 5</h1>
+    <p class="lede">스킬은 클로드에게 끼워 주는 '업무 매뉴얼'입니다. 한 번 설치하면 클로드가 그 방식대로 일합니다.</p>
+  </header>
+
+  <ol class="list">
+    <li class="repo">
+      <div class="repo-top">
+        <span class="rank">1</span>
+        <h2>슈퍼파워즈 <span class="meta">Superpowers</span></h2>
+        <span class="tag">개발 순서</span>
+      </div>
+      <p class="what">기획 → 개발 → 테스트 → 리뷰까지 순서를 잡아 줍니다.</p>
+      <p class="when"><b>이럴 때</b> 클로드가 일을 건너뛰거나, 만들다 말고 엉뚱한 데로 샐 때.</p>
+      <div class="meta"><span class="s">★</span> 30만+ (원고 기준)</div>
+    </li>
+
+    <li class="repo">
+      <div class="repo-top">
+        <span class="rank">2</span>
+        <h2>앤트로픽 공식 스킬 <span class="meta">Anthropic Skills</span></h2>
+        <span class="tag">문서 제작</span>
+      </div>
+      <p class="what">워드·엑셀·PPT·PDF 파일을 바로 만들어 줍니다.</p>
+      <p class="when"><b>이럴 때</b> 보고서, 견적표, 발표 자료를 파일로 바로 받아야 할 때.</p>
+      <div class="meta">클로드 만든 회사가 직접 배포</div>
+    </li>
+
+    <li class="repo">
+      <div class="repo-top">
+        <span class="rank">3</span>
+        <h2>UI UX Pro Max</h2>
+        <span class="tag">디자인 규칙</span>
+      </div>
+      <p class="what">색·글꼴·여백 같은 디자인 규칙을 넣어 줍니다.</p>
+      <p class="when"><b>이럴 때</b> 홈페이지나 앱 화면이 "뭔가 허술해 보일" 때. 완성도가 확 올라갑니다.</p>
+      <div class="meta">화면 만드는 작업 전용</div>
+    </li>
+
+    <li class="repo">
+      <div class="repo-top">
+        <span class="rank">4</span>
+        <h2>케이브맨 <span class="meta">Caveman</span></h2>
+        <span class="tag">토큰 절약</span>
+      </div>
+      <p class="what">원시인처럼 짧게 말하게 해서 토큰(사용량)을 아껴 줍니다.</p>
+      <p class="when"><b>이럴 때</b> 사용 한도가 금방 차거나, 긴 설명 없이 결과만 받고 싶을 때.</p>
+      <div class="meta">"나 고침. 버그 없음." 같은 말투</div>
+    </li>
+
+    <li class="repo">
+      <div class="repo-top">
+        <span class="rank">5</span>
+        <h2>테이스트 스킬 <span class="meta">Taste Skill</span></h2>
+        <span class="tag">AI 티 제거</span>
+      </div>
+      <p class="what">AI가 만든 티가 나는 뻔한 디자인을 줄여 줍니다.</p>
+      <p class="when"><b>이럴 때</b> 보라색 그라데이션, 똑같은 카드 배치처럼 "AI가 만들었네" 소리를 듣기 싫을 때.</p>
+      <div class="meta">랜딩페이지·포트폴리오에 효과</div>
+    </li>
+  </ol>
+
+  <section class="compare">
+    <h2>한눈에 비교</h2>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>스킬</th><th>한 줄 요약</th><th>추천 대상</th></tr></thead>
+        <tbody>
+          <tr><td>슈퍼파워즈</td><td>개발 순서를 잡아 줌</td><td>앱·프로그램 만드는 사람</td></tr>
+          <tr><td>앤트로픽 공식</td><td>워드·엑셀·PPT 바로 생성</td><td>사무·보고서 작업이 많은 사람</td></tr>
+          <tr><td>UI UX Pro Max</td><td>디자인 규칙 주입</td><td>홈페이지·화면 만드는 사람</td></tr>
+          <tr><td>케이브맨</td><td>짧게 말해서 토큰 절약</td><td>사용량 아끼고 싶은 사람</td></tr>
+          <tr><td>테이스트</td><td>AI 티 나는 디자인 감소</td><td>디자인 퀄리티가 중요한 사람</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">별 개수 등 숫자는 원고 기준이며, 시점에 따라 달라집니다.</p>
+  </section>
+</div>
