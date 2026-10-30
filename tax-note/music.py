@@ -1,5 +1,5 @@
 """
-'사장님 절세 노트' 음악: 96 BPM 로파이 피아노, 정확히 20초 (= 32비트 = 8마디, 카드 1장 = 1마디).
+'사장님 절세 노트' 음악: 80 BPM 로파이 피아노, 정확히 30초 (= 40비트 = 10마디, 카드 1장 = 1마디).
 코드로 직접 합성 → 저작권 걱정 없음.
 
 구간 (마디 = 3.33초, 화면 장면과 1:1로 맞춤)
@@ -17,9 +17,9 @@ import wave
 import numpy as np
 
 SR = 44100
-BPM = 96
+BPM = 80
 B = 60 / BPM
-DUR = 20.0
+DUR = 30.0
 N = int(SR * DUR)
 rng = np.random.default_rng(7)
 mix = np.zeros((N, 2))
@@ -144,11 +144,11 @@ def boom(len_=2.5):
 
 
 BAR = 4 * B
-PROG = [([57, 60, 64, 67], 45), ([53, 57, 60, 64], 41), ([48, 52, 55, 60], 48), ([55, 59, 62, 65], 43), ([57, 60, 64, 67], 45), ([53, 57, 60, 64], 41),
-        ([55, 59, 62, 65], 43), ([48, 52, 55, 60], 36)]
+PROG = [([57, 60, 64, 67], 45), ([53, 57, 60, 64], 41), ([48, 52, 55, 60], 48), ([55, 59, 62, 65], 43), ([57, 60, 64, 67], 45),
+        ([53, 57, 60, 64], 41), ([48, 52, 55, 60], 48), ([55, 59, 62, 65], 43), ([53, 57, 60, 64], 41), ([48, 52, 55, 60], 36)]
 SW = 0.05   # 로파이 스윙 (뒷박을 살짝 늦게)
 K, S, SH = kick(), snap(), shaker()
-MEL = {6: [(0, 76), (1, 79), (2, 81), (3, 79)], 7: [(0, 76), (1.5, 72)]}
+MEL = {8: [(0, 76), (1, 79), (2, 81), (3, 79)], 9: [(0, 76), (1.5, 72)]}
 
 for bar, (ch, root) in enumerate(PROG):
     t0 = bar * BAR
@@ -181,12 +181,12 @@ for bar, (ch, root) in enumerate(PROG):
         add(bell(m, 2.0), t0 + off * B, 0.08, -0.2)
 
 # 장면 전환 효과
-for bar in range(1, 8):
+for bar in range(1, 10):
     add(swell(0.5), bar * BAR - 0.5, 0.05)
-add(swell(BAR * 0.9), 5 * BAR + BAR * 0.1, 0.1)
-add(boom(), 7 * BAR, 0.4)
+add(swell(BAR * 0.9), 7 * BAR + BAR * 0.1, 0.1)
+add(boom(), 9 * BAR, 0.4)
 for i, m in enumerate([84, 88, 91, 96]):
-    add(musicbox(m, 2.0), 7 * BAR + 0.4 + i * 0.09, 0.08, -0.3 + i * 0.2)
+    add(musicbox(m, 2.0), 9 * BAR + 0.4 + i * 0.09, 0.08, -0.3 + i * 0.2)
 
 # 레코드 잡음 (쉬익 + 톡톡)
 hiss = onepole(rng.standard_normal(N), 0.3) * 0.012
@@ -208,4 +208,4 @@ with wave.open("out/music.wav", "wb") as w:
     w.setsampwidth(2)
     w.setframerate(SR)
     w.writeframes((mix * 32767).astype(np.int16).tobytes())
-print("out/music.wav 생성 완료 (정확히 20초, 96 BPM, 8마디)")
+print("out/music.wav 생성 완료 (정확히 30초, 80 BPM, 10마디)")

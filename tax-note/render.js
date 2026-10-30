@@ -12,7 +12,7 @@ let chromium;
 try { ({ chromium } = require("playwright")); } catch { ({ chromium } = require("/opt/node-tools/node_modules/playwright")); }
 
 const ROOT = __dirname, OUT = path.join(ROOT, "out");
-const FPS = 30, DUR = 20;
+const FPS = 30, DUR = 30;
 // 인스타 아이디: INSTA=@아이디 node render.js  (없으면 index.html 기본값 사용)
 const INSTA = process.env.INSTA || "";
 const TYPES = { ".jpg": "image/jpeg", ".ttf": "font/ttf", ".html": "text/html", ".ttf": "font/ttf", ".wav": "audio/wav", ".js": "text/javascript" };
@@ -64,7 +64,7 @@ async function renderVideo(browser, port, ar) {
 // 장면별 대표 컷 10장을 한 장의 스토리보드로
 async function storyboard(browser, port, ar) {
   const page = await openPage(browser, port, ar);
-  const times = [1.8, 4.3, 6.8, 9.3, 11.8, 14.3, 16.8, 18.0, 19.0, 19.8];
+  const times = [2.2, 5.2, 8.2, 11.2, 14.2, 17.4, 20.4, 23.4, 26.4, 29.6];
   const dir = path.join(OUT, `sb_${ar}`);
   fs.mkdirSync(dir, { recursive: true });
   for (let i = 0; i < times.length; i++) {

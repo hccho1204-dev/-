@@ -30,12 +30,12 @@
 <audio id="music" src="out/music.wav" preload="auto"></audio>
 <script>
 /* =====================================================================
-   사장님 절세 노트 — 카드뉴스를 움직이는 영상으로 (20초 / 96BPM, 카드 1장 = 1마디 = 2.5초, 8장)
+   사장님 절세 노트 — 카드뉴스를 움직이는 영상으로 (30초 / 80BPM, 카드 1장 = 1마디 = 3초, 10장)
    카드 원본 디자인(남색 + 금색 / 크림 + 빨강)을 그대로 따르고, 카드가 옆으로 넘어가며 요소가 차례로 등장
    좌표는 1080 x 1350 카드 기준으로 그리고, 화면 크기에 맞춰 축소·배치
    ===================================================================== */
-const NV = "#142040", NV2 = "#1e2d55", GD = "#c9a54a", CR = "#f5f0e6", WH = "#ffffff", INK = "#16213e", RD = "#c0392b", MT = "#7fd4b9", SL = "#f08a6e", GRY = "#5d6474", LN = "#e6dcc3";
-const D = 2.5, N = 8, DUR = 20;
+const GR = "#1f6f5c", NV = "#142040", NV2 = "#1e2d55", GD = "#c9a54a", CR = "#f5f0e6", WH = "#ffffff", INK = "#16213e", RD = "#c0392b", MT = "#7fd4b9", SL = "#f08a6e", GRY = "#5d6474", LN = "#e6dcc3";
+const D = 3, N = 10, DUR = 30;
 const HEAD = "Head", BODY = "Plex", BOLD = "PlexB";
 const INSTA = "@incarvip_bless";
 const params = new URLSearchParams(location.search);
@@ -80,18 +80,18 @@ function rise(t, t0, fn, dist = 40) {
   if (k <= 0) return;
   ctx.save(); ctx.globalAlpha *= k; ctx.translate(0, (1 - k) * dist); fn(k); ctx.restore();
 }
-function pill(label, t, t0, dark) {
+function pill(label, t, t0, dark, center = false) {
   rise(t, t0, () => {
-    const w = measure(label, 30, BOLD) + 58;
-    rr(90, 110, w, 68, 34, dark ? GD : INK);
-    txt(label, 90 + w / 2, 156, 30, { color: dark ? INK : GD, font: BOLD, align: "center" });
+    const w = measure(label, 30, BOLD) + 58, x = center ? 540 - w / 2 : 90;
+    rr(x, 110, w, 68, 34, dark ? GD : INK);
+    txt(label, x + w / 2, 156, 30, { color: dark ? INK : GD, font: BOLD, align: "center" });
   }, 20);
 }
 // 제목 여러 줄 (줄마다 차례로)
-function headline(lines, t, t0, y0, size, lh, dark) {
+function headline(lines, t, t0, y0, size, lh, dark, center = false) {
   lines.forEach((l, i) => rise(t, t0 + i * 0.12, () => {
     const parts = Array.isArray(l) ? l : [[l, dark ? WH : INK]];
-    runs(parts.map(([s, c]) => [s, c, HEAD]), 90, y0 + i * lh, size);
+    runs(parts.map(([s, c]) => [s, c, HEAD]), center ? 540 : 90, y0 + i * lh, size, { align: center ? "center" : "left" });
   }));
 }
 function footer(i, dark) {
@@ -116,7 +116,7 @@ const CARDS = [
     rise(t, s + 0.85, () => { ctx.fillStyle = GD; ctx.fillRect(90, 760, 120 * outExpo(prog(t, s + 0.85, s + 1.3)), 6); }, 0);
     rise(t, s + 1.0, () => txt("직장인과 사장님은", 90, 860, 44, { color: WH }));
     rise(t, s + 1.15, () => txt("완전히 다릅니다", 90, 930, 46, { color: GD, font: BOLD }));
-    rise(t, s + 1.5, () => txt("2026년 현행 세법 기준", 90, 1195, 30, { color: "rgba(255,255,255,0.75)" }), 10);
+    rise(t, s + 1.5, () => txt("2026년 현행 세법 기준 · 끝까지 확인하세요", 90, 1195, 30, { color: "rgba(255,255,255,0.75)" }), 10);
   } },
   { dark: false, draw(t, s) {
     pill("결론부터", t, s + 0.05, false);
@@ -177,48 +177,81 @@ const CARDS = [
     });
   } },
   { dark: false, draw(t, s) {
-    pill("한눈에 정리", t, s + 0.05, false);
-    headline(["보험마다", [["혜택 받는 때", RD], ["가 다릅니다", INK]]], t, s + 0.15, 300, 80, 100, false);
-    const rows = [["보장성보험", "낼 때 세액공제", "12% · 연 100만 원 한도", "직장인만", RD], ["저축성보험", "받을 때 비과세", "10년 유지 등 요건 충족 시", "소득 유형 무관", "#1f7a4d"], ["연금저축", "낼 때 세액공제", "연 600만 원 한도", "사장님도 가능", "#1f7a4d"]];
-    rows.forEach(([n, w, d, who, c], i) => rise(t, s + 0.55 + i * 0.22, () => {
-      const y = 440 + i * 215;
-      rr(90, y, 900, 185, 24, WH, LN, 3);
-      txt(n, 135, y + 70, 44, { color: INK, font: HEAD });
-      txt(w, 135, y + 130, 36, { color: INK, font: BOLD });
-      txt(d, 135, y + 168, 26, { color: GRY });
-      const pw = measure(who, 30, BOLD) + 44;
-      rr(945 - pw, y + 40, pw, 56, 28, c);
-      txt(who, 945 - pw / 2, y + 78, 30, { color: WH, font: BOLD, align: "center" });
+    pill("저축성 = 받을 때 혜택", t, s + 0.05, false);
+    headline(["저축성보험", [["비과세 3트랙", GR]]], t, s + 0.15, 300, 86, 100, false);
+    const rows = [[["① ", GR], ["일시납", GR, BOLD], [" 10년 이상 유지 · 1인당 1억 원 이하", INK]], null,
+      [["② ", GR], ["월적립식", GR, BOLD], [" 5년 이상 납입 + 10년 유지", INK]], [["· 월 150만 원 이하 · 매월 균등납입", INK]],
+      [["③ ", GR], ["종신형 연금", GR, BOLD], [" 55세 이후 평생 수령", INK]], [["· 계약자 = 피보험자 = 수익자", INK]]];
+    [[0, 425, 132], [2, 590, 186], [4, 808, 186]].forEach(([k, y, h], i) => rise(t, s + 0.55 + i * 0.3, () => {
+      rr(90, y, 900, h, 24, WH, LN, 3);
+      runs(rows[k], 138, rows[k + 1] ? y + 78 : y + 82, 38);
+      if (rows[k + 1]) runs(rows[k + 1], 138, y + 136, 36);
     }));
+    rise(t, s + 1.6, () => txt("소득 유형 무관! 사장님도 요건만 맞추면 비과세", 90, 1218, 32, { color: GRY }), 10);
   } },
   { dark: true, draw(t, s) {
-    pill("주의", t, s + 0.05, true);
-    headline(["저축성 비과세가", [["깨지는 순간", SL]]], t, s + 0.15, 300, 86, 104, true);
-    const rows = [["10년 전에 해지할 때", ""], ["계약자를 바꿀 때", "바꾼 날부터 10년을 다시 셉니다"], ["기본보험료를 1배 넘게 늘릴 때", "처음 계약한 기본보험료 기준"]];
-    rows.forEach(([a, b], i) => rise(t, s + 0.6 + i * 0.25, () => {
-      const y = 470 + i * 185;
-      rr(90, y, 900, 155, 22, "rgba(255,255,255,0.07)", "rgba(240,138,110,0.6)", 2);
-      ctx.beginPath(); ctx.arc(160, y + 78, 34, 0, 7); ctx.fillStyle = SL; ctx.fill();
-      txt(String(i + 1), 160, y + 92, 40, { color: NV, font: BOLD, align: "center" });
-      txt(a, 225, b ? y + 70 : y + 92, 40, { color: WH, font: BOLD });
-      if (b) txt(b, 225, y + 120, 30, { color: "rgba(255,255,255,0.75)" });
+    pill("⚠ 주의", t, s + 0.05, true);
+    headline(["비과세", [["날아가는 3가지", GD]]], t, s + 0.15, 300, 86, 100, true);
+    [["10년 전에 해지", "", "불어난 이익에 이자소득세 15.4%"], ["계약자 변경", " (사망 외)", "바꾼 날부터 10년 다시 시작될 수 있음"], ["기본보험료 1배 초과 증액", "", "증액한 날부터 10년 재계산"]].forEach(([a, a2, b], i) => rise(t, s + 0.55 + i * 0.3, () => {
+      const y = 480 + i * 156;
+      ctx.beginPath(); ctx.arc(122, y, 32, 0, 7); ctx.fillStyle = GD; ctx.fill();
+      txt(String(i + 1), 122, y + 13, 36, { color: NV, font: BOLD, align: "center" });
+      runs([[a, WH, BOLD], [a2, WH]], 178, y + 16, 42);
+      txt(b, 178, y + 78, 34, { color: "rgba(255,255,255,0.78)" });
     }));
+    rise(t, s + 1.6, () => txt("계약 건드리기 전에 꼭 먼저 확인하세요", 90, 1218, 32, { color: "rgba(255,255,255,0.8)" }), 10);
+  } },
+  { dark: false, draw(t, s) {
+    pill("사장님은 이걸 챙기세요", t, s + 0.05, false);
+    headline([[["연금저축", GR]], "세액공제"], t, s + 0.15, 300, 86, 100, false);
+    rise(t, s + 0.45, () => runs([["종합소득만 있으면 ", INK], ["사장님도 OK", INK, BOLD]], 90, 482, 42));
+    const ck = prog(t, s + 0.8, s + 1.6);
+    [[`${countUp(ck, 600)}`, "연 공제 한도", "IRP 포함 900만", 90], [`${countUp(ck, 99)}`, "최대 절세액", "16.5% 적용 시", 554]].forEach(([v, l, sub, x], i) => rise(t, s + 0.6 + i * 0.12, () => {
+      rr(x, 530, 436, 354, 26, WH, LN, 3);
+      const vs = 120, vw = measure(v, vs, HEAD) + measure("만", 48, BOLD);
+      txt(v, x + 218 - vw / 2, 660, vs, { color: GR, font: HEAD });
+      txt("만", x + 218 - vw / 2 + measure(v, vs, HEAD) + 4, 660, 48, { color: GR, font: BOLD });
+      txt(l, x + 218, 770, 40, { color: INK, align: "center" });
+      txt(sub, x + 218, 832, 30, { color: GRY, align: "center" });
+    }));
+    rise(t, s + 1.6, () => { txt("종합소득금액 4,500만 원 이하 16.5% / 초과 13.2%", 90, 1172, 30, { color: GRY }); txt("중도해지 시 기타소득세 16.5% 주의", 90, 1218, 30, { color: GRY }); }, 10);
   } },
   { dark: true, draw(t, s) {
-    rise(t, s + 0.05, () => txt("보험은", 90, 300, 60, { color: "rgba(255,255,255,0.8)", font: HEAD }));
-    headline([[["“들었다”", WH], ["보다", "rgba(255,255,255,0.8)"]], [["“어떻게 들었냐”", GD]], [["가 중요합니다", WH]]], t, s + 0.2, 420, 82, 108, true);
-    rise(t, s + 0.8, () => {
-      txt("내 보험이 보장성인지 저축성인지,", 90, 820, 38, { color: WH });
-      txt("계약자가 누구인지부터 확인하세요", 90, 875, 38, { color: WH });
+    pill("한눈에 정리", t, s + 0.05, true);
+    headline(["세 가지만", "기억하세요"], t, s + 0.15, 300, 86, 100, true);
+    [["보장성", "낼 때 세액공제", "직장인만"], ["저축성", "받을 때 비과세", "요건 지키면 누구나"], ["연금저축", "낼 때 세액공제", "사장님도 O"]].forEach(([a, b, c], i) => rise(t, s + 0.55 + i * 0.28, () => {
+      const y = 445 + i * 170;
+      rr(90, y, 900, 138, 22, "rgba(255,255,255,0.07)", "rgba(201,165,74,0.6)", 2);
+      runs([[a, GD, BOLD], [" · " + b + " · ", WH], [c, WH, BOLD]], 136, y + 84, 42);
+    }));
+    rise(t, s + 1.6, () => txt("보험은 “들었다”보다 “어떻게 들었냐”가 중요합니다", 90, 1218, 32, { color: "rgba(255,255,255,0.8)" }), 10);
+  } },
+  { dark: false, draw(t, s) {
+    pill("지금 해 보세요", t, s + 0.05, false, true);
+    headline(["보험증권", "꺼내 보셨나요?"], t, s + 0.15, 300, 86, 100, false, true);
+    rise(t, s + 0.5, () => rr(90, 445, 900, 240, 26, WH, LN, 3));
+    ["보장성 / 저축성 / 연금저축 구분", "저축성은 10년 유지 가능한 돈인지", "계약자 · 수익자 · 실제 납부자 확인"].forEach((l, i) => {
+      const t0 = s + 0.6 + i * 0.2, y = 528 + i * 56;
+      rise(t, t0, () => { ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeRect(140, y - 30, 32, 32); txt(l, 192, y, 38, { color: INK }); }, 10);
+      const ck = prog(t, t0 + 0.5, t0 + 0.8);
+      if (ck > 0) {
+        const a = Math.min(1, ck * 2), b = Math.max(0, ck * 2 - 1);
+        ctx.strokeStyle = GR; ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.beginPath();
+        ctx.moveTo(146, y - 16); ctx.lineTo(146 + 10 * a, y - 16 + 10 * a);
+        if (b > 0) ctx.lineTo(156 + 22 * b, y - 6 - 30 * b);
+        ctx.stroke();
+      }
     });
-    const k = outBack(prog(t, s + 1.15, s + 1.55));
+    const k = outBack(prog(t, s + 1.3, s + 1.7));
     if (k > 0) {
-      ctx.save(); ctx.translate(540, 1005); ctx.scale(k, k);
-      rr(-450, -60, 900, 120, 60, GD);
-      runs([["DM으로 ", INK], ["“점검”", INK, BOLD], [" 보내주세요", INK]], 0, 16, 44, { align: "center" });
+      ctx.save(); ctx.translate(540, 813); ctx.scale(k, k);
+      rr(-450, -97, 900, 195, 26, INK);
+      runs([["저장", GD, BOLD], ["해 두고, 점검이 필요하면", WH]], 0, -12, 42, { align: "center" });
+      runs([["DM으로 ", WH], ["“점검”", GD, BOLD], [" 보내주세요", WH]], 0, 52, 42, { align: "center" });
       ctx.restore();
     }
-    rise(t, s + 1.5, () => txt(`저장해 두고 연말정산 때 꺼내 보세요 · ${INSTA}`, 540, 1125, 28, { color: "rgba(255,255,255,0.7)", align: "center" }), 10);
+    rise(t, s + 1.7, () => { txt("조홍철 본부장", 540, 1000, 44, { color: INK, font: HEAD, align: "center" }); txt("인카금융서비스 블레스본부", 540, 1050, 32, { color: GRY, align: "center" }); });
+    rise(t, s + 1.9, () => { txt("2026년 10월 현행 세법 기준 일반 정보이며 특정 상품 권유가 아닙니다.", 540, 1170, 24, { color: GRY, align: "center" }); txt("실제 세액은 개인별로 다르니 세무사와 확인하세요.", 540, 1205, 24, { color: GRY, align: "center" }); }, 10);
   } },
 ];
 
