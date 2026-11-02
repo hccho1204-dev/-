@@ -127,7 +127,7 @@ const CARDS = [
     }
   } },
   { dark: false, draw(t, s) {
-    rise(t, s + 0.05, () => txt("“", 72, 230, 150, { color: GD, font: HEAD }));
+    rise(t, s + 0.05, () => txt("“", 72, 265, 150, { color: GD, font: HEAD }));
     headline(["당신이 현장에 못 나가면,", "둘째 대학 등록금은", "어디서 나와요?"], t, s + 0.2, 330, 64, 88, false);
     rise(t, s + 0.75, () => txt("배우자의 질문에 선뜻 답하지 못했습니다.", 80, 600, 30, { color: GRY }));
     const lk = outExpo(prog(t, s + 0.9, s + 1.4));
