@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Income Gap</title>
+<style>
+  @font-face { font-family: "Head"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansKR-Medium.ttf"); font-weight: 500; }
+  @font-face { font-family: "PlexB"; src: url("fonts/IBMPlexSansKR-Bold.ttf"); }
+  :root { --bg: #142040; --fg: #f5efe4; --ac: #c9a54a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Plex", sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #22305a; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   사장님 소득 공백 — 카드뉴스를 움직이는 영상으로 (26초 / 80BPM, 카드 1장 = 3초, 8장, 마지막 카드는 안내 문구를 읽도록 5초)
+   카드 원본 디자인(남색 + 금색 / 크림 + 빨강)을 그대로 따르고, 카드가 옆으로 넘어가며 요소가 차례로 등장
+   좌표는 1080 x 1080 카드 기준으로 그리고, 화면 크기에 맞춰 축소·배치
+   ===================================================================== */
+const GDD = "#b0812a", GR = "#1f6f5c", NV = "#15213f", NV2 = "#1c2a4f", GD = "#c9a54a", CR = "#f6f1e7", WH = "#ffffff", INK = "#16213e", RD = "#c0392b", MT = "#7fd4b9", SL = "#f08a6e", GRY = "#5d6474", LN = "#e6dcc3";
+const D = 3, N = 8, DUR = 26;
+const HEAD = "Head", BODY = "Plex", BOLD = "PlexB";
+const INSTA = "@incarvip_bless";
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, P;
+function setSize(ar) { [W, H] = ar === "16x9" ? [1920, 1080] : [1080, 1920]; cv.width = W; cv.height = H; P = H > W; }
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+
+/* ---------- 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const outBack = k => { const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+
+/* ---------- 그리기 도우미 (카드 좌표) ---------- */
+function measure(s, size, font) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function txt(s, x, y, size, o = {}) {
+  const { color = WH, font = BODY, align = "left", alpha = 1, sc = 1, base = "alphabetic" } = o;
+  if (alpha <= 0 || sc <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = base; ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+// 여러 색이 섞인 한 줄: [[글자, 색, 글꼴?], ...]
+function runs(parts, x, y, size, o = {}) {
+  const total = parts.reduce((a, [s, , f]) => a + measure(s, size, f || o.font || BODY), 0);
+  let px = o.align === "center" ? x - total / 2 : x;
+  parts.forEach(([s, c, f]) => { const fnt = f || o.font || BODY; txt(s, px, y, size, { color: c, font: fnt, alpha: o.alpha }); px += measure(s, size, fnt); });
+}
+function rr(x, y, w, h, r, fill, stroke, lw = 2) {
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+// 등장: 아래에서 떠오르며 선명해짐
+function rise(t, t0, fn, dist = 40) {
+  const k = outExpo(prog(t, t0, t0 + 0.45));
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha *= k; ctx.translate(0, (1 - k) * dist); fn(k); ctx.restore();
+}
+function pill(label, t, t0, dark, center = false) {
+  rise(t, t0, () => {
+    const w = measure(label, 30, BOLD) + 58, x = center ? 540 - w / 2 : 90;
+    rr(x, 110, w, 68, 34, dark ? GD : INK);
+    txt(label, x + w / 2, 156, 30, { color: dark ? INK : GD, font: BOLD, align: "center" });
+  }, 20);
+}
+// 제목 여러 줄 (줄마다 차례로)
+function headline(lines, t, t0, y0, size, lh, dark, center = false) {
+  lines.forEach((l, i) => rise(t, t0 + i * 0.12, () => {
+    const parts = Array.isArray(l) ? l : [[l, dark ? WH : INK]];
+    runs(parts.map(([s, c]) => [s, c, HEAD]), center ? 540 : 90, y0 + i * lh, size, { align: center ? "center" : "left" });
+  }));
+}
+function footer(i, dark) {
+  // 원본 카드 머리: 왕관 + BLESS, 오른쪽 위 쪽수
+  ctx.fillStyle = GD; ctx.beginPath();
+  ctx.moveTo(80, 86); ctx.lineTo(80, 66); ctx.lineTo(89, 75); ctx.lineTo(96, 62); ctx.lineTo(103, 75); ctx.lineTo(112, 66); ctx.lineTo(112, 86); ctx.closePath(); ctx.fill();
+  ctx.save(); ctx.letterSpacing = "6px"; txt("BLESS", 124, 86, 24, { color: dark ? WH : INK, font: BOLD }); ctx.restore();
+  txt(`${i + 1} / ${N}`, 1000, 86, 22, { color: dark ? "rgba(255,255,255,0.6)" : GRY, align: "right" });
+}
+function bg(dark) {
+  if (dark) {
+    const g = ctx.createRadialGradient(150, 0, 0, 150, 0, 1500);
+    g.addColorStop(0, NV2); g.addColorStop(1, NV);
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = CR;
+  ctx.fillRect(-2000, -2000, 5080, 5350);
+}
+function countUp(k, to) { return Math.round(to * outCubic(k)); }
+
+/* ---------- 카드 8장 ---------- */
+const CARDS = [
+  { dark: true, draw(t, s) {
+    headline(["사장님이 쉬면,", [["소득도 쉽니다", GD]]], t, s + 0.15, 250, 100, 118, true);
+    rise(t, s + 0.6, () => { txt("치료비만큼 챙겨볼 것,", 80, 450, 36, { color: "rgba(255,255,255,0.82)" }); txt("회복 기간의 사업소득 공백", 80, 500, 36, { color: "rgba(255,255,255,0.82)" }); });
+    // 12개월 칸: 일한 5개월은 금색으로 차오르고, 나머지 7칸은 비어 있음
+    for (let k = 0; k < 12; k++) {
+      const x = 80 + k * 77, y = 860, a = outBack(prog(t, s + 0.8 + k * 0.05, s + 1.1 + k * 0.05));
+      if (a <= 0) continue;
+      ctx.save(); ctx.translate(x + 33, y + 33); ctx.scale(a, a);
+      const fill = k < 5 ? prog(t, s + 1.3 + k * 0.12, s + 1.5 + k * 0.12) : 0;
+      rr(-33, -33, 66, 66, 6, fill > 0 ? `rgba(201,165,74,${fill})` : null, "rgba(255,255,255,0.35)", 2);
+      ctx.restore();
+    }
+  } },
+  { dark: false, draw(t, s) {
+    rise(t, s + 0.05, () => txt("“", 72, 230, 150, { color: GD, font: HEAD }));
+    headline(["당신이 현장에 못 나가면,", "둘째 대학 등록금은", "어디서 나와요?"], t, s + 0.2, 330, 64, 88, false);
+    rise(t, s + 0.75, () => txt("배우자의 질문에 선뜻 답하지 못했습니다.", 80, 600, 30, { color: GRY }));
+    const lk = outExpo(prog(t, s + 0.9, s + 1.4));
+    ctx.fillStyle = INK; ctx.fillRect(80, 750, 920 * lk, 3);
+    rise(t, s + 1.1, () => {
+      rr(80, 790, 132, 46, 6, INK); txt("가상 사례", 146, 823, 24, { color: WH, font: BOLD, align: "center" });
+      txt("55세 · 인테리어 시공업 19년차 개인사업자", 80, 890, 32, { color: INK });
+      txt("배우자·자녀 2명 부양 · 월평균 사업소득 580만 원", 80, 940, 32, { color: INK });
+    });
+  } },
+  { dark: false, draw(t, s) {
+    headline(["필요한 돈은", [["두 갈래", GDD], ["로 나뉩니다", INK]]], t, s + 0.1, 200, 70, 90, false);
+    [[80, WH, INK, "치료비", ["병원에 내는 돈"], ["건강보험·실손 보상 후", "본인부담을 확인"], GRY, LN],
+     [555, INK, GD, "소득 공백", ["현장에 못 나가는 동안", "줄어드는 돈"], ["대체 운영·실제 가계지출을 확인"], "rgba(255,255,255,0.8)", null]].forEach(([x, bgc, hc, h, sub, foot, fc, st], i) => {
+      const k = outBack(prog(t, s + 0.55 + i * 0.25, s + 1.0 + i * 0.25));
+      if (k <= 0) return;
+      ctx.save(); ctx.translate(x + 222, 635); ctx.scale(k, k); ctx.translate(-(x + 222), -635);
+      rr(x, 340, 445, 590, 18, bgc, st, 3);
+      txt(h, x + 40, 435, 56, { color: hc, font: HEAD });
+      sub.forEach((l, j) => txt(l, x + 40, 515 + j * 48, 34, { color: bgc === WH ? INK : WH, font: BOLD }));
+      ctx.fillStyle = bgc === WH ? LN : "rgba(255,255,255,0.25)"; ctx.fillRect(x + 40, 800, 365, 2);
+      foot.forEach((l, j) => txt(l, x + 40, 850 + j * 42, 27, { color: fc }));
+      ctx.restore();
+    });
+  } },
+  { dark: true, draw(t, s) {
+    rise(t, s + 0.05, () => txt("가상 사례로 계산해 보면", 80, 150, 30, { color: GD, font: BOLD }));
+    rise(t, s + 0.15, () => txt("월 580만 원 × 18개월", 80, 215, 42, { color: WH }));
+    const ck = outCubic(prog(t, s + 0.4, s + 1.9)), v = Math.round(10440 * ck);
+    const amt = v >= 10000 ? `1억 ${v - 10000}만 원` : `${v.toLocaleString()}만 원`;
+    rise(t, s + 0.3, () => txt(amt, 80, 355, 118, { color: GD, font: HEAD }));
+    for (let k = 0; k < 18; k++) {
+      const x = 80 + (k % 6) * 155, y = 420 + Math.floor(k / 6) * 92, a = prog(t, s + 0.4 + k * 0.08, s + 0.55 + k * 0.08);
+      if (a <= 0) continue;
+      ctx.save(); ctx.globalAlpha = a;
+      rr(x, y, 143, 80, 8, "rgba(255,255,255,0.08)", "rgba(201,165,74,0.7)", 2);
+      txt(`${k + 1}개월`, x + 71, y + 49, 26, { color: WH, font: BOLD, align: "center" });
+      ctx.restore();
+    }
+    rise(t, s + 1.9, () => {
+      txt("소득이 18개월간 전액 끊긴다고 가정한 단순 계산이며, 실제 손실액이 아닙니다.", 80, 890, 25, { color: "rgba(255,255,255,0.75)" });
+      txt("대체 인력·비용 절감·실제 생활비에 따라 달라집니다.", 80, 930, 25, { color: "rgba(255,255,255,0.75)" });
+    }, 10);
+  } },
+  { dark: false, draw(t, s) {
+    headline(["실손이 있어도", [["따로", GDD], [" 살펴봅니다", INK]]], t, s + 0.1, 200, 70, 90, false);
+    rise(t, s + 0.5, () => { rr(200, 350, 800, 78, 0, INK); txt("실손의료보험", 230, 401, 32, { color: WH, font: BOLD }); txt("진단비", 615, 401, 32, { color: WH, font: BOLD }); });
+    [["구조", ["실제 쓴 의료비를 약관", "범위에서 보상"], ["지급요건 충족 시 약정", "금액 지급"]],
+     ["성격", ["치료 후 청구하는 사후 보전"], ["치료·회복 기간에 활용할", "수 있는 현금"]],
+     ["확인", ["세대, 자기부담률, 비급여", "범위"], ["지급 조건, 지급액, 보험기간"]]].forEach(([lab, a, b], i) => rise(t, s + 0.7 + i * 0.25, () => {
+      const y = 430 + i * 150;
+      txt(lab, 80, y + 60, 28, { color: GDD, font: BOLD });
+      a.forEach((l, j) => txt(l, 230, y + 60 + j * 42, 30, { color: INK }));
+      b.forEach((l, j) => txt(l, 615, y + 60 + j * 42, 30, { color: INK }));
+      ctx.fillStyle = LN; ctx.fillRect(80, y + 148, 920, 2);
+    }, 20));
+    rise(t, s + 1.5, () => txt("계약 시기·특약·약관에 따라 다릅니다. 간병비 등은 별도 확인이 필요합니다.", 80, 1000, 24, { color: GRY }), 10);
+  } },
+  { dark: false, draw(t, s) {
+    headline([[["점검은 ", INK], ["이 순서로", GDD]]], t, s + 0.1, 210, 70, 90, false);
+    [["이미 있는 보험부터 확인", "준비된 부분을 알아야 비어 있는 금액이 보입니다."], ["치료비와 소득 공백을 나눠 계산", "성격이 다른 돈이니 각각 따로 따져봅니다."], ["가족 단위로 함께 확인", "배우자·자녀의 생활자금 흐름까지 같이 봅니다."]].forEach(([a, b], i) => {
+      const y = 390 + i * 200, t0 = s + 0.5 + i * 0.3;
+      const k = outBack(prog(t, t0, t0 + 0.4));
+      if (k > 0) { ctx.save(); ctx.translate(120, y); ctx.scale(k, k); ctx.beginPath(); ctx.arc(0, 0, 40, 0, 7); ctx.fillStyle = INK; ctx.fill(); txt(String(i + 1), 0, 14, 40, { color: GD, font: HEAD, align: "center" }); ctx.restore(); }
+      rise(t, t0 + 0.1, () => { txt(a, 190, y + 12, 40, { color: INK, font: BOLD }); txt(b, 190, y + 68, 29, { color: GRY }); }, 20);
+    });
+  } },
+  { dark: false, draw(t, s) {
+    headline([[["꺼내둘 자료 ", INK], ["5가지", GDD]]], t, s + 0.1, 210, 70, 90, false);
+    [["종합보험 증권", "진단비 지급 조건·지급액"], ["실손의료보험 증권", "세대·자기부담률·비급여 범위"], ["최근 소득자료", "사업소득 관련 자료"], ["월 고정지출 내역", "카드값·자재비·생활비·교육비"], ["가족 보험 현황", "배우자·자녀 계약"]].forEach(([a, b], i) => {
+      const y = 290 + i * 135, t0 = s + 0.45 + i * 0.18;
+      rise(t, t0, () => {
+        ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeRect(84, y + 28, 40, 40);
+        txt(a, 160, y + 50, 36, { color: INK, font: BOLD });
+        txt(b, 160, y + 92, 26, { color: GRY });
+        ctx.fillStyle = LN; ctx.fillRect(80, y + 125, 920, 2);
+      }, 15);
+      const ck = prog(t, t0 + 0.5, t0 + 0.8);
+      if (ck > 0) {
+        const a1 = Math.min(1, ck * 2), b1 = Math.max(0, ck * 2 - 1);
+        ctx.strokeStyle = GDD; ctx.lineWidth = 7; ctx.lineCap = "round"; ctx.beginPath();
+        ctx.moveTo(92, y + 48); ctx.lineTo(92 + 12 * a1, y + 48 + 12 * a1);
+        if (b1 > 0) ctx.lineTo(104 + 26 * b1, y + 60 - 34 * b1);
+        ctx.stroke();
+      }
+    });
+  } },
+  { dark: true, draw(t, s) {
+    headline(["가입 결정보다,", [["확인", GD], ["이 먼저입니다", WH]]], t, s + 0.1, 230, 82, 102, true);
+    rise(t, s + 0.5, () => txt("준비된 부분과 비어 있는 부분을 나눠 보는 것부터.", 80, 410, 33, { color: "rgba(255,255,255,0.85)" }));
+    const k = outBack(prog(t, s + 0.8, s + 1.2));
+    if (k > 0) {
+      ctx.save(); ctx.translate(80, 495); ctx.scale(k, k);
+      rr(0, -42, 560, 84, 10, GD);
+      ctx.fillStyle = NV; ctx.beginPath(); ctx.moveTo(30, -20); ctx.lineTo(54, -20); ctx.lineTo(54, 22); ctx.lineTo(42, 12); ctx.lineTo(30, 22); ctx.closePath(); ctx.fill();
+      txt("저장해두고 증권부터 꺼내보세요", 72, 12, 34, { color: NV, font: BOLD });
+      ctx.restore();
+    }
+    rise(t, s + 1.2, () => {
+      ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(80, 770, 920, 2);
+      ["계약 체결 전 상품설명서 및 약관을 확인하시기 바랍니다. 소비자는 보험상품에 대해 설명받을 권리가",
+       "있으며, 그 설명을 이해한 후 거래하시기 바랍니다.",
+       "인카금융서비스(주)는 다수 보험회사의 상품을 비교·설명하고 보험계약 체결을 중개하는",
+       "법인보험대리점이며, 보험계약 체결 권한이 없습니다.",
+       "사례의 인물·금액은 교육용 가상 예시이며, 실제 보장·지급은 약관과 심사 결과에 따라 달라집니다."].forEach((l, j) => txt(l, 80, 815 + j * 36, 22, { color: "rgba(255,255,255,0.8)" }));
+    }, 10);
+  } },
+];
+
+/* ---------- 화면 배치 ---------- */
+function frameRect() {
+  // 정사각 카드(1080x1080)를 화면 가운데에
+  const sc = Math.min(W / 1080, H / 1080);
+  return { sc, ox: (W - 1080 * sc) / 2, oy: (H - 1080 * sc) / 2 };
+}
+function drawCard(i, t, dx) {
+  const c = CARDS[i], f = frameRect();
+  ctx.save();
+  ctx.translate(f.ox + dx, f.oy); ctx.scale(f.sc, f.sc);
+  ctx.beginPath(); ctx.rect(-2000, -2000, 5080, 5080); ctx.clip();
+  bg(c.dark);
+  c.draw(t, i * D);
+  footer(i, c.dark);
+  ctx.restore();
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+  ctx.fillStyle = NV; ctx.fillRect(0, 0, W, H);
+  const i = Math.min(N - 1, Math.floor(t / D)), local = t - i * D;
+  // 카드 넘김: 다음 카드가 오른쪽에서 밀고 들어옴 (마지막 0.35초)
+  const sw = i < N - 1 ? inOut(prog(local, D - 0.35, D)) : 0;
+  const span = W;
+  drawCard(i, t, -sw * span);
+  if (sw > 0) drawCard(i + 1, (i + 1) * D, (1 - sw) * span);
+  // 화면 위/아래 진행 막대 (세로형은 여백에 표시)
+  const f = frameRect(), barY = P ? f.oy + 1080 * f.sc + (H - (f.oy + 1080 * f.sc)) / 2 : H - 14;
+  for (let k = 0; k < N; k++) {
+    const w = (W - 160) / N, x = 80 + k * w;
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(x + 4, barY - 3, w - 8, 6);
+    const fill = k < i ? 1 : k === i ? clamp(local / D) : 0;
+    ctx.fillStyle = GD; ctx.fillRect(x + 4, barY - 3, (w - 8) * fill, 6);
+  }
+  if (P) {
+    const ty = f.oy / 2;
+    ctx.font = `38px ${BOLD}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = GD;
+    ctx.fillText("현장 사장님의 소득 공백", W / 2, ty);
+  }
+  const fi = 1 - prog(t, 0, 0.25);
+  if (fi > 0) { ctx.fillStyle = `rgba(0,0,0,${fi})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+window.ready = Promise.all([document.fonts.load("10px Head"), document.fonts.load("10px Plex"), document.fonts.load("10px PlexB")]).then(() => document.fonts.ready);
+
+/* ---------- 미리보기 재생 ---------- */
+const audio = document.getElementById("music");
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2);
+});
+window.ready.then(() => renderFrame(2));
+</script>
+</body>
+</html>
