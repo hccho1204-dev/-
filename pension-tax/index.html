@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pension Before Cancel</title>
+<style>
+  @font-face { font-family: "Head"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansKR-Medium.ttf"); font-weight: 500; }
+  @font-face { font-family: "PlexB"; src: url("fonts/IBMPlexSansKR-Bold.ttf"); }
+  :root { --bg: #142040; --fg: #f5efe4; --ac: #c9a54a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Plex", sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #22305a; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   연금저축 깨기 전에 — 카드뉴스를 움직이는 영상으로 (26초, 카드 1장 = 1마디 = 3.5초, 7장, 마지막 카드는 끝까지)
+   카드 원본 디자인(남색 + 금색 / 크림 + 빨강)을 그대로 따르고, 카드가 옆으로 넘어가며 요소가 차례로 등장
+   좌표는 1080 x 1350 카드 기준으로 그리고, 화면 크기에 맞춰 축소·배치
+   ===================================================================== */
+const GDD = "#a87a26", GR = "#1f6f5c", NV = "#15233f", NV2 = "#1d2c50", GD = "#c9a54a", CR = "#f5f0e6", WH = "#ffffff", INK = "#16213e", RD = "#c0392b", MT = "#7fd4b9", SL = "#f08a6e", GRY = "#5d6474", LN = "#e6dcc3";
+const D = 3.5, N = 7, DUR = 26;
+const HEAD = "Head", BODY = "Plex", BOLD = "PlexB";
+const INSTA = "@incarvip_bless";
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, P;
+function setSize(ar) { [W, H] = ar === "16x9" ? [1920, 1080] : [1080, 1920]; cv.width = W; cv.height = H; P = H > W; }
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+
+/* ---------- 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const outBack = k => { const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+
+/* ---------- 그리기 도우미 (카드 좌표) ---------- */
+function measure(s, size, font) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function txt(s, x, y, size, o = {}) {
+  const { color = WH, font = BODY, align = "left", alpha = 1, sc = 1, base = "alphabetic" } = o;
+  if (alpha <= 0 || sc <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = base; ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+// 여러 색이 섞인 한 줄: [[글자, 색, 글꼴?], ...]
+function runs(parts, x, y, size, o = {}) {
+  const total = parts.reduce((a, [s, , f]) => a + measure(s, size, f || o.font || BODY), 0);
+  let px = o.align === "center" ? x - total / 2 : x;
+  parts.forEach(([s, c, f]) => { const fnt = f || o.font || BODY; txt(s, px, y, size, { color: c, font: fnt, alpha: o.alpha }); px += measure(s, size, fnt); });
+}
+function rr(x, y, w, h, r, fill, stroke, lw = 2) {
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+// 등장: 아래에서 떠오르며 선명해짐
+function rise(t, t0, fn, dist = 40) {
+  const k = outExpo(prog(t, t0, t0 + 0.45));
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha *= k; ctx.translate(0, (1 - k) * dist); fn(k); ctx.restore();
+}
+function pill(label, t, t0, dark, center = false) {
+  rise(t, t0, () => {
+    const w = measure(label, 30, BOLD) + 58, x = center ? 540 - w / 2 : 90;
+    rr(x, 110, w, 68, 34, dark ? GD : INK);
+    txt(label, x + w / 2, 156, 30, { color: dark ? INK : GD, font: BOLD, align: "center" });
+  }, 20);
+}
+// 제목 여러 줄 (줄마다 차례로)
+function headline(lines, t, t0, y0, size, lh, dark, center = false) {
+  lines.forEach((l, i) => rise(t, t0 + i * 0.12, () => {
+    const parts = Array.isArray(l) ? l : [[l, dark ? WH : INK]];
+    runs(parts.map(([s, c]) => [s, c, HEAD]), center ? 540 : 90, y0 + i * lh, size, { align: center ? "center" : "left" });
+  }));
+}
+function footer(i, c) {
+  // 원본 카드 머리(분류 + 쪽수)와 바닥(코치 이름 + 근거)
+  if (c.cover) return;
+  txt(c.label, 80, 108, 28, { color: GDD, font: BOLD });
+  txt(`${String(i + 1).padStart(2, "0")} / ${String(N).padStart(2, "0")}`, 1000, 108, 28, { color: GDD, font: BOLD, align: "right" });
+  ctx.fillStyle = "rgba(168,122,38,0.45)"; ctx.fillRect(80, 1210, 920, 2);
+  txt("재무프레임 코치 조홍철", 80, 1270, 26, { color: GRY });
+  if (c.basis) txt(c.basis, 1000, 1270, 24, { color: GRY, align: "right" });
+}
+function bg(dark) {
+  if (dark) {
+    const g = ctx.createRadialGradient(150, 0, 0, 150, 0, 1500);
+    g.addColorStop(0, NV2); g.addColorStop(1, NV);
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = CR;
+  ctx.fillRect(-2000, -2000, 5080, 5350);
+}
+function countUp(k, to) { return Math.round(to * outCubic(k)); }
+
+/* ---------- 카드 8장 ---------- */
+const CARDS = [
+  { dark: true, cover: true, draw(t, s) {
+    // 오른쪽 위 장식 원
+    ctx.strokeStyle = "rgba(201,165,74,0.22)"; ctx.lineWidth = 2;
+    [300, 420].forEach((r, i) => { const k = outCubic(prog(t, s + 0.1 + i * 0.15, s + 1.2 + i * 0.15)); if (k > 0) { ctx.beginPath(); ctx.arc(860, 160, r * k, 0, 7); ctx.stroke(); } });
+    rise(t, s + 0.05, () => {
+      rr(80, 70, 210, 64, 32, null, GD, 2.5);
+      txt("연금 · 세금", 185, 112, 28, { color: GD, font: BOLD, align: "center" });
+      txt("2026.11 현행 세법 기준", 315, 112, 26, { color: "rgba(255,255,255,0.7)" });
+    }, 15);
+    rise(t, s + 0.2, () => txt("사장님, 잠깐만요.", 80, 310, 42, { color: "rgba(255,255,255,0.8)" }));
+    headline(["연금저축", "깨기 전에,", [["세금 ", WH], [`${(16.5 * outCubic(prog(t, s + 0.9, s + 1.8))).toFixed(1)}%`, GD]], "먼저 보셨나요?"], t, s + 0.35, 450, 96, 112, true);
+    rise(t, s + 1.3, () => { txt("해지 버튼 누르기 전,", 80, 900, 38, { color: "rgba(255,255,255,0.85)" }); txt("딱 5분만 투자하세요.", 80, 955, 38, { color: "rgba(255,255,255,0.85)" }); });
+    rise(t, s + 1.6, () => {
+      ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(80, 1170, 920, 2);
+      txt("재무프레임 코치 조홍철", 80, 1235, 30, { color: WH, font: BOLD });
+      txt("옆으로 넘겨보세요 →", 1000, 1235, 28, { color: GD, font: BOLD, align: "right" });
+    }, 10);
+  } },
+  { dark: false, label: "핵심 한 줄", basis: "근거: 소득세법 제14조·제129조", draw(t, s) {
+    headline(["세금은 '환급금 전체'에", "붙지 않습니다.", [["'과세대상'에만", GDD], [" 붙습니다.", INK]]], t, s + 0.1, 260, 72, 92, false);
+    rise(t, s + 0.6, () => {
+      rr(80, 520, 920, 260, 22, INK);
+      txt("세금 O · 기타소득세 16.5%", 130, 595, 28, { color: GD, font: BOLD });
+      txt("세액공제 받은 원금", 130, 665, 42, { color: WH, font: BOLD });
+      txt("+ 운용수익", 130, 725, 42, { color: WH, font: BOLD });
+    });
+    rise(t, s + 0.9, () => {
+      rr(80, 810, 920, 210, 22, WH, INK, 3);
+      txt("세금 X · 과세제외", 130, 880, 28, { color: GDD, font: BOLD });
+      txt("세액공제 안 받은 원금", 130, 950, 42, { color: INK, font: BOLD });
+    });
+    rise(t, s + 1.3, () => { txt("16.5% = 소득세 15% + 지방소득세 1.5%.", 80, 1090, 30, { color: GRY }); txt("원천징수로 끝나는 분리과세입니다.", 80, 1135, 30, { color: GRY }); }, 10);
+  } },
+  { dark: false, label: "숫자로 보기 (가정)", draw(t, s) {
+    headline(["해지환급금 2,800만 원,", "손에 쥐는 돈은?"], t, s + 0.1, 260, 72, 92, false);
+    rise(t, s + 0.5, () => {
+      rr(80, 400, 920, 380, 22, WH);
+      [["세액공제 받은 원금", "2,000만", INK], ["운용수익", "300만", INK], ["공제 안 받은 원금 (비과세)", "500만", GRY]].forEach(([a, b, c], i) => rise(t, s + 0.6 + i * 0.15, () => {
+        txt(a, 130, 475 + i * 75, 34, { color: c }); txt(b, 950, 475 + i * 75, 36, { color: c, font: BOLD, align: "right" });
+      }, 10));
+      ctx.strokeStyle = GD; ctx.lineWidth = 2; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(130, 660); ctx.lineTo(950, 660); ctx.stroke(); ctx.setLineDash([]);
+      rise(t, s + 1.1, () => { txt("과세대상", 130, 730, 36, { color: INK, font: BOLD }); txt("2,300만", 950, 730, 38, { color: INK, font: BOLD, align: "right" }); }, 10);
+    });
+    const ck = outCubic(prog(t, s + 1.3, s + 2.3));
+    [[80, "세금 (2,300만 × 16.5%)", 379.5, GD], [555, "세후 수령액", 2420.5, WH]].forEach(([x, l, v, c], i) => rise(t, s + 1.2 + i * 0.12, () => {
+      rr(x, 820, 445, 220, 22, INK);
+      txt(l, x + 40, 885, 26, { color: "rgba(255,255,255,0.75)" });
+      txt(`${(v * ck).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}만`, x + 40, 985, 70, { color: c, font: BOLD });
+    }));
+    rise(t, s + 1.8, () => { txt("※ 이해를 돕는 가정 예시입니다. 실제 세액은 금융회사의 원천별 잔액과", 80, 1100, 26, { color: GRY }); txt("약관상 해지환급금으로 확인하세요.", 80, 1140, 26, { color: GRY }); }, 10);
+  } },
+  { dark: false, label: "많이 헷갈리는 3가지", basis: "근거: 소득세법 제14조 제3항 제8호 나목", draw(t, s) {
+    headline(["이렇게 알고 계시면", "계산이 틀립니다"], t, s + 0.1, 260, 72, 92, false);
+    [["“300만 원 넘으면 종합소득세 또 내죠?”", "아닙니다. 금액과 관계없이 분리과세.", "16.5% 떼면 그걸로 끝입니다."],
+     ["“가게 자금 급하면 예외 아닌가요?”", "아닙니다. 사업자금·주택 구입은 그 사정만으로", "법정 '부득이한 사유'가 아닙니다."],
+     ["“공제받은 만큼만 토해내는 거죠?”", "아닙니다. 공제받은 원금과 수익에 16.5%.", "받은 혜택보다 더 낼 때도 있습니다."]].forEach(([q, a1, a2], i) => {
+      const y = 400 + i * 245, t0 = s + 0.5 + i * 0.35;
+      rise(t, t0, () => { rr(80, y, 920, 215, 22, WH); txt(q, 165, y + 72, 34, { color: RD, font: BOLD }); txt(a1, 130, y + 130, 30, { color: INK }); txt(a2, 130, y + 175, 30, { color: INK }); });
+      const k = outBack(prog(t, t0 + 0.2, t0 + 0.5));
+      if (k > 0) txt("✕", 132, y + 74, 38, { color: RD, font: BOLD, align: "center", sc: k });
+    });
+  } },
+  { dark: false, label: "예외가 있다", basis: "근거: 소득세법 시행령 제20조의2", draw(t, s) {
+    headline(["이런 사유라면", [["세율이 ", INK], ["3.3~5.5%", GDD], ["로", INK]]], t, s + 0.1, 260, 72, 92, false);
+    rise(t, s + 0.45, () => txt("법정 '부득이한 인출'은 연금소득으로 분리과세됩니다.", 80, 410, 30, { color: GRY }));
+    [["본인·부양가족", "질병·부상 3개월 이상 요양"], ["재난으로", "15일 이상 입원치료"], ["파산선고·", "개인회생절차 개시 결정"], ["가입자 사망·", "해외이주"], ["천재지변"], ["금융회사", "영업정지 등"]].forEach((ls, i) => {
+      const x = 80 + (i % 2) * 475, y = 460 + Math.floor(i / 2) * 170, k = outBack(prog(t, s + 0.6 + i * 0.12, s + 0.95 + i * 0.12));
+      if (k <= 0) return;
+      ctx.save(); ctx.translate(x + 222, y + 75); ctx.scale(k, k); ctx.translate(-(x + 222), -(y + 75));
+      rr(x, y, 445, 150, 18, WH);
+      ls.forEach((l, j) => txt(l, x + 35, y + 62 + j * 44, 30, { color: INK, font: BOLD }));
+      ctx.restore();
+    });
+    rise(t, s + 1.5, () => {
+      rr(80, 980, 920, 150, 20, INK);
+      runs([["사유 확인일부터 ", WH], ["6개월 이내", GD, BOLD], [" 증빙서류 제출이 조건입니다.", WH]], 120, 1045, 30);
+      txt("요양 사유는 한도가 따로 있습니다.", 120, 1095, 30, { color: WH });
+    });
+  } },
+  { dark: false, label: "체크리스트", draw(t, s) {
+    headline(["해지 버튼 전에", "5가지만 확인"], t, s + 0.1, 260, 72, 92, false);
+    [["계좌 종류", "연금저축? 구 개인연금? IRP?"], ["공제 안 받은 원금", "금융회사 '과세제외금액' 조회"], ["예상 세금·세후 금액", "16.5% 대상 금액을 먼저 계산"], ["부득이한 사유 해당 여부", "증빙 기한 6개월 체크"], ["연금수령 요건", "55세 이상 · 가입 5년 경과 · 수령한도"]].forEach(([a, b], i) => {
+      const y = 395 + i * 160, t0 = s + 0.5 + i * 0.2;
+      rise(t, t0, () => {
+        rr(80, y, 920, 140, 20, WH);
+        ctx.beginPath(); ctx.arc(140, y + 70, 30, 0, 7); ctx.fillStyle = INK; ctx.fill();
+        txt(String(i + 1), 140, y + 82, 32, { color: GD, font: BOLD, align: "center" });
+        txt(a, 200, y + 60, 34, { color: INK, font: BOLD });
+        txt(b, 200, y + 106, 28, { color: GRY });
+      }, 20);
+    });
+  } },
+  { dark: false, label: "다른 길도 있다", basis: "근거: 소득세법 시행령 제40조의3", draw(t, s) {
+    headline(["전부 깨기 전에", "먼저 비교해볼 것"], t, s + 0.1, 260, 72, 92, false);
+    rise(t, s + 0.4, () => rr(80, 395, 920, 660, 22, WH), 10);
+    [["부분 인출", "공제 안 받은 원금이 먼저 빠집니다. 필요한 만큼만 꺼내기."], ["납입 중지·감액", "매달 나가는 돈만 멈춰도 숨통이 트입니다."], ["연금계좌 간 이체", "여러 개 정리가 목적이면 해지 말고 옮기기."], ["비상자금 따로 두기", "노후 돈과 급한 돈은 통장을 나누세요."]].forEach(([a, b], i) => rise(t, s + 0.6 + i * 0.25, () => {
+      const y = 420 + i * 160;
+      txt(a, 130, y + 62, 38, { color: INK, font: BOLD });
+      txt(b, 130, y + 112, 29, { color: GRY });
+      if (i < 3) { ctx.fillStyle = LN; ctx.fillRect(130, y + 150, 820, 2); }
+    }, 20));
+    rise(t, s + 1.7, () => txt("※ 이체 가능 여부·비용, 담보대출 금리와 위험은 금융회사별로 다릅니다.", 80, 1110, 26, { color: GRY }), 10);
+  } },
+];
+
+/* ---------- 화면 배치 ---------- */
+function frameRect() {
+  // 카드(1080x1350)를 화면에 맞춤: 세로는 가로 꽉, 가로는 높이에 맞춰 가운데
+  const sc = Math.min(W / 1080, H / 1350);
+  return { sc, ox: (W - 1080 * sc) / 2, oy: (H - 1350 * sc) / 2 };
+}
+function drawCard(i, t, dx) {
+  const c = CARDS[i], f = frameRect();
+  ctx.save();
+  ctx.translate(f.ox + dx, f.oy); ctx.scale(f.sc, f.sc);
+  ctx.beginPath(); ctx.rect(-2000, -2000, 5080, 5350); ctx.clip();
+  bg(c.dark);
+  c.draw(t, i * D);
+  footer(i, c);
+  ctx.restore();
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+  ctx.fillStyle = NV; ctx.fillRect(0, 0, W, H);
+  const i = Math.min(N - 1, Math.floor(t / D)), local = t - i * D;
+  // 카드 넘김: 다음 카드가 오른쪽에서 밀고 들어옴 (마지막 0.35초)
+  const sw = i < N - 1 ? inOut(prog(local, D - 0.35, D)) : 0;
+  const span = W;
+  drawCard(i, t, -sw * span);
+  if (sw > 0) drawCard(i + 1, (i + 1) * D, (1 - sw) * span);
+  // 화면 위/아래 진행 막대 (세로형은 여백에 표시)
+  const f = frameRect(), barY = P ? f.oy + 1350 * f.sc + (H - (f.oy + 1350 * f.sc)) / 2 : H - 14;
+  for (let k = 0; k < N; k++) {
+    const w = (W - 160) / N, x = 80 + k * w;
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(x + 4, barY - 3, w - 8, 6);
+    const fill = k < i ? 1 : k === i ? clamp(local / D) : 0;
+    ctx.fillStyle = GD; ctx.fillRect(x + 4, barY - 3, (w - 8) * fill, 6);
+  }
+  if (P) {
+    const ty = f.oy / 2;
+    ctx.font = `34px ${BOLD}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = GD;
+    ctx.fillText("연금저축 깨기 전에", W / 2, ty);
+  }
+  const fi = 1 - prog(t, 0, 0.25);
+  if (fi > 0) { ctx.fillStyle = `rgba(0,0,0,${fi})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+window.ready = Promise.all([document.fonts.load("10px Head"), document.fonts.load("10px Plex"), document.fonts.load("10px PlexB")]).then(() => document.fonts.ready);
+
+/* ---------- 미리보기 재생 ---------- */
+const audio = document.getElementById("music");
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2);
+});
+window.ready.then(() => renderFrame(2));
+</script>
+</body>
+</html>
