@@ -123,7 +123,7 @@ def main():
         assert n == 30, f"{f}: {n} questions"
         doc, sid = new_doc(template)
         add_episode(doc, sid, ep)
-        short = re.sub(r'[\\/:*?"<>|]', '', ep["title"]).replace(" ", "_")[:40]
+        short = re.sub(r"[^0-9A-Za-z가-힣]+", "_", ep["title"]).strip("_")[:40]
         doc.save(os.path.join(out, f"{short}.docx"))
     doc, sid = new_doc(template)
     for i, ep in enumerate(eps):
