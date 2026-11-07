@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autumn Letter</title>
+<style>
+  @font-face { font-family: "Gowun"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Pen"; src: url("fonts/NanumPenScript-Regular.ttf"); }
+  @font-face { font-family: "Serif"; src: url("fonts/InstrumentSerif-Italic.ttf"); }
+  :root { --bg: #1a1208; --fg: #fff6df; --ac: #f2c230; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Gowun", serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #33261a; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   가을 편지 — 은행잎 길 사진 8장 감성 모션그래픽 30초 (사진 1장 = 3.75초 = 음악 1마디)
+   은행잎이 흩날리고, 사진은 천천히 확대되며, 한 줄씩 손편지처럼 문장이 써짐
+   ===================================================================== */
+const YL = "#f2c230", CR = "#fff6df", INK = "#2a1d10";
+const SH = 3.75, N = 8, DUR = 30;
+const KR = "Gowun", PEN = "Pen", SF = "Serif";
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, U, P;
+function setSize(ar) { [W, H] = ar === "16x9" ? [1920, 1080] : [1080, 1920]; cv.width = W; cv.height = H; U = Math.min(W, H) / 100; P = H > W; }
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+
+const IMG = {}, BLUR = {};
+const loadImg = n => new Promise(r => {
+  const i = new Image();
+  i.onload = () => {
+    IMG[n] = i;
+    const s = document.createElement("canvas"); s.width = 150; s.height = 200;
+    const g = s.getContext("2d"); g.filter = "blur(6px)"; g.drawImage(i, -10, -10, 170, 220);
+    BLUR[n] = s; r();
+  };
+  i.src = `assets/${n}.jpg`;
+});
+const imgsReady = Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map(i => loadImg("p" + i)));
+
+/* ---------- 사진마다 한 줄 (직접 쓴 문장) ---------- */
+const SCENES = [
+  { img: "p3", fx: 0.5, fy: 0.55, line: "곧게 뻗은 길 끝에", line2: "파란 하늘이 열리고" },
+  { img: "p2", fx: 0.5, fy: 0.6, line: "천천히 걸어도", line2: "괜찮은 길" },
+  { img: "p1", fx: 0.5, fy: 0.5, line: "발끝마다 노랗게", line2: "쌓인 계절" },
+  { img: "p4", fx: 0.5, fy: 0.45, line: "나무 사이로", line2: "햇살이 쏟아지던 오후" },
+  { img: "p5", fx: 0.5, fy: 0.42, line: "은행나무 한 그루가", line2: "가을을 다 품었다" },
+  { img: "p6", fx: 0.5, fy: 0.45, line: "떨어진 잎마저", line2: "둥글게 모여 앉은 자리" },
+  { img: "p7", fx: 0.42, fy: 0.45, line: "붉게 물든", line2: "마음 하나" },
+  { img: "p8", fx: 0.35, fy: 0.5, line: "오늘의 가을을", line2: "편지처럼 남겨둡니다", end: true },
+];
+
+/* ---------- 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* ---------- 그리기 ---------- */
+function measure(s, size, font) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function text(s, x, y, size, o = {}) {
+  const { color = CR, font = KR, align = "center", alpha = 1, sp = 0 } = o;
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.letterSpacing = `${sp * size}px`;
+  ctx.shadowColor = "rgba(0,0,0,0.7)"; ctx.shadowBlur = size * 0.4; ctx.shadowOffsetY = size * 0.05;
+  ctx.fillStyle = color; ctx.fillText(s, x, y); ctx.restore();
+}
+// 글자가 하나씩 흐림에서 선명하게
+function writeIn(s, x, y, size, t, t0, o = {}) {
+  const chars = [...s], per = o.per || 0.06, font = o.font || KR;
+  const total = measure(s, size, font);
+  let px = o.align === "left" ? x : x - total / 2;
+  chars.forEach((c, i) => {
+    const k = outCubic(prog(t, t0 + i * per, t0 + i * per + 0.45));
+    const w = measure(c, size, font);
+    if (k > 0 && c !== " ") { ctx.save(); ctx.filter = k < 0.97 ? `blur(${(1 - k) * 6}px)` : "none"; text(c, px + w / 2, y - (1 - k) * size * 0.25, size, { ...o, align: "center", alpha: k * (o.alpha ?? 1) }); ctx.restore(); }
+    px += w;
+  });
+}
+function cover(src, x, y, w, h, fx, fy, zoom) {
+  const k = Math.max(w / src.width, h / src.height) * zoom, dw = src.width * k, dh = src.height * k;
+  let ox = x + w / 2 - dw * fx, oy = y + h / 2 - dh * fy;
+  ox = Math.min(x, Math.max(x + w - dw, ox)); oy = Math.min(y, Math.max(y + h - dh, oy));
+  ctx.drawImage(src, ox, oy, dw, dh);
+}
+// 은행잎
+function ginkgo(x, y, s, rot, c, a) {
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = c;
+  ctx.beginPath(); ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(-s * 0.9, -s * 0.35, -s * 0.85, -s * 1.05, -s * 0.15, -s * 1.0);
+  ctx.lineTo(0, -s * 0.78); ctx.lineTo(s * 0.15, -s * 1.0);
+  ctx.bezierCurveTo(s * 0.85, -s * 1.05, s * 0.9, -s * 0.35, 0, 0); ctx.fill();
+  ctx.strokeStyle = c; ctx.lineWidth = s * 0.08; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, s * 0.55); ctx.stroke();
+  ctx.restore();
+}
+const LC = ["#f2c230", "#e8b21c", "#f7d65a", "#d99a12", "#ffe27a"];
+function leaves(t, n) {
+  for (let i = 0; i < n; i++) {
+    const sp = 0.05 + rand(i + 4) * 0.06, sway = Math.sin(t * (0.8 + rand(i) * 0.8) + i) * U * 6;
+    const y = ((rand(i + 20) + t * sp) % 1) * H * 1.15 - H * 0.08;
+    const x = rand(i) * W + sway;
+    ginkgo(x, y, U * (1.6 + rand(i + 9) * 2), Math.sin(t * 1.3 + i) * 1.2 + i, LC[i % 5], 0.85);
+  }
+}
+const grain = document.createElement("canvas"); grain.width = grain.height = 256;
+{ const g = grain.getContext("2d"), d = g.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = rand(i) * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 13; } g.putImageData(d, 0, 0); }
+function drawGrain(f) { ctx.save(); ctx.fillStyle = ctx.createPattern(grain, "repeat"); ctx.translate(-(rand(f) * 256) | 0, -(rand(f + 9) * 256) | 0); ctx.fillRect(0, 0, W + 256, H + 256); ctx.restore(); }
+
+/* ---------- 장면 ---------- */
+function drawPhoto(i, t, a) {
+  const sc = SCENES[i], s0 = i * SH, k = prog(t, s0 - 0.6, s0 + SH + 0.6), zoom = lerp(1.03, 1.14, k);
+  ctx.save(); ctx.globalAlpha = a;
+  if (P) cover(IMG[sc.img], 0, 0, W, H, sc.fx, sc.fy, zoom);
+  else {
+    cover(BLUR[sc.img], -U * 2, -U * 2, W + U * 4, H + U * 4, sc.fx, sc.fy, 1.05);
+    ctx.fillStyle = "rgba(26,18,8,0.45)"; ctx.fillRect(0, 0, W, H);
+    const ph = H * 0.86, pw = ph * 0.75, px = W * 0.3 - pw / 2, py = (H - ph) / 2;
+    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = U * 5; ctx.shadowOffsetY = U * 1.5;
+    ctx.fillStyle = "#fbf3e2"; ctx.fillRect(px - U * 1.2, py - U * 1.2, pw + U * 2.4, ph + U * 2.4); ctx.shadowColor = "transparent";
+    ctx.save(); ctx.beginPath(); ctx.rect(px, py, pw, ph); ctx.clip(); cover(IMG[sc.img], px, py, pw, ph, sc.fx, sc.fy, zoom); ctx.restore();
+  }
+  ctx.restore();
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = "none";
+  ctx.fillStyle = "#1a1208"; ctx.fillRect(0, 0, W, H);
+  const i = Math.min(N - 1, Math.floor(t / SH));
+  // 사진: 이전 장면 위로 0.8초 크로스페이드
+  if (i > 0 && t - i * SH < 0.8) drawPhoto(i - 1, t, 1);
+  drawPhoto(i, t, i === 0 ? 1 : inOut(prog(t, i * SH, i * SH + 0.8)));
+  // 따뜻한 색감 + 아래 그라데이션
+  ctx.save(); ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = "rgba(255,180,80,0.22)"; ctx.fillRect(0, 0, W, H); ctx.restore();
+  if (P) {
+    const g = ctx.createLinearGradient(0, H * 0.5, 0, H); g.addColorStop(0, "rgba(26,18,8,0)"); g.addColorStop(1, "rgba(26,18,8,0.78)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.hypot(W, H) * 0.6);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.45)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  leaves(t, P ? 22 : 26);
+
+  // 문장
+  const sc = SCENES[i], s0 = i * SH, out = sc.end ? 1 : 1 - prog(t, s0 + SH - 0.45, s0 + SH - 0.05);
+  const tx = P ? W / 2 : W * 0.72, align = "center";
+  const y1 = P ? H * 0.74 : H * 0.42, size = U * (P ? 7.6 : 6.2);
+  writeIn(sc.line, tx, y1, size, t, s0 + 0.5, { alpha: out, align });
+  writeIn(sc.line2, tx, y1 + size * 1.5, size, t, s0 + 1.1, { alpha: out, align, color: YL });
+  // 첫 장면 제목
+  const ta = 1 - prog(t, SH - 0.6, SH - 0.1);
+  if (i === 0) {
+    writeIn("가을, 그 길 위에서", P ? W / 2 : tx, P ? H * 0.16 : H * 0.2, U * (P ? 9 : 7.5), t, 0.2, { font: PEN, color: CR, alpha: ta, per: 0.08 });
+    text("AUTUMN · 2026", P ? W / 2 : tx, P ? H * 0.22 : H * 0.29, U * (P ? 3.2 : 2.8), { font: SF, color: YL, alpha: ta * prog(t, 1.2, 2), sp: 0.3 });
+  }
+  // 마지막 장면 서명
+  if (sc.end) {
+    const k = prog(t, s0 + 2.2, s0 + 3.0);
+    writeIn("2026년 가을에", tx, y1 + size * 3.1, U * (P ? 6 : 5), t, s0 + 2.0, { font: PEN, color: CR, per: 0.08 });
+    ctx.fillStyle = YL; ctx.globalAlpha = k; ctx.fillRect(tx - U * 10 * k, y1 + size * 3.75, U * 20 * k, U * 0.3); ctx.globalAlpha = 1;
+  }
+  drawGrain(Math.floor(t * 30));
+  const f = Math.max(1 - prog(t, 0, 0.6), prog(t, DUR - 0.8, DUR));
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+window.ready = Promise.all([imgsReady, document.fonts.load("10px Gowun"), document.fonts.load("10px Pen"), document.fonts.load("10px Serif")]).then(() => document.fonts.ready);
+
+const audio = document.getElementById("music");
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2.5);
+});
+window.ready.then(() => renderFrame(2.5));
+</script>
+</body>
+</html>
