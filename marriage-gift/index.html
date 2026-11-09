@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marriage Gift Tax</title>
+<style>
+  @font-face { font-family: "Head"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansKR-Medium.ttf"); font-weight: 500; }
+  @font-face { font-family: "PlexB"; src: url("fonts/IBMPlexSansKR-Bold.ttf"); }
+  :root { --bg: #142040; --fg: #f5efe4; --ac: #c9a54a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Plex", sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #22305a; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   사장님 절세 노트 — 카드뉴스를 움직이는 영상으로 (30초 / 80BPM, 카드 1장 = 1마디 = 3초, 10장)
+   카드 원본 디자인(남색 + 금색 / 크림 + 빨강)을 그대로 따르고, 카드가 옆으로 넘어가며 요소가 차례로 등장
+   좌표는 1080 x 1350 카드 기준으로 그리고, 화면 크기에 맞춰 축소·배치
+   ===================================================================== */
+const GR = "#1f6f5c", NV = "#142040", NV2 = "#1e2d55", GD = "#c9a54a", CR = "#f5f0e6", WH = "#ffffff", INK = "#16213e", RD = "#c0392b", MT = "#7fd4b9", SL = "#f08a6e", GRY = "#5d6474", LN = "#e6dcc3";
+const D = 3, N = 10, DUR = 30;
+const HEAD = "Head", BODY = "Plex", BOLD = "PlexB";
+const INSTA = "@incarvip_bless";
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, P;
+function setSize(ar) { [W, H] = ar === "card" ? [1080, 1350] : ar === "16x9" ? [1920, 1080] : [1080, 1920]; cv.width = W; cv.height = H; P = H > W; }
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+
+/* ---------- 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const outBack = k => { const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+
+/* ---------- 그리기 도우미 (카드 좌표) ---------- */
+function measure(s, size, font) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function txt(s, x, y, size, o = {}) {
+  const { color = WH, font = BODY, align = "left", alpha = 1, sc = 1, base = "alphabetic" } = o;
+  if (alpha <= 0 || sc <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = base; ctx.fillStyle = color; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+// 여러 색이 섞인 한 줄: [[글자, 색, 글꼴?], ...]
+function runs(parts, x, y, size, o = {}) {
+  const total = parts.reduce((a, [s, , f]) => a + measure(s, size, f || o.font || BODY), 0);
+  let px = o.align === "center" ? x - total / 2 : x;
+  parts.forEach(([s, c, f]) => { const fnt = f || o.font || BODY; txt(s, px, y, size, { color: c, font: fnt, alpha: o.alpha }); px += measure(s, size, fnt); });
+}
+function rr(x, y, w, h, r, fill, stroke, lw = 2) {
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+// 등장: 아래에서 떠오르며 선명해짐
+function rise(t, t0, fn, dist = 40) {
+  const k = outExpo(prog(t, t0, t0 + 0.45));
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha *= k; ctx.translate(0, (1 - k) * dist); fn(k); ctx.restore();
+}
+function pill(label, t, t0, dark, center = false) {
+  rise(t, t0, () => {
+    const w = measure(label, 30, BOLD) + 58, x = center ? 540 - w / 2 : 90;
+    rr(x, 110, w, 68, 34, dark ? GD : INK);
+    txt(label, x + w / 2, 156, 30, { color: dark ? INK : GD, font: BOLD, align: "center" });
+  }, 20);
+}
+// 제목 여러 줄 (줄마다 차례로)
+function headline(lines, t, t0, y0, size, lh, dark, center = false) {
+  lines.forEach((l, i) => rise(t, t0 + i * 0.12, () => {
+    const parts = Array.isArray(l) ? l : [[l, dark ? WH : INK]];
+    runs(parts.map(([s, c]) => [s, c, HEAD]), center ? 540 : 90, y0 + i * lh, size, { align: center ? "center" : "left" });
+  }));
+}
+function footer(i, dark) {
+  txt("BLESS · 조홍철 본부장", 90, 1287, 26, { color: dark ? "rgba(201,165,74,0.85)" : "#8a7a55" });
+  txt(`${i + 1} / ${N}`, 990, 1287, 28, { color: dark ? GD : "#8a7a55", font: BOLD, align: "right" });
+}
+function bg(dark) {
+  if (dark) {
+    const g = ctx.createRadialGradient(150, 0, 0, 150, 0, 1500);
+    g.addColorStop(0, NV2); g.addColorStop(1, NV);
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = CR;
+  ctx.fillRect(-2000, -2000, 5080, 5350);
+}
+function countUp(k, to) { return Math.round(to * outCubic(k)); }
+
+/* ---------- 카드 8장 ---------- */
+const CARDS = [
+  { dark: true, draw(t, s) {
+    pill("증여 · 세금", t, s + 0.05, true);
+    headline(["결혼하는 자녀에게", "1억 5천만 원을 준다면,", [["세금 0원", GD], ["일 수도,", WH]], [["2,000만 원", SL], ["일 수도.", WH]]], t, s + 0.2, 330, 74, 98, true);
+    rise(t, s + 0.9, () => { ctx.fillStyle = GD; ctx.fillRect(90, 780, 120, 6); }, 0);
+    rise(t, s + 1.0, () => txt("차이는 금액이 아니라", 90, 880, 44, { color: WH }));
+    rise(t, s + 1.15, () => txt("'언제·누가·어떻게'에서 생깁니다", 90, 950, 46, { color: GD, font: BOLD }));
+    rise(t, s + 1.5, () => txt("2026년 11월 현행 세법 기준 · 끝까지 확인하세요", 90, 1195, 30, { color: "rgba(255,255,255,0.75)" }), 10);
+  } },
+  { dark: false, draw(t, s) {
+    pill("가상 사례", t, s + 0.05, false);
+    headline(["“아버지, 전세 계약금", "넣어야 해요”"], t, s + 0.15, 290, 72, 92, false);
+    rise(t, s + 0.6, () => {
+      rr(90, 470, 900, 300, 26, WH, LN, 3);
+      [["62세 · 프랜차이즈 가맹본부 대표", INK, BOLD], ["아들 2027년 4월 혼인신고 예정", INK, BODY], ["전세보증금 1억 5천만 원 지원 약속", INK, BODY]].forEach(([l, c, f], i) => txt(l, 140, 555 + i * 80, 40, { color: c, font: f }));
+    });
+    rise(t, s + 1.0, () => {
+      txt("돈이 없어서가 아니라", 90, 880, 40, { color: INK });
+      txt("“지금 보내면 세금 나오는 거 아닐까?”", 90, 950, 40, { color: RD, font: BOLD });
+      txt("그 불확실함에 이체 버튼 앞에서 멈췄습니다.", 90, 1020, 40, { color: INK });
+    });
+    rise(t, s + 1.4, () => txt("※ 교육용 가상 사례이며 실제 인물이 아닙니다", 90, 1200, 28, { color: GRY }), 10);
+  } },
+  { dark: true, draw(t, s) {
+    pill("핵심 숫자", t, s + 0.05, true);
+    headline(["같은 1억 5천만 원,", [["결과는 두 갈래", GD]]], t, s + 0.15, 300, 80, 100, true);
+    const ck = prog(t, s + 0.8, s + 1.6);
+    [["공제를 못 쓰면", `${countUp(ck, 2000).toLocaleString()}만`, "기한 내 신고 시 1,940만 원", SL, 90], ["공제 요건을 충족하면", "0원", "과세표준 0원 가능", MT, 554]].forEach(([h, v, sub, c, x], i) => {
+      const k = outBack(prog(t, s + 0.55 + i * 0.2, s + 1.0 + i * 0.2));
+      if (k <= 0) return;
+      ctx.save(); ctx.translate(x + 218, 640); ctx.scale(k, k); ctx.translate(-(x + 218), -640);
+      rr(x, 470, 436, 340, 26, "rgba(255,255,255,0.07)", c, 3);
+      txt(h, x + 218, 545, 34, { color: WH, align: "center" });
+      txt(v, x + 218, 680, 96, { color: c, font: HEAD, align: "center" });
+      txt(sub, x + 218, 760, 28, { color: "rgba(255,255,255,0.75)", align: "center" });
+      ctx.restore();
+    });
+    rise(t, s + 1.5, () => {
+      txt("과세표준 1억 5천만 원 × 세율 10~20% = 2,000만 원", 90, 920, 30, { color: "rgba(255,255,255,0.8)" });
+      txt("기본공제 5,000만 + 혼인공제 1억 = 1억 5천만 → 0원", 90, 975, 30, { color: GD, font: BOLD });
+    });
+    rise(t, s + 1.7, () => txt("※ 단순 계산 가정 · 실제 세액은 과거 증여·공제 사용액에 따라 다릅니다", 90, 1195, 26, { color: "rgba(255,255,255,0.7)" }), 10);
+  } },
+  { dark: false, basis: true, draw(t, s) {
+    pill("세법이 주는 공제", t, s + 0.05, false);
+    headline(["자녀가 받을 수 있는", "공제는 두 가지"], t, s + 0.15, 290, 76, 96, false);
+    [["기본공제", "5,000만 원", "부모·조부모 합산, 10년간"], ["혼인·출산공제", "1억 원", "2024년 신설, 혼인·출산 합산 평생"]].forEach(([a, v, b], i) => rise(t, s + 0.6 + i * 0.25, () => {
+      const y = 450 + i * 215;
+      rr(90, y, 900, 185, 24, WH, LN, 3);
+      txt(a, 140, y + 72, 40, { color: INK, font: HEAD });
+      txt(b, 140, y + 135, 30, { color: GRY });
+      txt(v, 945, y + 102, 56, { color: GR, font: BOLD, align: "right" });
+    }));
+    rise(t, s + 1.2, () => {
+      rr(90, 900, 900, 150, 24, INK);
+      runs([["합계 ", WH], ["1억 5,000만 원", GD, BOLD], [" → 과세표준 0원 가능", WH]], 540, 990, 40, { align: "center" });
+    });
+    rise(t, s + 1.4, () => txt("근거: 상속세 및 증여세법 제53조·제53조의2", 90, 1170, 28, { color: GRY }), 10);
+  } },
+  { dark: true, draw(t, s) {
+    pill("① 언제", t, s + 0.05, true);
+    headline(["결혼식 날이 아니라", [["혼인신고일", GD], [" 기준", WH]]], t, s + 0.15, 300, 80, 100, true);
+    const k = outCubic(prog(t, s + 0.6, s + 1.4)), y = 640;
+    ctx.fillStyle = "rgba(201,165,74,0.25)"; ctx.fillRect(540 - 380 * k, y - 50, 760 * k, 100);
+    ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(110, y); ctx.lineTo(970, y); ctx.stroke();
+    ctx.fillStyle = GD; ctx.beginPath(); ctx.arc(540, y, 22, 0, 7); ctx.fill();
+    rise(t, s + 0.7, () => {
+      txt("혼인신고일", 540, y - 85, 40, { color: GD, font: BOLD, align: "center" });
+      txt("◀ 전 2년", 300, y + 100, 36, { color: WH, align: "center" });
+      txt("후 2년 ▶", 780, y + 100, 36, { color: WH, align: "center" });
+    });
+    rise(t, s + 1.2, () => txt("이 4년 안의 증여에만 혼인공제 1억 원", 540, 860, 40, { color: GD, font: BOLD, align: "center" }));
+    rise(t, s + 1.5, () => {
+      txt("증여 후 2년 안에 혼인이 성립하지 않으면", 90, 1010, 32, { color: "rgba(255,255,255,0.85)" });
+      txt("수정신고·이자상당액 규정을 확인해야 합니다", 90, 1060, 32, { color: "rgba(255,255,255,0.85)" });
+    });
+  } },
+  { dark: false, draw(t, s) {
+    pill("② 누가", t, s + 0.05, false);
+    headline(["엄마·아빠가 따로 주면", "공제가 두 배?"], t, s + 0.15, 290, 76, 96, false);
+    const k = outBack(prog(t, s + 0.6, s + 1.0));
+    if (k > 0) txt("아닙니다", 90, 545, 92, { color: RD, font: HEAD, sc: k });
+    rise(t, s + 0.9, () => {
+      rr(90, 610, 900, 270, 26, WH, LN, 3);
+      txt("공제는 받는 자녀 기준으로 합산", 140, 690, 40, { color: INK, font: BOLD });
+      txt("기본공제 5,000만 원 · 혼인공제 1억 원", 140, 760, 36, { color: INK });
+      txt("부모별로 중복 적용되지 않습니다", 140, 825, 36, { color: INK });
+    });
+    rise(t, s + 1.3, () => {
+      txt("아버지 단독 증여로도 요건만 맞으면 0원 가능", 90, 970, 34, { color: GR, font: BOLD });
+      txt("→ 필요한 건 실제 자금 주인과 이체자 확인", 90, 1030, 34, { color: INK });
+    });
+  } },
+  { dark: true, draw(t, s) {
+    pill("③ 어떻게", t, s + 0.05, true);
+    headline(["세금이 0원이어도", [["신고는 하세요", GD]]], t, s + 0.15, 300, 80, 100, true);
+    [["신고기한", "증여일이 속한 달 말일부터 3개월"], ["기한 내 신고", "신고세액공제 3%"], ["증빙 보관", "증여계약서 · 송금기록 · 신고서"]].forEach(([a, b], i) => rise(t, s + 0.6 + i * 0.25, () => {
+      const y = 440 + i * 165;
+      rr(90, y, 900, 135, 22, "rgba(255,255,255,0.07)", "rgba(201,165,74,0.6)", 2);
+      txt(a, 135, y + 82, 38, { color: GD, font: BOLD });
+      txt(b, 945, y + 82, 32, { color: WH, align: "right" });
+    }));
+    rise(t, s + 1.4, () => {
+      txt("신고는 '부담'이 아니라", 90, 1000, 40, { color: WH });
+      txt("'자금출처 확보 장치'입니다", 90, 1060, 40, { color: GD, font: BOLD });
+    });
+    rise(t, s + 1.6, () => txt("근거: 상속세 및 증여세법 제68조·제69조", 90, 1180, 28, { color: "rgba(255,255,255,0.7)" }), 10);
+  } },
+  { dark: false, draw(t, s) {
+    pill("그냥 이체만 하면", t, s + 0.05, false);
+    headline(["방치하면 생기는", [["3가지 위험", RD]]], t, s + 0.15, 290, 76, 96, false);
+    [["공제 시점을 놓치면", "1억 원 혼인공제를 못 받을 수 있습니다"], ["신고 없이 이체하면", "나중에 확인될 때 세금·가산세 검토 대상"], ["자녀가 집을 살 때", "'1억 5천만 원의 출처' 입증이 어려울 수 있습니다"]].forEach(([a, b], i) => {
+      const y = 430 + i * 215, t0 = s + 0.55 + i * 0.3;
+      rise(t, t0, () => { rr(90, y, 900, 185, 22, WH, LN, 3); txt(a, 180, y + 75, 40, { color: INK, font: BOLD }); txt(b, 180, y + 135, 30, { color: GRY }); });
+      const k = outBack(prog(t, t0 + 0.2, t0 + 0.5));
+      if (k > 0) txt("✕", 132, y + 78, 44, { color: RD, font: BOLD, align: "center", sc: k });
+    });
+  } },
+  { dark: false, draw(t, s) {
+    pill("체크리스트", t, s + 0.05, false);
+    headline(["이체 버튼 누르기 전", "꺼내둘 자료 5가지"], t, s + 0.15, 290, 76, 96, false);
+    [["자녀 통장 사본 · 최근 거래내역", ""], ["전세계약서", "초안도 괜찮습니다"], ["부부 각자 지원할 금액 계획", ""], ["혼인신고 예정일", ""], ["최근 10년 직계존속 증여 이력", "없으면 '없음' 확인만으로 충분"]].forEach(([a, b], i) => {
+      const y = 420 + i * 140, t0 = s + 0.5 + i * 0.2;
+      rise(t, t0, () => {
+        ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeRect(100, y + 20, 44, 44);
+        txt(a, 180, b ? y + 40 : y + 55, 38, { color: INK, font: BOLD });
+        if (b) txt(b, 180, y + 92, 28, { color: GRY });
+        ctx.fillStyle = LN; ctx.fillRect(90, y + 125, 900, 2);
+      }, 15);
+      const ck = prog(t, t0 + 0.5, t0 + 0.8);
+      if (ck > 0) {
+        const a1 = Math.min(1, ck * 2), b1 = Math.max(0, ck * 2 - 1);
+        ctx.strokeStyle = GR; ctx.lineWidth = 7; ctx.lineCap = "round"; ctx.beginPath();
+        ctx.moveTo(108, y + 42); ctx.lineTo(108 + 12 * a1, y + 42 + 12 * a1);
+        if (b1 > 0) ctx.lineTo(120 + 28 * b1, y + 54 - 36 * b1);
+        ctx.stroke();
+      }
+    });
+  } },
+  { dark: true, draw(t, s) {
+    rise(t, s + 0.05, () => txt("핵심은", 90, 300, 56, { color: "rgba(255,255,255,0.8)", font: HEAD }));
+    headline([[["“얼마를”", WH], [" 주느냐가 아니라", "rgba(255,255,255,0.8)"]], [["“언제·누구 명의로·", GD]], [["신고를 포함해”", GD], [" 주느냐", WH]]], t, s + 0.2, 410, 66, 92, true);
+    rise(t, s + 0.8, () => {
+      txt("오늘 결정하자는 게 아닙니다.", 90, 760, 38, { color: WH });
+      txt("자료를 놓고 준비된 부분과 비어 있는 부분을", 90, 815, 38, { color: WH });
+      txt("나눠 보는 것부터 시작하세요.", 90, 870, 38, { color: WH });
+    });
+    const k = outBack(prog(t, s + 1.15, s + 1.55));
+    if (k > 0) {
+      ctx.save(); ctx.translate(540, 990); ctx.scale(k, k);
+      rr(-450, -58, 900, 116, 58, GD);
+      runs([["DM으로 ", INK], ["“증여”", INK, BOLD], [" 보내주세요", INK]], 0, 15, 42, { align: "center" });
+      ctx.restore();
+    }
+    rise(t, s + 1.5, () => {
+      txt("가상 사례 기반 교육용 자료이며 특정 상품 권유가 아닙니다.", 540, 1115, 25, { color: "rgba(255,255,255,0.7)", align: "center" });
+      txt("실제 세액은 개인별로 다르니 세무사와 확인하세요. · 2026.11 현행 세법 기준", 540, 1150, 25, { color: "rgba(255,255,255,0.7)", align: "center" });
+    }, 10);
+  } },
+];
+
+/* ---------- 화면 배치 ---------- */
+function frameRect() {
+  // 카드(1080x1350)를 화면에 맞춤: 세로는 가로 꽉, 가로는 높이에 맞춰 가운데
+  const sc = Math.min(W / 1080, H / 1350);
+  return { sc, ox: (W - 1080 * sc) / 2, oy: (H - 1350 * sc) / 2 };
+}
+function drawCard(i, t, dx) {
+  const c = CARDS[i], f = frameRect();
+  ctx.save();
+  ctx.translate(f.ox + dx, f.oy); ctx.scale(f.sc, f.sc);
+  ctx.beginPath(); ctx.rect(-2000, -2000, 5080, 5350); ctx.clip();
+  bg(c.dark);
+  c.draw(t, i * D);
+  footer(i, c.dark);
+  ctx.restore();
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+  ctx.fillStyle = NV; ctx.fillRect(0, 0, W, H);
+  const i = Math.min(N - 1, Math.floor(t / D)), local = t - i * D;
+  // 카드 넘김: 다음 카드가 오른쪽에서 밀고 들어옴 (마지막 0.35초)
+  const sw = i < N - 1 ? inOut(prog(local, D - 0.35, D)) : 0;
+  const span = W;
+  drawCard(i, t, -sw * span);
+  if (sw > 0) drawCard(i + 1, (i + 1) * D, (1 - sw) * span);
+  // 화면 위/아래 진행 막대 (세로형은 여백에 표시)
+  const f = frameRect(), barY = P ? f.oy + 1350 * f.sc + (H - (f.oy + 1350 * f.sc)) / 2 : H - 14;
+  for (let k = 0; k < N; k++) {
+    const w = (W - 160) / N, x = 80 + k * w;
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(x + 4, barY - 3, w - 8, 6);
+    const fill = k < i ? 1 : k === i ? local / D : 0;
+    ctx.fillStyle = GD; ctx.fillRect(x + 4, barY - 3, (w - 8) * fill, 6);
+  }
+  if (P) {
+    const ty = f.oy / 2;
+    ctx.font = `34px ${BOLD}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = GD;
+    ctx.fillText("결혼하는 자녀 증여 공제", W / 2, ty);
+  }
+  const fi = 1 - prog(t, 0, 0.25);
+  if (fi > 0) { ctx.fillStyle = `rgba(0,0,0,${fi})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+// 카드뉴스 한 장 (1080x1350, 애니메이션 끝난 상태)
+window.renderCard = i => { setSize("card"); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; drawCard(i, i * D + 30, 0); };
+window.ready = Promise.all([document.fonts.load("10px Head"), document.fonts.load("10px Plex"), document.fonts.load("10px PlexB")]).then(() => document.fonts.ready);
+
+/* ---------- 미리보기 재생 ---------- */
+const audio = document.getElementById("music");
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2);
+});
+window.ready.then(() => renderFrame(2));
+</script>
+</body>
+</html>
