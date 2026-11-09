@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gwanggyo Kimjang</title>
+<style>
+  @font-face { font-family: "Gowun"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Pen"; src: url("fonts/NanumPenScript-Regular.ttf"); }
+  @font-face { font-family: "Serif"; src: url("fonts/InstrumentSerif-Italic.ttf"); }
+  :root { --bg: #14181d; --fg: #f4f1ea; --ac: #ffcf5a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Gowun", serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #2a3038; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<script>
+/* =====================================================================
+   광교1동 사랑의 김장 나눔 첫날(양념 버무리기) — 사진 8장 모션그래픽 30초 (사진 1장 = 3.75초 = 음악 1마디)
+   평양면옥(기숙사 사는 아들과 점심) → 청계광장 → 청계천 물길 따라 → 광화문·경복궁 → 영천시장
+   장소 이름표 + 아래쪽 동선 점(지나온 장소가 하나씩 켜짐)
+   ===================================================================== */
+const YL = "#ffcf5a", CR = "#fbf4ea", BG = "#1d1210";
+const SH = 3.75, DUR = 30;
+const KR = "Gowun", PEN = "Pen", SF = "Serif";
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, U, P;
+function setSize(ar) { [W, H] = ar === "16x9" ? [1920, 1080] : [1080, 1920]; cv.width = W; cv.height = H; U = Math.min(W, H) / 100; P = H > W; }
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+
+const IMG = {}, BLUR = {};
+const loadImg = n => new Promise(r => {
+  const i = new Image();
+  i.onload = () => {
+    IMG[n] = i;
+    const s = document.createElement("canvas"); s.width = 160; s.height = 160;
+    const g = s.getContext("2d"); g.filter = "blur(7px)"; g.drawImage(i, -12, -12, 184, 184);
+    BLUR[n] = s; r();
+  };
+  i.src = `assets/${n}.jpg`;
+});
+const imgsReady = Promise.all(Array.from({ length: 8 }, (_, i) => loadImg("p" + (i + 1))));
+
+/* ---------- 하루 동선 (사진 순서) ---------- */
+const SCENES = [
+  { img: "p1", place: "광교1동 행정복지센터", fx: 0.5, fy: 0.5, l1: "마을 구석구석", l2: "따뜻한 사랑을 전하는", wide: true },
+  { img: "p2", place: "양념 버무리기", fx: 0.5, fy: 0.5, l1: "김장 나눔 첫날,", l2: "양념부터 버무립니다" },
+  { img: "p3", place: "양념 버무리기", fx: 0.45, fy: 0.55, l1: "노란 고무장갑으로", l2: "꾹꾹, 골고루" },
+  { img: "p4", place: "양념 버무리기", fx: 0.5, fy: 0.5, l1: "붉게 잘 어우러진", l2: "사랑의 양념" },
+  { img: "p5", place: "절임배추", fx: 0.45, fy: 0.5, l1: "곱게 절인", l2: "노란 배춧속" },
+  { img: "p6", place: "맛보기", fx: 0.4, fy: 0.45, l1: "한 입 싸서 맛보니,", l2: "바로 이 맛!" },
+  { img: "p7", place: "나눔 준비", fx: 0.5, fy: 0.6, l1: "내일 버무릴 배추가", l2: "줄지어 기다리고" },
+  { img: "p8", place: "나눔 준비", fx: 0.5, fy: 0.5, l1: "이웃에게 전할", l2: "김치통이 차곡차곡", end: true },
+];
+const STOPS = ["광교1동 행정복지센터", "양념 버무리기", "절임배추", "맛보기", "나눔 준비"];
+
+/* ---------- 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const outBack = k => { const c = 1.6; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* ---------- 그리기 ---------- */
+function measure(s, size, font) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function text(s, x, y, size, o = {}) {
+  const { color = CR, font = KR, align = "center", alpha = 1, sp = 0, shadow = true } = o;
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.letterSpacing = `${sp * size}px`;
+  if (shadow) { ctx.shadowColor = "rgba(0,0,0,0.75)"; ctx.shadowBlur = size * 0.4; ctx.shadowOffsetY = size * 0.05; }
+  ctx.fillStyle = color; ctx.fillText(s, x, y); ctx.restore();
+}
+function writeIn(s, x, y, size, t, t0, o = {}) {
+  const chars = [...s], per = o.per || 0.05, font = o.font || KR, total = measure(s, size, font);
+  let px = x - total / 2;
+  chars.forEach((c, i) => {
+    const k = outCubic(prog(t, t0 + i * per, t0 + i * per + 0.4));
+    const w = measure(c, size, font);
+    if (k > 0 && c !== " ") text(c, px + w / 2, y - (1 - k) * size * 0.3, size, { ...o, alpha: k * (o.alpha ?? 1) });
+    px += w;
+  });
+}
+function cover(src, x, y, w, h, fx, fy, zoom) {
+  const k = Math.max(w / src.width, h / src.height) * zoom, dw = src.width * k, dh = src.height * k;
+  let ox = x + w / 2 - dw * fx, oy = y + h / 2 - dh * fy;
+  ox = Math.min(x, Math.max(x + w - dw, ox)); oy = Math.min(y, Math.max(y + h - dh, oy));
+  ctx.drawImage(src, ox, oy, dw, dh);
+}
+// 사진 액자 (흰 테두리 + 그림자)
+function framed(sc, x, y, w, h, zoom, rot) {
+  ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.rotate(rot); ctx.translate(-(x + w / 2), -(y + h / 2));
+  ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = U * 5; ctx.shadowOffsetY = U * 1.5;
+  ctx.fillStyle = "#faf7f0"; ctx.fillRect(x - U * 1.1, y - U * 1.1, w + U * 2.2, h + U * 2.2); ctx.shadowColor = "transparent";
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); cover(IMG[sc.img], x, y, w, h, sc.fx, sc.fy, zoom);
+  ctx.restore();
+}
+// 장소 이름표 (지도 핀 + 이름)
+function placeChip(name, x, y, k) {
+  if (k <= 0) return;
+  const s = U * (P ? 3.6 : 2.9), w = measure(name, s, KR) + s * 2.6, h = s * 2;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+  ctx.fillStyle = "rgba(20,24,29,0.72)"; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
+  // 핀
+  const px = -w / 2 + s * 1.05, py = -s * 0.12;
+  ctx.fillStyle = YL; ctx.beginPath(); ctx.arc(px, py - s * 0.12, s * 0.38, Math.PI, 0); ctx.lineTo(px, py + s * 0.55); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(px, py - s * 0.12, s * 0.38, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = BG; ctx.beginPath(); ctx.arc(px, py - s * 0.12, s * 0.15, 0, Math.PI * 2); ctx.fill();
+  text(name, px + s * 0.75, s * 0.04, s, { align: "left", shadow: false });
+  ctx.restore();
+}
+// 아래쪽 동선: 점과 선, 지나온 곳까지 노랗게
+function route(t, y) {
+  const cur = STOPS.indexOf(SCENES[Math.min(SCENES.length - 1, Math.floor(t / SH))].place);
+  const x0 = W * 0.1, x1 = W * 0.9, step = (x1 - x0) / (STOPS.length - 1);
+  // 진행 정도(점 사이를 부드럽게 이동)
+  const scene = Math.min(SCENES.length - 1, Math.floor(t / SH));
+  const prevStop = scene > 0 ? STOPS.indexOf(SCENES[scene - 1].place) : 0;
+  const pos = lerp(prevStop, cur, inOut(prog(t - scene * SH, 0, 0.8)));
+  ctx.strokeStyle = "rgba(244,241,234,0.35)"; ctx.lineWidth = U * 0.35; ctx.setLineDash([U * 0.8, U * 0.8]);
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = YL; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + step * pos, y); ctx.stroke();
+  STOPS.forEach((s, i) => {
+    const on = i <= pos + 0.01;
+    ctx.fillStyle = on ? YL : "rgba(244,241,234,0.45)";
+    ctx.beginPath(); ctx.arc(x0 + step * i, y, U * (i === cur ? 1.1 : 0.65), 0, Math.PI * 2); ctx.fill();
+  });
+  // 걷는 점 위의 작은 발자국 표시
+  text("●", x0 + step * pos, y, U * 1.2, { color: "#fff", shadow: false, alpha: 0.9 });
+}
+const grain = document.createElement("canvas"); grain.width = grain.height = 256;
+{ const g = grain.getContext("2d"), d = g.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = rand(i) * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 12; } g.putImageData(d, 0, 0); }
+function drawGrain(f) { ctx.save(); ctx.fillStyle = ctx.createPattern(grain, "repeat"); ctx.translate(-(rand(f) * 256) | 0, -(rand(f + 9) * 256) | 0); ctx.fillRect(0, 0, W + 256, H + 256); ctx.restore(); }
+
+/* ---------- 장면 ---------- */
+// 세로: 세로 사진은 화면 가득, 가로 사진은 액자로 / 가로: 반대로
+function drawPhoto(i, t, a) {
+  const sc = SCENES[i], s0 = i * SH, k = prog(t, s0 - 0.5, s0 + SH + 0.5), zoom = lerp(1.02, 1.12, k);
+  const full = P ? !sc.wide : sc.wide;
+  ctx.save(); ctx.globalAlpha = a;
+  if (full) {
+    cover(IMG[sc.img], 0, 0, W, H, sc.fx + (i % 2 ? 0.03 : -0.03) * k, sc.fy, zoom);
+  } else {
+    cover(BLUR[sc.img], -U * 3, -U * 3, W + U * 6, H + U * 6, 0.5, 0.5, 1.1);
+    ctx.fillStyle = "rgba(20,24,29,0.5)"; ctx.fillRect(0, 0, W, H);
+    const im = IMG[sc.img], r = im.width / im.height;
+    let w, h, x, y;
+    if (P) { w = W * 0.9; h = Math.min(w / r, H * 0.42); x = (W - w) / 2; y = H * 0.3; }
+    else { h = H * 0.78; w = Math.min(h * r, W * 0.42); x = W * 0.06; y = H * 0.07; }
+    framed(sc, x, y, w, h, zoom, (i % 2 ? 0.012 : -0.012) * (1 - outCubic(prog(t, s0, s0 + 0.8))));
+  }
+  ctx.restore();
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = "none";
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  const i = Math.min(SCENES.length - 1, Math.floor(t / SH)), s0 = i * SH, sc = SCENES[i];
+  if (i > 0 && t - s0 < 0.6) drawPhoto(i - 1, t, 1);
+  drawPhoto(i, t, i === 0 ? 1 : inOut(prog(t, s0, s0 + 0.6)));
+
+  const full = P ? !sc.wide : sc.wide;
+  // 글 자리: 세로 전체사진·가로 액자 = 아래/오른쪽, 세로 액자 = 사진 아래
+  let tx, ty, size = U * (P ? 7.4 : 6);
+  if (P) { tx = W / 2; ty = full ? H * 0.72 : H * 0.62; }
+  else { tx = full ? W / 2 : W * 0.72; ty = full ? H * 0.68 : H * 0.44; }
+  // 글 뒤 그라데이션 (전체 사진일 때)
+  if (full) {
+    const g = ctx.createLinearGradient(0, H * 0.45, 0, H); g.addColorStop(0, "rgba(20,24,29,0)"); g.addColorStop(1, "rgba(20,24,29,0.82)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const g2 = ctx.createLinearGradient(0, 0, 0, H * 0.2); g2.addColorStop(0, "rgba(20,24,29,0.55)"); g2.addColorStop(1, "rgba(20,24,29,0)");
+    ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H * 0.2);
+  }
+  const out = sc.end ? 1 : 1 - prog(t, s0 + SH - 0.35, s0 + SH - 0.02);
+  // 장소 이름표
+  const chipY = P ? (full ? H * 0.64 : H * 0.24) : (full ? H * 0.56 : H * 0.3);
+  placeChip(sc.place, tx, chipY, outBack(prog(t, s0 + 0.15, s0 + 0.5)) * out);
+  writeIn(sc.l1, tx, ty, size, t, s0 + 0.35, { alpha: out });
+  writeIn(sc.l2, tx, ty + size * 1.45, size, t, s0 + 0.8, { alpha: out, color: YL });
+
+  // 맨 처음 제목
+  if (i === 0 && P) {   // 가로형은 현수막에 행사명이 이미 크게 보여서 생략
+    const ta = 1 - prog(t, SH - 0.4, SH - 0.05);
+    writeIn("2026 광교1동 사랑의 김장 나눔", W / 2, P ? H * 0.1 : H * 0.12, U * (P ? 7.6 : 6.6), t, 0.1, { font: PEN, alpha: ta, per: 0.06 });
+    text("주민자치위원회 · 첫날", W / 2, P ? H * 0.15 : H * 0.2, U * (P ? 3 : 2.6), { color: YL, alpha: ta * prog(t, 0.8, 1.4), sp: 0.1 });
+  }
+  // 마지막 마무리 문장
+  if (sc.end) {
+    writeIn("광교1동 주민자치위원회 드림", tx, ty + size * 3.1, U * (P ? 7 : 5.6), t, s0 + 1.3, { font: PEN, per: 0.05 });
+  }
+  // 동선
+  route(t, P ? H * 0.93 : H * 0.93);
+  drawGrain(Math.floor(t * 30));
+  const f = Math.max(1 - prog(t, 0, 0.4), prog(t, DUR - 0.5, DUR));
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+window.ready = Promise.all([imgsReady, document.fonts.load("10px Gowun"), document.fonts.load("10px Pen"), document.fonts.load("10px Serif")]).then(() => document.fonts.ready);
+
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+const audio = document.getElementById("music");
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2.4);
+});
+window.ready.then(() => renderFrame(2.4));
+</script>
+</body>
+</html>
