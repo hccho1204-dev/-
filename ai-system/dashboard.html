@@ -1,0 +1,573 @@
+<title>BLESS 사령실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 관제실형 그리드 — 상단 SSR+ 진척 띠, 1행 세컨드브레인(넓게)+루틴, 2행 스킬 런처, 3행 익스텐션+프롬프트 */
+:root{
+  --bg:#ECEFEA; --surface:#FAFBF8; --sunk:#E2E7E0; --ink:#132019; --muted:#56655C; --line:#D2DAD0;
+  --accent:#1E6A50; --accent-soft:#D6E8DF; --on-accent:#FFFFFF;
+  --amber:#A86E12; --amber-soft:#F3E6CC; --seal:#A33A28; --seal-soft:#F4DDD7;
+  --n-hub:#132019; --n-guide:#1E6A50; --n-post:#3E6FA8; --n-skill:#A86E12; --n-routine:#8A4FA0; --n-conn:#A33A28; --n-doc:#56655C;
+  --f-display:"Gothic A1","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1411; --surface:#16201A; --sunk:#1D2922; --ink:#E4EBE5; --muted:#93A399; --line:#2B3830;
+  --accent:#62C29B; --accent-soft:#1E3A2E; --on-accent:#0E1411;
+  --amber:#E3AA4E; --amber-soft:#3A2F1A; --seal:#E5806A; --seal-soft:#3D231D;
+  --n-hub:#E4EBE5; --n-guide:#62C29B; --n-post:#7FA9DE; --n-skill:#E3AA4E; --n-routine:#C08AD6; --n-conn:#E5806A; --n-doc:#93A399;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1411; --surface:#16201A; --sunk:#1D2922; --ink:#E4EBE5; --muted:#93A399; --line:#2B3830;
+  --accent:#62C29B; --accent-soft:#1E3A2E; --on-accent:#0E1411;
+  --amber:#E3AA4E; --amber-soft:#3A2F1A; --seal:#E5806A; --seal-soft:#3D231D;
+  --n-hub:#E4EBE5; --n-guide:#62C29B; --n-post:#7FA9DE; --n-skill:#E3AA4E; --n-routine:#C08AD6; --n-conn:#E5806A; --n-doc:#93A399;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.brand h1{font-size:28px;font-weight:800}
+.brand p{margin:4px 0 0;color:var(--muted)}
+.clock{text-align:right}
+.clock .t{font-family:var(--f-mono);font-size:22px;font-weight:500}
+.ssr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ssr-step{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ssr-head{display:flex;align-items:baseline;gap:8px}
+.ssr-head b{font-family:var(--f-display);font-size:20px;font-weight:800;color:var(--accent)}
+.ssr-head span{font-weight:600}
+.lv{display:flex;gap:6px;flex-wrap:wrap}
+.lv button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:2px 10px;font-size:12px;color:var(--muted)}
+.lv button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.lv button.next{border-color:var(--seal);color:var(--seal);background:var(--seal-soft)}
+.ssr-note{font-size:12px;color:var(--muted)}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.panel-h h2{font-size:17px;font-weight:700}
+.panel-h h2 small{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-weight:400;margin-left:6px;letter-spacing:.06em}
+.c8{grid-column:span 8}.c4{grid-column:span 4}.c12{grid-column:span 12}.c5{grid-column:span 5}.c7{grid-column:span 7}
+@media (max-width:980px){.c8,.c4,.c5,.c7{grid-column:span 12}.ssr{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.ssr{grid-template-columns:minmax(0,1fr)}.brand h1{font-size:24px}}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 12px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 14px;font-weight:500}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sm{padding:4px 10px;font-size:12px}
+input[type=search],textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;color:var(--ink)}
+textarea{resize:vertical;min-height:110px;line-height:1.5}
+
+/* brain */
+.brain{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;min-height:440px}
+@media (max-width:760px){.brain{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--bg);border:1px solid var(--line);border-radius:8px;position:relative;overflow:hidden;min-height:500px}
+.stage svg{width:100%;height:100%;display:block;position:absolute;inset:0}
+.stage .edge{stroke:var(--line);stroke-width:1.2}
+.stage .edge.hl{stroke:var(--accent);stroke-width:2}
+.stage .node circle{stroke:var(--surface);stroke-width:2;cursor:pointer}
+.stage .node text{font-size:10.5px;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:3px;pointer-events:none;font-family:var(--f-body)}
+.stage .node.dim{opacity:.18}
+.stage .node.sel circle{stroke:var(--ink);stroke-width:3}
+.tree{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow:auto;max-height:520px;min-height:420px}
+.tree details{margin-left:4px}
+.tree summary{cursor:pointer;font-weight:600;padding:3px 0}
+.tree ul{list-style:none;margin:2px 0 6px 14px;padding:0;border-left:1px solid var(--line)}
+.tree li button{border:0;background:transparent;text-align:left;padding:3px 8px;width:100%;border-radius:6px;color:var(--ink)}
+.tree li button:hover{background:var(--sunk)}
+.tree li button.hit{background:var(--amber-soft)}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.preview{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;flex:1;overflow:auto;max-height:420px}
+.preview h3{font-size:15px;margin:4px 0 6px}
+.preview p{margin:0 0 8px}
+.preview .path{font-family:var(--f-mono);font-size:11px;color:var(--muted);word-break:break-all}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:0}
+.results{display:flex;flex-direction:column;gap:2px;max-height:150px;overflow:auto}
+.results button{border:0;background:transparent;text-align:left;padding:4px 6px;border-radius:6px;font-size:13px}
+.results button:hover{background:var(--sunk)}
+
+/* routines */
+.timeline{position:relative;height:58px;margin:4px 6px 0}
+.timeline .rail{position:absolute;left:0;right:0;top:26px;height:6px;border-radius:3px;background:var(--sunk)}
+.timeline .past{position:absolute;left:0;top:26px;height:6px;border-radius:3px;background:var(--accent-soft)}
+.timeline .now{position:absolute;top:14px;width:2px;height:30px;background:var(--seal)}
+.timeline .now span{position:absolute;top:-16px;left:-12px;white-space:nowrap;font-family:var(--f-mono);font-size:10px;color:var(--seal)}
+.timeline .mk{position:absolute;top:21px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--n-routine);border:3px solid var(--surface)}
+.timeline .mk.off{background:var(--line)}
+.timeline .tick{position:absolute;top:40px;font-family:var(--f-mono);font-size:10px;color:var(--muted);transform:translateX(-50%)}
+.rlist{display:flex;flex-direction:column;gap:8px}
+.rcard{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.rcard .time{font-family:var(--f-mono);font-size:18px;font-weight:500}
+.rcard .nm{font-weight:600}
+.rcard .meta{font-size:12px;color:var(--muted);grid-column:2}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;font-weight:500;white-space:nowrap}
+.pill.ok{background:var(--accent-soft);color:var(--accent)}
+.pill.todo{background:var(--seal-soft);color:var(--seal)}
+.pill.warn{background:var(--amber-soft);color:var(--amber)}
+.pill.next{background:var(--amber-soft);color:var(--amber)}
+.callout{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--muted)}
+
+/* skills */
+.skills{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px}
+@media (max-width:900px){.skills{grid-template-columns:minmax(0,1fr)}}
+.sk-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start}
+@media (max-width:460px){.sk-list{grid-template-columns:minmax(0,1fr)}}
+.sk{border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:left;background:transparent;display:flex;flex-direction:column;gap:4px;min-width:0}
+.sk:hover{border-color:var(--accent)}
+.sk[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.sk .nm{font-weight:600}
+.sk .id{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.sk .ds{font-size:12px;color:var(--muted)}
+.sk.sys .id{color:var(--amber)}
+.runner{display:flex;flex-direction:column;gap:10px;min-width:0}
+.runner .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.guide{font-size:13px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;border:1px solid var(--line)}
+.out{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;min-height:140px;max-height:520px;overflow:auto;min-width:0}
+.out.empty{color:var(--muted)}
+.out table{border-collapse:collapse;display:block;overflow-x:auto;margin:8px 0}
+.out th,.out td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+.out h1,.out h2,.out h3{font-size:16px;margin:12px 0 6px}
+.out pre{white-space:pre-wrap;background:var(--sunk);padding:8px;border-radius:6px}
+.out blockquote{margin:6px 0;padding-left:10px;border-left:3px solid var(--accent);color:var(--muted)}
+
+/* connectors */
+.conns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.conns{grid-template-columns:minmax(0,1fr)}}
+.conn{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.conn .r1{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.conn .nm{font-weight:600}
+.conn .ds{font-size:12px;color:var(--muted)}
+
+/* prompts */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 12px;font-size:13px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.plist{display:flex;flex-direction:column;gap:10px}
+.pr{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pr-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.pr-h .t{font-weight:600}
+.pr pre{margin:0;padding:12px;white-space:pre-wrap;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;max-height:260px;overflow:auto}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 16px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+footer{color:var(--muted);font-size:12px;text-align:center}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="label">BLESS 본부 · AI 에이전트 시스템</div>
+      <h1>BLESS 사령실</h1>
+      <p>스킬 · 세컨드 브레인 · 루틴 · 익스텐션을 한 화면에서.</p>
+    </div>
+    <div class="clock"><div class="label" id="today"></div><div class="t" id="now"></div></div>
+  </header>
+
+  <section class="ssr" id="ssr" aria-label="SSR+ 세팅 진척"></section>
+
+  <div class="grid">
+    <!-- 세컨드 브레인 -->
+    <section class="panel c8" aria-labelledby="h-brain">
+      <div class="panel-h">
+        <h2 id="h-brain">세컨드 브레인<small>CLAUDE.md 중심 지식 지도</small></h2>
+        <div class="seg" role="group" aria-label="보기 방식">
+          <button id="v-graph" aria-pressed="true">그래프</button>
+          <button id="v-tree" aria-pressed="false">계층</button>
+        </div>
+      </div>
+      <div class="brain">
+        <div>
+          <div class="stage" id="stage"><svg id="svg" role="img" aria-label="지식 그래프"></svg></div>
+          <div class="tree" id="tree" hidden></div>
+        </div>
+        <div class="side">
+          <input type="search" id="q" placeholder="검색: 간호사, 루틴, Gmail…" aria-label="세컨드 브레인 검색">
+          <div class="results" id="results"></div>
+          <div class="preview" id="preview"></div>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 루틴 -->
+    <section class="panel c4" aria-labelledby="h-rt">
+      <div class="panel-h"><h2 id="h-rt">루틴<small>예약 작업</small></h2><span class="pill todo" id="rt-state">등록 전</span></div>
+      <div class="timeline" id="timeline"></div>
+      <div class="rlist" id="rlist"></div>
+      <div class="callout">컴퓨터를 꺼도 돌게 하려면 Claude Code(클라우드)에 등록하세요. 각 루틴의 <b>등록 문구</b>를 복사해 대화창에 붙이면 끝입니다.</div>
+    </section>
+
+    <!-- 스킬 -->
+    <section class="panel c12" aria-labelledby="h-sk">
+      <div class="panel-h"><h2 id="h-sk">스킬 런처<small>업무 단축키</small></h2><span class="label" id="sk-avail"></span></div>
+      <div class="skills">
+        <div class="sk-list" id="sklist" role="group" aria-label="스킬 목록"></div>
+        <div class="runner">
+          <div class="row">
+            <div><div class="label" id="r-id"></div><h3 id="r-name" style="font-size:18px"></h3></div>
+            <div class="seg" role="group" aria-label="모델 선택" id="tier">
+              <button data-tier="quick" aria-pressed="false">빠르게</button>
+              <button data-tier="default" aria-pressed="true">기본</button>
+              <button data-tier="complex" aria-pressed="false">깊게</button>
+            </div>
+          </div>
+          <div class="guide" id="r-guide"></div>
+          <label class="label" for="r-input">요청 내용</label>
+          <textarea id="r-input"></textarea>
+          <div class="row">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn primary" id="run">실행</button>
+              <button class="btn" id="stop" hidden>중지</button>
+              <button class="btn" id="copy-prompt">프롬프트 복사</button>
+            </div>
+            <button class="btn sm" id="copy-out">결과 복사</button>
+          </div>
+          <div class="out empty" id="out" aria-live="polite">실행하면 결과가 여기에 나옵니다. 예시 요청이 미리 채워져 있으니 그대로 눌러봐도 됩니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 익스텐션 -->
+    <section class="panel c5" aria-labelledby="h-ex">
+      <div class="panel-h"><h2 id="h-ex">익스텐션<small>AI의 손발</small></h2><span class="label">세션 확인 기준</span></div>
+      <div class="conns" id="conns"></div>
+      <div class="callout">없는 서비스는 <b>connector-finder</b> 스킬로 MCP → CLI → API 순서로 찾습니다. 맞는 게 없으면 <b>extension-idea</b>로 직접 만듭니다.</div>
+    </section>
+
+    <!-- 프롬프트 -->
+    <section class="panel c7" aria-labelledby="h-pr">
+      <div class="panel-h"><h2 id="h-pr">프롬프트 모음<small>단계별 전문</small></h2></div>
+      <div class="tabs" role="tablist" id="ptabs"></div>
+      <div class="plist" id="plist" role="tabpanel"></div>
+    </section>
+  </div>
+  <footer>저장소 위치: ai-system/ · 대문: CLAUDE.md · 진척 체크는 이 브라우저에만 저장됩니다.</footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script>
+const POSTS = [{"file": "posts/260316-40대-재취업-보험설계사.md", "title": "40대 재취업, 보험설계사로 시작해도 늦지 않을까?", "summary": "40대는 보험설계사를 시작하기에 오히려 좋은 나이입니다. 결혼, 출산, 육아, 가정 경제를 경험한 40대는 고객의 상황에 깊이 공감할 수 있고, 그 공감이 신뢰로 이어집니다. 나이 제한 없이 시작할 수 있으며, 체계적인 지원 시스템이 있다면 경험 없이도 안정적으로 정착할 수 있습니다."}, {"file": "posts/260316-간호사-보험설계사-이직.md", "title": "간호사가 보험설계사로 이직하면 좋은 이유? 현직자가 알려드립니다", "summary": "간호사 경력은 보험설계사로 전환할 때 강력한 무기가 됩니다. 의료 현장에서 쌓은 질병·건강 지식, 환자 응대 경험, 그리고 공감 능력은 보험 상담에서 고객 신뢰를 빠르게 얻는 핵심 역량입니다. 실제로 간호사 출신 설계사 중 상당수가 안정적인 고객층을 빠르게 확보하며 성과를 내고 있습니다."}, {"file": "posts/260316-간호조무사-이직-추천.md", "title": "간호조무사 이직 추천 직업, 보험설계사가 답인 이유", "summary": "간호조무사의 의료 지식과 환자 응대 경험은 보험설계사로 이직할 때 강력한 경쟁력이 됩니다. 병원 근무에서 벗어나 시간의 자유를 얻으면서도 의료 경력을 살릴 수 있는 현실적인 선택지입니다. 체계적인 지원 시스템이 있는 조직에서 시작하면 영업 경험이 없어도 안정적으로 정착할 수 있습니다."}, {"file": "posts/260316-경력단절-여성-보험설계사.md", "title": "경력단절 여성이 보험설계사로 재취업할 수 있을까?", "summary": "경력단절 여성에게 보험설계사는 현실적인 재취업 선택지 중 하나입니다. 학력이나 이전 경력에 관계없이 시작할 수 있고, 시간 활용이 자유로워 육아와 병행이 가능합니다. 다만 쉽지만은 않기에, 체계적인 지원을 받을 수 있는 조직에서 시작하는 것이 중요합니다."}, {"file": "posts/260316-보험설계사-DB영업-뜻.md", "title": "보험설계사 DB영업이란? 지인영업과 뭐가 다른가요", "summary": "DB영업은 회사가 제공하는 고객 데이터(DB)를 활용해 상담하는 영업 방식입니다. 지인영업과 달리 개인 인맥에 의존하지 않으며, 보험에 관심이 있는 고객을 꾸준히 만날 수 있다는 것이 가장 큰 차이입니다. 보험설계사의 초기 정착과 장기적 성과를 좌우하는 핵심 요소입니다."}, {"file": "posts/260316-보험설계사-수입-현실.md", "title": "보험설계사 수입 현실은? 초봉부터 3년차까지 솔직 정리", "summary": "보험설계사의 수입은 고정급이 아닌 성과 기반 구조입니다. 활동 초기에는 월 150~300만 원 수준에서 시작하는 경우가 많으며, 경력과 고객 기반이 쌓이면 점차 안정적인 수입을 만들어갈 수 있습니다(예시이며, 개인 역량과 활동량에 따라 차이가 있습니다). 중요한 것은 어떤 조직에서, 어떤 지원을 받으며 시작하느냐입니다."}, {"file": "posts/260316-보험설계사-자격증-준비.md", "title": "보험설계사 자격증 준비 방법과 기간, 현실 총정리", "summary": "보험설계사가 되려면 손해보험 모집인 자격시험을 통과해야 합니다. 시험 난이도는 높지 않으며, 집중해서 준비하면 2~4주 안에 합격이 가능합니다. 별도의 학력 조건 없이 만 19세 이상이면 누구나 응시할 수 있습니다."}, {"file": "posts/260316-보험설계사-초기정착-팁.md", "title": "보험설계사 초기 정착 성공하려면? 현직자가 알려주는 5가지", "summary": "보험설계사 초기 정착의 핵심은 '꾸준한 고객 접점'과 '올바른 상담 습관'입니다. 처음 6개월을 어떻게 보내느냐가 이후 커리어를 결정합니다. 혼자 부딪히기보다 체계적인 지원 시스템이 있는 조직에서 시작하면 정착 확률을 크게 높일 수 있습니다."}, {"file": "posts/260316-보험설계사-하루일과.md", "title": "보험설계사 하루 일과는 어떤가요? 실제 스케줄 공개", "summary": "보험설계사의 하루는 고객 상담, 보장 분석, 자기 개발로 구성됩니다. 출퇴근 시간이 정해져 있지 않아 자신의 스타일에 맞게 스케줄을 조정할 수 있지만, 꾸준한 자기 관리가 필수입니다. 실제 현직 설계사의 하루를 통해 보험설계사의 일상을 들여다봅니다."}, {"file": "posts/260316-손해보험-경력직-이직.md", "title": "손해보험 경력직 설계사, 조직 옮길 때 꼭 확인할 3가지", "summary": "손해보험 경력직 설계사의 이직은 수수료 구조, DB 지원, 성장 환경 세 가지를 기준으로 판단해야 합니다. 경력이 있어도 조직 환경에 따라 성과가 크게 달라집니다. 더 나은 조건을 찾고 있다면, 이 세 가지를 꼼꼼히 비교해 보세요."}, {"file": "posts/260316-요양보호사-보험설계사-전환.md", "title": "요양보호사가 보험설계사로 전환하면 어떤 점이 좋을까?", "summary": "요양보호사의 돌봄 경험과 공감 능력은 보험설계사로 전환할 때 큰 강점이 됩니다. 어르신과 환자를 돌보며 쌓은 소통 능력은 보험 상담에서 고객 신뢰를 빠르게 얻는 핵심 역량입니다. 시간의 자유와 성과에 따른 수입을 원한다면, 보험설계사는 현실적인 대안이 될 수 있습니다."}];
+
+/* ---------- 데이터 ---------- */
+const STEPS = [
+  {k:"S1", nm:"스킬", lv:["기본 스킬로 만들기","참고 자료 넣기","스킬 개선 스킬"], done:[true,true,true], note:"skill-improver 설치됨"},
+  {k:"S2", nm:"세컨드 브레인", lv:["CLAUDE.md 지침","길잡이 파일","나만의 탐색기"], done:[true,true,true], note:"대문 + 길잡이 4개 + 이 탐색기"},
+  {k:"R", nm:"루틴", lv:["데스크톱 예약","상시 PC + 동기화","클라우드 실행"], done:[false,false,false], next:2, note:"다음 할 일: 클라우드에 4개 등록"},
+  {k:"+", nm:"익스텐션", lv:["기본 커넥터","MCP·CLI·API","직접 만들기"], done:[true,true,true], note:"커넥터 10종 연결 + 대시보드"}
+];
+
+const RULES = "공통 규칙: 한국어. 첫 문장은 결론. 문장은 짧게. '중요합니다', '다양한', '효과적인', '~할 수 있습니다' 쓰지 않는다. 수입·수당을 보장하는 표현 금지(범위와 조건으로만). 긴 내용은 표로. 고객 실명·연락처는 이니셜로. 결과는 바로 복사해 쓸 수 있는 마크다운으로.";
+
+const SKILLS = [
+  {id:"recruit-proposal", nm:"모집 제안서", ds:"직군별 블레스본부 합류 제안서", sys:false,
+   guide:"대상 직군과 상황만 적으면 공감 → 왜 지금 → 지원 시스템 → 수입 구조(조건 명시) → 30/60/90일 정착 로드맵 → 다음 단계 순서의 제안서를 만듭니다.",
+   ins:"블레스본부(보험 설계사 조직) 합류 제안서를 쓴다. 구성: 1) 대상의 현재 고민에 공감하는 첫 문단 2) 지금 시작해야 하는 이유 3가지 3) 블레스본부 지원 시스템(교육, DB 지원, 멘토링) 표 4) 수입 구조는 '예시·범위·조건'으로만 5) 30/60/90일 정착 로드맵 표 6) 다음 단계 한 줄(상담 신청).",
+   ex:"대상: 6년차 간호사, 3교대에 지쳐 이직 고민 중. 30대 중반, 아이 1명.\n원하는 톤: 따뜻하지만 현실적으로."},
+  {id:"tistory-aeo-post", nm:"블로그 AEO 글", ds:"BLESS INSIGHT 티스토리 포스트", sys:false,
+   guide:"주제와 키워드를 주면 AI 검색(AEO)에 걸리기 좋은 구조로 씁니다. 첫 문단 결론 인용구, 질문형 소제목, FAQ 3개.",
+   ins:"티스토리 블로그 '보험설계사 현실 연구소 - BLESS INSIGHT' 포스트를 쓴다. 구조: H1 제목(질문형) → 결론을 담은 인용구 2~3문장 → 질문형 H2 4개 → 표 1개 이상 → FAQ 3개(Q/A) → 마무리 CTA 1줄. 1,500~2,000자. 마지막에 메타 설명 120자와 태그 8개.",
+   ex:"주제: 보험설계사 연봉 현실 (1~3년차)\n키워드: 보험설계사 연봉, 보험설계사 수입\n타깃: 이직 고민 중인 30대 직장인"},
+  {id:"sns-content-creator", nm:"카드뉴스·릴스", ds:"인스타 카드 6장 + 캡션 + 해시태그", sys:false,
+   guide:"블로그 글이나 주제를 넣으면 카드뉴스 6장 문구, 릴스 15초 대본, 캡션, 해시태그 10개를 한 번에 만듭니다.",
+   ins:"블레스본부 인스타그램 콘텐츠를 만든다. 1) 카드뉴스 6장: 장마다 큰 제목(12자 이내)+본문 2줄 2) 릴스 15초 대본: 0-3초 훅, 3-12초 내용, 12-15초 CTA 3) 캡션 5줄 4) 해시태그 10개(대형 3, 중형 4, 소형 3).",
+   ex:"주제: 경력단절 여성이 보험설계사로 재취업할 때 첫 3개월\n핵심 메시지: 혼자 시작하지 않는다"},
+  {id:"recruit-dm", nm:"문의 DM 답장", ds:"채용 문의에 3문장 답장 초안", sys:false,
+   guide:"인스타·블로그로 들어온 채용 문의를 붙여넣으면 온도(상·중·하)를 판단하고 3문장 답장 초안을 씁니다. 보내지는 않습니다.",
+   ins:"보험 설계사 채용 문의에 답장 초안을 쓴다. 먼저 문의의 온도(상/중/하)와 핵심 질문을 표로 정리. 그다음 답장 3문장(공감 → 질문에 대한 답 → 부담 없는 다음 행동 제안). 이모지 1개 이하. 존댓말.",
+   ex:"문의: 안녕하세요 요양보호사로 5년 일했는데요, 보험 일은 아는 사람한테 영업해야 한다고 들어서 망설여져요. 지인 없이도 가능한가요?"},
+  {id:"consult-script", nm:"상담 스크립트", ds:"고객 상황별 상담 흐름", sys:false,
+   guide:"고객 상황을 적으면 오프닝 → 니즈 질문 5개 → 예상 반론 3개와 답변 → 클로징 문장까지 상담 흐름을 만듭니다.",
+   ins:"보험 상담 스크립트를 만든다. 1) 오프닝 2문장 2) 니즈 파악 질문 5개(열린 질문) 3) 예상 반론 3개와 답변 표 4) 클로징 문장 2개 5) 상담 후 보낼 문자 1개. 상품명·보장 금액을 단정하지 말고 '확인 후 안내'로 쓴다.",
+   ex:"고객: 40대 맞벌이 부부, 아이 2명. 실손만 있고 종합보험은 없음. '보험료가 부담된다'는 말을 자주 함."},
+  {id:"morning", nm:"모닝 브리핑", ds:"일정·메일 붙여넣으면 오늘 할 일 TOP3", sys:false,
+   guide:"캘린더 일정과 메일 제목을 붙여넣으면 시간표 + 답장 필요한 메일 + 오늘 할 일 TOP3로 정리합니다. (자동 실행은 루틴에서)",
+   ins:"모닝 브리핑을 만든다. 1) 오늘 일정 표(시간/구분: 상담·교육·미팅/메모) 2) 답장이 필요한 메일만 3줄 요약 3) 오늘 할 일 TOP3 — 기준: 마감 임박 > 돈이 되는 일 > 리크루팅. 인사말 없이 시작.",
+   ex:"일정:\n10:00 신입 교육(2기)\n14:00 고객 상담 김OO (실손 갱신)\n17:30 본부 미팅\n\n메일:\n- [인사팀] 11월 위촉 서류 마감 안내\n- 네이버 블로그 댓글 알림 3건\n- [교육원] 자격시험 일정 변경"},
+  {id:"skill-improver", nm:"스킬 개선기", ds:"스킬 + 피드백 → 개선안 표", sys:true,
+   guide:"낡은 스킬 내용과 '이게 불편했다'는 피드백을 붙여넣으면 [문제 / 고칠 위치 / 수정 전 / 수정 후] 표를 만듭니다.",
+   ins:"스킬 개선안을 만든다. 입력된 스킬 지침과 사용자 피드백을 근거로 [# / 문제 / 고칠 위치 / 수정 전 / 수정 후] 표를 만든다. 반복되는 지적은 규칙으로 승격. 마지막에 SKILL.md 끝에 붙일 '자가 업데이트' 섹션도 제안.",
+   ex:"스킬: 모집 제안서 — 공감 → 이유 → 지원 → 수입 → 로드맵 순서.\n피드백: 회사 양식이 바뀌어서 첫 장에 본부장 인사말이 들어가야 함. 수입 부분이 매번 너무 길다. 표 대신 숫자 3개로 보여줬으면."},
+  {id:"connector-finder", nm:"커넥터 찾기", ds:"연결하고 싶은 서비스 → 방법", sys:true,
+   guide:"연결하고 싶은 서비스와 쓰는 상황을 적으면 MCP → CLI → API 순서로 무엇을 찾아야 하는지, 따라하기 단계를 알려줍니다. (실제 검색은 Claude Code에서)",
+   ins:"사용자가 연결하고 싶은 서비스를 Claude에 붙이는 방법을 안내한다. 1) 원하는 것 한 줄 정리 2) 찾는 순서 표(기본 커넥터 / MCP / CLI / API, 각각 검색어 예시와 난이도) 3) 가장 가능성 높은 방법의 따라하기 단계(번호) 4) 주의할 점(API 키는 채팅에 붙이지 않기, 공식 여부 확인). 존재가 확실하지 않은 서버 이름은 '검색 필요'로 표시.",
+   ex:"연결하고 싶은 것: 건축물대장 — 주소로 건물 층수·면적·용도 조회\n쓰는 상황: 법인 고객 화재보험 상담 전 건물 정보 확인"},
+  {id:"extension-idea", nm:"확장 기능 아이디어", ds:"반복 수작업 → 나만의 도구", sys:true,
+   guide:"요즘 귀찮은 일을 적으면 그걸 없애는 도구 아이디어 5개를 표로 제안합니다.",
+   ins:"보험 영업 조직 리더의 반복 수작업을 줄이는 확장 기능 아이디어 5개를 [# / 이름 / 해결하는 불편 / 형태(웹 화면·스킬·루틴) / 만드는 시간 / 효과] 표로 제안한다. 그중 1순위 하나를 골라 Claude Code에 그대로 붙여넣을 제작 프롬프트를 쓴다.",
+   ex:"귀찮은 일: 매주 신입 설계사 10명의 활동량(상담 수, 계약 수)을 카톡으로 받아서 엑셀에 옮겨 적는 것"}
+];
+
+const ROUTINES = [
+  {nm:"모닝 브리핑", h:8, m:47, days:"매일", dset:[0,1,2,3,4,5,6], file:"ai-system/routines/모닝-브리핑.md", conn:"Gmail · Calendar", ds:"오늘 일정 + 답장 필요한 메일 + TOP3"},
+  {nm:"리크루팅 리드 점검", h:13, m:23, days:"평일", dset:[1,2,3,4,5], file:"ai-system/routines/리크루팅-리드-점검.md", conn:"Gmail · Uplika", ds:"채용 문의 온도 분류 + 답장 초안"},
+  {nm:"주간 콘텐츠 기획", h:7, m:41, days:"월", dset:[1], file:"ai-system/routines/주간-콘텐츠-기획.md", conn:"Uplika 키워드", ds:"블로그 3 + 숏폼 2 주제"},
+  {nm:"세컨드 브레인 정리", h:17, m:37, days:"금", dset:[5], file:"ai-system/routines/세컨드브레인-정리.md", conn:"저장소", ds:"새 파일을 길잡이에 연결"}
+];
+
+const CONNS = [
+  {nm:"Gmail", ds:"메일 요약 · 답장 초안", st:"ok"},
+  {nm:"Google Calendar", ds:"일정 확인 · 등록", st:"ok"},
+  {nm:"Google Drive · Docs", ds:"자료 찾기 · 문서 편집", st:"ok"},
+  {nm:"Notion", ds:"메모 · 리크루팅 DB", st:"ok"},
+  {nm:"Uplika", ds:"SNS 예약 발행 · 네이버 키워드", st:"ok"},
+  {nm:"PlayMCP (카카오)", ds:"톡캘린더 · 유튜브 데이터", st:"ok"},
+  {nm:"Canva · Gamma", ds:"카드뉴스 · 슬라이드", st:"ok"},
+  {nm:"Slack · Zoom", ds:"팀 공지 · 회의록", st:"ok"},
+  {nm:"공공데이터", ds:"법령 · 보험 상품 · 판례", st:"ok"},
+  {nm:"Figma · Adobe", ds:"디자인 · 이미지 편집", st:"ok"},
+  {nm:"youtube_mcp", ds:"연결 시간 초과 — 재연결 필요", st:"warn"},
+  {nm:"건축물대장", ds:"connector-finder로 찾기", st:"todo"}
+];
+
+const PROMPTS = {
+  "스킬":[
+    {t:"초급 · 스킬 만들기", p:"skill-creator를 사용해서 스킬을 하나 만들어줘.\n- 스킬 이름: (예: recruit-dm)\n- 하는 일: (예: 인스타 DM으로 들어온 채용 문의에 답장 초안 쓰기)\n- 이렇게 말하면 발동: (예: \"DM 답장 써줘\", \"채용 문의 답장\")\n- 입력: (예: 문의 내용 복사본)\n- 출력 형식: (예: 3문장 답장 + 다음 행동 1줄)\n- 꼭 지킬 규칙: (예: 수입 보장 표현 금지, 존댓말, 이모지 1개 이하)\n만든 뒤 테스트 문의 2개로 직접 돌려보고 결과를 보여줘."},
+    {t:"중급 · 스킬에 참고 자료 넣기", p:".claude/skills/<스킬이름>/ 스킬을 업그레이드해줘.\n1. 지금 SKILL.md를 읽고, 결과물 품질을 좌우하는 기준(디자인, 말투, 양식)을 뽑아줘.\n2. 그 기준을 별도 참고 파일로 분리해줘: style.md(톤·디자인), template.md 또는 template.html(양식), examples.md(잘 된 예시 2개).\n3. SKILL.md에는 \"작업 전 style.md와 template을 반드시 읽는다\"는 줄만 남겨 짧게 만들어줘.\n4. 내가 첨부한 자료(양식 파일, 예전 결과물)를 template와 examples에 반영해줘."},
+    {t:"고급 · 자가 업데이트 기능 넣기", p:".claude/skills/<스킬이름>/SKILL.md 맨 끝에 \"자가 업데이트\" 섹션을 추가해줘.\n내용: 작업이 끝나면 내가 고친 부분이 있었는지 확인하고, 있었다면\n\"이 수정을 스킬에 반영할까요?\"라고 한 줄로 묻는다. 내가 \"응\"이라고 하면\n해당 규칙을 SKILL.md 또는 참고 파일에 추가하고 맨 아래 변경 기록에 날짜와 한 줄 요약을 남긴다."},
+    {t:"고급 · 전체 스킬 개선", p:"skill-improver 스킬로 <스킬이름>을 점검해줘.\n이번 대화에서 그 스킬이 발동된 부분과 내가 고치라고 한 부분을 근거로\n[문제 / 고칠 위치 / 수정 전 / 수정 후] 표를 만들어줘. 내가 \"적용\"이라고 하면 고쳐."}
+  ],
+  "세컨드 브레인":[
+    {t:"초급 · CLAUDE.md 만들기", p:"이 폴더의 CLAUDE.md를 만들어줘. 나에게 질문을 1개씩 해서 아래 내용을 채워.\n1. 나는 누구인가 (직업, 하는 일, 고객)\n2. 답변 스타일 (언어, 길이, 형식, 금지 표현)\n3. 항상 지킬 규칙 5개 이내\n4. 자주 하는 업무 TOP 5\n다 채우면 50줄 이내로 정리해서 저장해줘."},
+    {t:"중급 · 길잡이 파일 세팅", p:"이 폴더를 세컨드 브레인으로 정리해줘. 파일은 옮기지 말고 길잡이만 만든다.\n1. 모든 파일을 훑어서 업무 분야별(예: 콘텐츠, 영업, 리크루팅, 운영)로 묶어줘.\n2. 분야마다 ai-system/wiki/<분야>.md 길잡이 파일을 만들고, 파일마다 [날짜/주제/링크/한 줄 설명] 표로 정리해.\n3. CLAUDE.md에 \"업무별 길잡이\" 표를 만들어 각 길잡이로 연결해. (CLAUDE.md = 대문)\n4. CLAUDE.md 규칙에 \"새 파일을 만들면 반드시 해당 길잡이에 한 줄 링크를 추가한다\"를 넣어.\n5. 마지막에 어느 길잡이에도 속하지 않은 파일 목록을 보여줘."},
+    {t:"고급 · 나만의 탐색기", p:"내 세컨드 브레인 탐색기를 HTML 한 장으로 만들어줘.\n- 가운데 CLAUDE.md를 두고, 길잡이 파일과 그 안에 링크된 파일을 선으로 잇는 지식 그래프 뷰\n- 같은 데이터를 폴더처럼 접었다 펴는 계층 뷰 (탭으로 전환)\n- 검색창: 파일 이름과 길잡이 설명으로 찾기\n- 노드를 누르면 오른쪽에 내용 미리보기\n데이터는 CLAUDE.md와 ai-system/wiki/ 안의 링크를 읽어서 자동으로 만들어."}
+  ],
+  "루틴":[
+    {t:"고급 · 클라우드 예약 등록", p:"ai-system/routines/모닝-브리핑.md 안의 프롬프트를\n매일 아침 8시 47분(서울 시간)에 실행되는 예약 작업으로 등록해줘.\nGmail과 Google Calendar 커넥터를 쓰도록 하고, 결과는 휴대폰 알림으로 받게 해줘."},
+    {t:"중급 · 남는 PC를 루틴 서버로", p:"집에 남는 윈도우 PC를 24시간 AI 루틴 서버로 쓰고 싶어. 비개발자 기준으로 번호 매겨 안내해줘.\n1. 절전 모드 끄기, 자동 로그인, 원격 접속 설정\n2. Syncthing으로 내 노트북의 작업 폴더(세컨드 브레인)를 그 PC와 동기화\n3. 그 PC에 Claude Code(또는 상시 실행 에이전트)를 설치하고 예약 작업 등록\n4. 잘 돌고 있는지 휴대폰으로 확인하는 방법"},
+    {t:"루틴 · 모닝 브리핑 본문", p:"오늘의 모닝 브리핑을 만들어줘.\n\n1. Google Calendar에서 오늘 일정을 시간순으로 정리해줘. (상담/교육/미팅 구분)\n2. Gmail에서 최근 24시간 안 읽은 메일 중 답장이 필요한 것만 골라 3줄 요약해줘.\n3. 오늘 해야 할 일 TOP 3를 골라줘. 기준: 마감 임박 > 돈이 되는 일 > 리크루팅.\n4. 어제 못 끝낸 일이 있으면 맨 아래에 따로 적어줘.\n\n형식: 표 1개 + 할 일 3줄. 인사말 없이 시작."}
+  ],
+  "익스텐션":[
+    {t:"중급 · 커넥터 찾기", p:"connector-finder 스킬로 찾아줘.\n연결하고 싶은 것: (예: 건축물대장 — 주소로 건물 층수·면적·용도 조회)\n쓰는 상황: (예: 법인 고객 화재보험 상담 전에 건물 정보 확인)\n무료 우선, 공식 우선으로 후보 3개를 표로 보여주고 1순위 연결 방법을 번호 매겨 알려줘."},
+    {t:"고급 · 확장 기능 아이디어", p:"extension-idea 스킬로 내 업무에 맞는 확장 기능 아이디어 5개를 표로 제안해줘.\nCLAUDE.md와 ai-system/wiki/를 먼저 읽고, 내가 반복하는 수작업을 근거로 골라.\n각 아이디어에 [해결하는 불편 / 형태 / 만드는 시간 / 효과]를 적어줘."}
+  ]
+};
+
+/* ---------- 공통 ---------- */
+const $ = s => document.querySelector(s);
+const el = (tag, attrs={}, kids=[]) => { const e=document.createElement(tag); for(const [k,v] of Object.entries(attrs)){ if(k==="text") e.textContent=v; else if(k==="html") e.innerHTML=v; else if(k.startsWith("on")) e.addEventListener(k.slice(2),v); else e.setAttribute(k,v);} for(const c of [].concat(kids)) if(c!=null) e.append(c); return e; };
+const store = { get(k,d){ try{ const v=localStorage.getItem("bless:"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }, set(k,v){ try{ localStorage.setItem("bless:"+k,JSON.stringify(v)); }catch(e){} } };
+let toastT; function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),1600); }
+async function copy(text, okMsg="복사했습니다"){
+  try{ await navigator.clipboard.writeText(text); toast(okMsg); }
+  catch(e){ const ta=el("textarea",{style:"position:fixed;left:-9999px"}); ta.value=text; document.body.append(ta); ta.select(); let ok=false; try{ ok=document.execCommand("copy"); }catch(_){} ta.remove(); toast(ok?okMsg:"복사가 막혔어요. 텍스트를 직접 선택해 복사하세요"); }
+}
+const DAYS = ["일","월","화","수","목","금","토"];
+
+/* ---------- 시계 ---------- */
+function tickClock(){ const d=new Date(); $("#today").textContent=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} (${DAYS[d.getDay()]})`; $("#now").textContent=`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
+tickClock(); setInterval(()=>{ tickClock(); renderTimeline(); }, 30000);
+
+/* ---------- SSR+ ---------- */
+function renderSSR(){
+  const box=$("#ssr"); box.innerHTML="";
+  const saved=store.get("ssr",null);
+  STEPS.forEach((s,i)=>{
+    const done = saved?.[i] ?? s.done;
+    const firstTodo = done.indexOf(false);
+    const lv = el("div",{class:"lv"});
+    s.lv.forEach((name,j)=>{
+      const b=el("button",{"aria-pressed":String(done[j]),title:name,text:["초급","중급","고급"][j]+" · "+name});
+      if(!done[j] && j===(s.next ?? firstTodo)) b.classList.add("next");
+      b.onclick=()=>{ const cur=(store.get("ssr",null)||STEPS.map(x=>x.done.slice())); cur[i][j]=!cur[i][j]; store.set("ssr",cur); renderSSR(); };
+      lv.append(b);
+    });
+    const count=done.filter(Boolean).length;
+    box.append(el("div",{class:"ssr-step"},[
+      el("div",{class:"ssr-head"},[el("b",{text:s.k}),el("span",{text:s.nm}),el("span",{class:"pill "+(count===3?"ok":"todo"),text:`${count}/3`})]),
+      lv, el("div",{class:"ssr-note",text:s.note})
+    ]));
+  });
+}
+renderSSR();
+
+/* ---------- 세컨드 브레인 ---------- */
+const N=[], E=[];
+function add(id,label,type,parent,info){ N.push({id,label,type,info}); if(parent) E.push([parent,id]); }
+add("hub","CLAUDE.md","hub",null,{path:"CLAUDE.md",body:"대문. Claude가 매번 가장 먼저 읽는 파일. 나는 누구인지, 항상 지킬 규칙 6개, 업무별 길잡이 표, 대시보드 위치가 들어 있다."});
+add("g-content","콘텐츠","guide","hub",{path:"ai-system/wiki/콘텐츠.md",body:"블로그 원고 표(posts/), 콘텐츠 스킬 4개, 파일명 규칙(YYMMDD-주제.md)."});
+add("g-recruit","리크루팅·영업","guide","hub",{path:"ai-system/wiki/리크루팅-영업.md",body:"모집 제안서 스킬, 직군별 타깃 원고, 영업 자료 목록."});
+add("g-skill","스킬·루틴","guide","hub",{path:"ai-system/wiki/스킬-루틴.md",body:"업무 스킬 5개, 시스템 스킬 3개, 예약 루틴 4개의 목록과 발동 문구."});
+add("g-conn","커넥터","guide","hub",{path:"ai-system/wiki/커넥터.md",body:"연결된 커넥터와 말로 시키는 예, 새 커넥터 찾는 법, 직접 만든 확장 기능."});
+add("doc-guide","세팅 가이드","doc","hub",{path:"ai-system/README.md",body:"SSR+ 4단계 × 초·중·고급 세팅법과 프롬프트 전문."});
+POSTS.forEach((p,i)=>{ const short=p.title.split(/[,?]/)[0].replace(/보험설계사/g,"").trim()||p.title; add("p"+i, short.length>14?short.slice(0,14)+"…":short,"post","g-content",{path:p.file,title:p.title,body:p.summary}); });
+["recruit-proposal","tistory-aeo-post","sns-content-creator","shortform-auto-edit","motion-graphics"].forEach(s=>add("s-"+s,s,"skill","g-skill",{path:`.claude/skills/${s}/SKILL.md`,body:(SKILLS.find(x=>x.id===s)||{}).guide||"숏폼·모션그래픽 영상 제작 스킬."}));
+["skill-improver","connector-finder","extension-idea"].forEach(s=>add("s-"+s,s,"skill","g-skill",{path:`.claude/skills/${s}/SKILL.md`,body:SKILLS.find(x=>x.id===s).guide}));
+ROUTINES.forEach((r,i)=>add("r"+i,r.nm,"routine","g-skill",{path:r.file,body:`${r.days} ${String(r.h).padStart(2,"0")}:${String(r.m).padStart(2,"0")} · ${r.ds} · 사용: ${r.conn}`}));
+CONNS.slice(0,10).forEach((c,i)=>add("c"+i,c.nm,"conn","g-conn",{path:"ai-system/wiki/커넥터.md",body:c.ds}));
+add("dash","dashboard.html","doc","g-conn",{path:"ai-system/dashboard.html",body:"지금 보고 있는 이 사령실 화면."});
+// 교차 연결 (길잡이끼리 같은 파일을 가리킴)
+E.push(["g-recruit","s-recruit-proposal"]);
+POSTS.forEach((p,i)=>{ if(/간호|요양|경력단절|40대|경력직/.test(p.title)) E.push(["g-recruit","p"+i]); });
+E.push(["g-content","s-tistory-aeo-post"],["g-content","s-sns-content-creator"],["g-content","s-shortform-auto-edit"],["g-content","s-motion-graphics"]);
+
+const TYPES={hub:["대문","--n-hub",13],guide:["길잡이","--n-guide",10],post:["블로그 글","--n-post",6],skill:["스킬","--n-skill",7],routine:["루틴","--n-routine",7],conn:["커넥터","--n-conn",6],doc:["문서","--n-doc",7]};
+$("#legend").append(...Object.values(TYPES).map(([nm,c])=>el("span",{},[el("i",{style:`background:var(${c})`}),nm])));
+
+function layout(W,H){
+  // 결정적 초기 배치: 길잡이는 원형, 하위는 부모 주변
+  const idx=Object.fromEntries(N.map((n,i)=>[n.id,i]));
+  const guides=N.filter(n=>n.type==="guide"||n.id==="doc-guide");
+  N.forEach(n=>{ n.x=W/2; n.y=H/2; n.vx=0; n.vy=0; });
+  guides.forEach((g,i)=>{ const a=i/guides.length*Math.PI*2-Math.PI/2; g.x=W/2+Math.cos(a)*W*.22; g.y=H/2+Math.sin(a)*H*.26; });
+  const kids={}; E.forEach(([a,b])=>{ if(!kids[a]) kids[a]=[]; kids[a].push(b); });
+  guides.forEach(g=>{ const ks=(kids[g.id]||[]).filter(k=>N[idx[k]].x===W/2); ks.forEach((k,i)=>{ const a=i/ks.length*Math.PI*2; const n=N[idx[k]]; n.x=g.x+Math.cos(a)*60; n.y=g.y+Math.sin(a)*60; }); });
+  for(let it=0;it<320;it++){
+    const alpha=1-it/320;
+    for(let i=0;i<N.length;i++) for(let j=i+1;j<N.length;j++){
+      const a=N[i],b=N[j]; let dx=b.x-a.x, dy=b.y-a.y; let d2=dx*dx+dy*dy||.01; const d=Math.sqrt(d2);
+      const f=Math.min(2600/d2,6)*alpha; dx/=d; dy/=d; a.vx-=dx*f; a.vy-=dy*f; b.vx+=dx*f; b.vy+=dy*f;
+    }
+    E.forEach(([s,t])=>{ const a=N[idx[s]],b=N[idx[t]]; const dx=b.x-a.x, dy=b.y-a.y; const d=Math.sqrt(dx*dx+dy*dy)||1; const L=(a.type==="hub"||b.type==="hub")?150:72; const f=(d-L)*.02*alpha; a.vx+=dx/d*f; a.vy+=dy/d*f; b.vx-=dx/d*f; b.vy-=dy/d*f; });
+    N.forEach(n=>{ if(n.type==="hub"){ n.x=W/2; n.y=H/2; n.vx=n.vy=0; return; } n.vx+=(W/2-n.x)*.0012; n.vy+=(H/2-n.y)*.0012; n.x+=n.vx; n.y+=n.vy; n.vx*=.6; n.vy*=.6; });
+  }
+  // 화면에 꽉 차게 다시 맞춤 (오른쪽은 라벨 여백)
+  const xs=N.map(n=>n.x), ys=N.map(n=>n.y); const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const mL=24,mR=W<500?70:120,mT=20,mB=20;
+  N.forEach(n=>{ n.x=mL+(n.x-x0)/((x1-x0)||1)*(W-mL-mR); n.y=mT+(n.y-y0)/((y1-y0)||1)*(H-mT-mB); });
+  return idx;
+}
+
+let selected="hub", query="";
+function drawGraph(){
+  const st=$("#stage"), W=Math.max(st.clientWidth,320), H=Math.max(st.clientHeight,420);
+  const idx=layout(W,H); const svg=$("#svg"); svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.innerHTML="";
+  const NS="http://www.w3.org/2000/svg";
+  const gE=document.createElementNS(NS,"g"), gN=document.createElementNS(NS,"g"); svg.append(gE,gN);
+  E.forEach(([s,t])=>{ const a=N[idx[s]],b=N[idx[t]]; const l=document.createElementNS(NS,"line"); l.setAttribute("x1",a.x);l.setAttribute("y1",a.y);l.setAttribute("x2",b.x);l.setAttribute("y2",b.y); l.setAttribute("class","edge"); l.dataset.s=s; l.dataset.t=t; gE.append(l); });
+  N.forEach(n=>{
+    const [,c,r]=TYPES[n.type]; const g=document.createElementNS(NS,"g"); g.setAttribute("class","node"); g.dataset.id=n.id; g.setAttribute("tabindex","0"); g.setAttribute("role","button"); g.setAttribute("aria-label",n.label);
+    const ci=document.createElementNS(NS,"circle"); ci.setAttribute("cx",n.x); ci.setAttribute("cy",n.y); ci.setAttribute("r",r); ci.setAttribute("fill",`var(${c})`);
+    const tx=document.createElementNS(NS,"text"); tx.setAttribute("x",n.x+r+4); tx.setAttribute("y",n.y+4); tx.textContent=n.label;
+    if(n.type==="hub"||n.type==="guide"){ tx.setAttribute("font-weight","700"); tx.style.fontSize="12.5px"; }
+    g.append(ci,tx); g.addEventListener("click",()=>select(n.id)); g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(n.id);} });
+    gN.append(g);
+  });
+  paint();
+}
+function matches(n){ if(!query) return true; const q=query.toLowerCase(); return [n.label,n.info.path,n.info.title||"",n.info.body].join(" ").toLowerCase().includes(q); }
+function paint(){
+  document.querySelectorAll("#svg .node").forEach(g=>{ const n=N.find(x=>x.id===g.dataset.id); g.classList.toggle("dim",!matches(n)); g.classList.toggle("sel",n.id===selected); });
+  document.querySelectorAll("#svg .edge").forEach(l=>l.classList.toggle("hl",l.dataset.s===selected||l.dataset.t===selected));
+  document.querySelectorAll("#tree li button").forEach(b=>b.classList.toggle("hit",!!query && matches(N.find(x=>x.id===b.dataset.id))));
+  const res=$("#results"); res.innerHTML="";
+  if(query){ const hits=N.filter(matches); res.append(...(hits.length?hits.slice(0,12).map(n=>el("button",{text:`${TYPES[n.type][0]} · ${n.info.title||n.label}`,onclick:()=>select(n.id)})):[el("div",{class:"label",text:"결과 없음"})])); }
+}
+function select(id){
+  selected=id; const n=N.find(x=>x.id===id); const p=$("#preview"); p.innerHTML="";
+  const links=E.filter(([a,b])=>a===id||b===id).map(([a,b])=>a===id?b:a).map(x=>N.find(y=>y.id===x));
+  p.append(el("span",{class:"pill ok",text:TYPES[n.type][0]}), el("h3",{text:n.info.title||n.label}), el("div",{class:"path",text:n.info.path}), el("p",{text:n.info.body,style:"margin-top:8px"}));
+  if(links.length){ p.append(el("div",{class:"label",text:`연결 ${links.length}개`,style:"margin-top:6px"})); const wrap=el("div",{style:"display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"}); links.forEach(l=>wrap.append(el("button",{class:"btn sm",text:l.label,onclick:()=>select(l.id)}))); p.append(wrap); }
+  p.append(el("div",{style:"margin-top:10px"},[el("button",{class:"btn sm",text:"Claude에게 열어달라고 하기 (복사)",onclick:()=>copy(`${n.info.path} 파일을 열어서 핵심만 요약해줘.`)})]));
+  paint();
+}
+function buildTree(){
+  const t=$("#tree"); t.innerHTML="";
+  const hub=el("details",{open:""},[el("summary",{text:"CLAUDE.md (대문)"})]);
+  const groups=N.filter(n=>n.type==="guide"||n.id==="doc-guide");
+  groups.forEach(g=>{
+    const ks=E.filter(([a])=>a===g.id).map(([,b])=>N.find(n=>n.id===b));
+    const d=el("details",{open:""},[el("summary",{text:`${g.label} — ${g.info.path}`})]);
+    const ul=el("ul"); ul.append(el("li",{},el("button",{"data-id":g.id,text:"▸ 길잡이 열기",onclick:()=>select(g.id)})));
+    ks.forEach(k=>ul.append(el("li",{},el("button",{"data-id":k.id,text:`${TYPES[k.type][0]} · ${k.info.title||k.label}`,onclick:()=>select(k.id)}))));
+    d.append(ul); hub.append(d);
+  });
+  t.append(hub);
+}
+function setView(v){ $("#v-graph").setAttribute("aria-pressed",String(v==="graph")); $("#v-tree").setAttribute("aria-pressed",String(v==="tree")); $("#stage").hidden=v!=="graph"; $("#tree").hidden=v!=="tree"; if(v==="graph") drawGraph(); else paint(); store.set("view",v); }
+$("#v-graph").onclick=()=>setView("graph"); $("#v-tree").onclick=()=>setView("tree");
+$("#q").addEventListener("input",e=>{ query=e.target.value.trim(); paint(); });
+buildTree(); setView(store.get("view","graph")); select("hub");
+let rT; window.addEventListener("resize",()=>{ clearTimeout(rT); rT=setTimeout(()=>{ if(!$("#stage").hidden) drawGraph(); },200); });
+
+/* ---------- 루틴 ---------- */
+function nextRun(r){ const now=new Date(); for(let k=0;k<8;k++){ const d=new Date(now); d.setDate(now.getDate()+k); d.setHours(r.h,r.m,0,0); if(d>now && r.dset.includes(d.getDay())) return d; } return null; }
+function fmtNext(d){ const now=new Date(); const diff=Math.round((d-now)/60000); if(diff<60) return `${diff}분 뒤`; const sameDay=d.toDateString()===now.toDateString(); if(sameDay) return `오늘 ${Math.floor(diff/60)}시간 뒤`; return `${DAYS[d.getDay()]}요일`; }
+function renderTimeline(){
+  const tl=$("#timeline"); tl.innerHTML=""; const now=new Date(); const pct=(now.getHours()*60+now.getMinutes())/1440*100;
+  tl.append(el("div",{class:"rail"}), el("div",{class:"past",style:`width:${pct}%`}));
+  [0,6,12,18,24].forEach(h=>tl.append(el("div",{class:"tick",style:`left:${h/24*100}%`,text:String(h).padStart(2,"0")})));
+  ROUTINES.forEach(r=>{ const on=r.dset.includes(now.getDay()); tl.append(el("div",{class:"mk"+(on?"":" off"),style:`left:${(r.h*60+r.m)/1440*100}%`,title:`${r.nm} ${r.h}:${String(r.m).padStart(2,"0")}${on?"":" (오늘 없음)"}`})); });
+  tl.append(el("div",{class:"now",style:`left:${pct}%`},el("span",{text:"지금"})));
+  const list=$("#rlist"); list.innerHTML="";
+  const sorted=ROUTINES.map(r=>({r,n:nextRun(r)})).sort((a,b)=>a.n-b.n);
+  sorted.forEach(({r,n},i)=>{
+    const reg=`${r.file} 안의 프롬프트를 ${r.days==="매일"?"매일":r.days==="평일"?"평일(월~금)":"매주 "+r.days+"요일"} ${r.h}시 ${r.m}분(서울 시간)에 실행되는 예약 작업으로 등록해줘. ${r.conn} 커넥터를 쓰고, 결과는 휴대폰 알림으로 받게 해줘.`;
+    list.append(el("div",{class:"rcard"},[
+      el("div",{class:"time",text:`${String(r.h).padStart(2,"0")}:${String(r.m).padStart(2,"0")}`}),
+      el("div",{},[el("div",{class:"nm",text:r.nm}),el("div",{class:"meta",text:`${r.days} · ${r.ds}`})]),
+      el("button",{class:"btn sm",text:"등록 문구",onclick:()=>copy(reg,"등록 문구를 복사했습니다. Claude Code에 붙여넣으세요")}),
+      el("div",{class:"meta",text:n?`다음: ${fmtNext(n)} · ${r.conn}`:""}),
+      i===0?el("span",{class:"pill next",text:"다음 실행",style:"grid-column:3;justify-self:end"}):null
+    ]));
+  });
+}
+renderTimeline();
+
+/* ---------- 스킬 런처 ---------- */
+let cur=SKILLS[0], tier=store.get("tier","default"), sample=null, ctl=null, lastOut="";
+function renderSkills(){
+  const box=$("#sklist"); box.innerHTML="";
+  SKILLS.forEach(s=>{ const b=el("button",{class:"sk"+(s.sys?" sys":""),"aria-pressed":String(s===cur)},[el("span",{class:"id",text:(s.sys?"시스템 · ":"")+s.id}),el("span",{class:"nm",text:s.nm}),el("span",{class:"ds",text:s.ds})]); b.onclick=()=>{ pick(s); }; box.append(b); });
+}
+function pick(s){ const drafts=store.get("drafts",{}); if(cur) { drafts[cur.id]=$("#r-input").value; store.set("drafts",drafts); } cur=s; $("#r-id").textContent=s.id; $("#r-name").textContent=s.nm; $("#r-guide").textContent=s.guide; $("#r-input").value=(store.get("drafts",{})[s.id])||s.ex; renderSkills(); }
+function setTier(t){ tier=t; store.set("tier",t); document.querySelectorAll("#tier button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.tier===t))); }
+document.querySelectorAll("#tier button").forEach(b=>b.onclick=()=>setTier(b.dataset.tier));
+function buildPrompt(){ return `너는 블레스본부(보험 설계사 조직)의 AI 비서다.\n${RULES}\n\n[스킬: ${cur.nm}]\n${cur.ins}\n\n[요청]\n${$("#r-input").value.trim()}`; }
+function renderMd(t){ const out=$("#out"); out.classList.remove("empty"); if(window.marked&&window.DOMPurify){ out.innerHTML=DOMPurify.sanitize(marked.parse(t)); } else { out.textContent=t; } }
+const ERR={not_granted:"Claude 사용이 허용되지 않았습니다. '프롬프트 복사'로 Claude 대화창에 붙여 쓰세요.",rate_limited:"요청이 몰렸습니다. 잠시 뒤 다시 눌러주세요.",aborted:"중지했습니다."};
+$("#run").onclick=async()=>{
+  if(!$("#r-input").value.trim()){ toast("요청 내용을 적어주세요"); return; }
+  if(!sample){ copy(buildPrompt(),"이 화면에선 실행이 안 돼서 프롬프트를 복사했습니다"); return; }
+  ctl=new AbortController(); $("#run").disabled=true; $("#stop").hidden=false; const out=$("#out"); out.classList.add("empty"); out.textContent="생각 중…";
+  try{
+    const {text}=await sample(buildPrompt(),{modelTier:tier,signal:ctl.signal,cache:false,onText:({text})=>{ lastOut=text; renderMd(text); }});
+    lastOut=text; renderMd(text);
+  }catch(e){ if(e&&e.text){ lastOut=e.text; renderMd(e.text); } const m=ERR[e?.code]||"실행하지 못했습니다. 잠시 뒤 다시 시도하거나 '프롬프트 복사'를 쓰세요."; toast(m); if(!e?.text){ out.classList.add("empty"); out.textContent=m; } }
+  finally{ $("#run").disabled=false; $("#stop").hidden=true; ctl=null; }
+};
+$("#stop").onclick=()=>ctl?.abort();
+$("#copy-prompt").onclick=()=>copy(buildPrompt(),"프롬프트를 복사했습니다");
+$("#copy-out").onclick=()=>lastOut?copy(lastOut,"결과를 복사했습니다"):toast("아직 결과가 없습니다");
+$("#r-input").addEventListener("input",()=>{ const d=store.get("drafts",{}); d[cur.id]=$("#r-input").value; store.set("drafts",d); });
+setTier(tier); pick(SKILLS[0]);
+$("#sk-avail").textContent="AI 연결 확인 중…";
+(async()=>{ try{ sample = window.claude ? await window.claude.use("sample") : null; }catch(e){ sample=null; }
+  $("#sk-avail").textContent = sample ? "실행 가능 · 내 Claude 계정 사용" : "이 화면에선 실행 불가 · 프롬프트 복사로 사용";
+  if(!sample){ $("#run").textContent="프롬프트 복사"; $("#copy-prompt").hidden=true; }
+})();
+
+/* ---------- 익스텐션 ---------- */
+const STL={ok:["연결됨","ok"],warn:["오류","warn"],todo:["찾는 중","todo"]};
+$("#conns").append(...CONNS.map(c=>el("div",{class:"conn"},[el("div",{class:"r1"},[el("span",{class:"nm",text:c.nm}),el("span",{class:"pill "+STL[c.st][1],text:STL[c.st][0]})]),el("span",{class:"ds",text:c.ds})])));
+
+/* ---------- 프롬프트 ---------- */
+let ptab=store.get("ptab","스킬"); if(!PROMPTS[ptab]) ptab="스킬";
+function renderPrompts(){
+  const tabs=$("#ptabs"); tabs.innerHTML="";
+  Object.keys(PROMPTS).forEach(k=>tabs.append(el("button",{role:"tab","aria-selected":String(k===ptab),text:`${k} ${PROMPTS[k].length}`,onclick:()=>{ ptab=k; store.set("ptab",k); renderPrompts(); }})));
+  const list=$("#plist"); list.innerHTML="";
+  PROMPTS[ptab].forEach(p=>list.append(el("div",{class:"pr"},[el("div",{class:"pr-h"},[el("span",{class:"t",text:p.t}),el("button",{class:"btn sm",text:"복사",onclick:()=>copy(p.p)})]),el("pre",{text:p.p})])));
+}
+renderPrompts();
+</script>
