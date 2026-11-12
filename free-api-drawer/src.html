@@ -1,0 +1,406 @@
+<title>무료 API 서랍</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: 카탈로그 서랍 — 위는 "바로 써보기" 카드 12장, 아래는 2,360개 전체 색인 카드 목록 */
+:root {
+  --bg: #f3f6f5;
+  --surface: #ffffff;
+  --ink: #0f1f1b;
+  --muted: #5a6b66;
+  --line: #d9e2df;
+  --mint: #47e3b8;
+  --mint-ink: #0a5c47;
+  --mint-soft: #dcf8ef;
+  --warn: #b5590f;
+  --warn-soft: #fdeedd;
+  --bad: #b3261e;
+  --display: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+  --body: "IBM Plex Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1513; --surface: #15211e; --ink: #e6efec; --muted: #93a8a1; --line: #263632;
+  --mint: #47e3b8; --mint-ink: #7cf0cf; --mint-soft: #16372e; --warn: #f0a35e; --warn-soft: #3a2a19; --bad: #ff8a80;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0d1513; --surface: #15211e; --ink: #e6efec; --muted: #93a8a1; --line: #263632;
+  --mint: #47e3b8; --mint-ink: #7cf0cf; --mint-soft: #16372e; --warn: #f0a35e; --warn-soft: #3a2a19; --bad: #ff8a80;
+  color-scheme: dark }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+.wrap > * { min-width: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 64px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+a { color: var(--mint-ink); }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+
+/* Hero */
+.hero { display: grid; gap: 14px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hero h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; font-weight: 700; }
+.hl { background: var(--mint); color: #062a20; padding: 0 .18em; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.hero p { margin: 0; max-width: 62ch; color: var(--muted); font-size: 16px; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 500; font-size: 15px; }
+
+.sec-head { display: grid; gap: 6px; margin-bottom: 20px; }
+.sec-head h2 { font-size: 26px; }
+.sec-head p { margin: 0; color: var(--muted); max-width: 70ch; }
+
+/* Demo cards */
+.demos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.demo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.demo-top { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.demo h3 { font-size: 18px; font-family: var(--body); font-weight: 700; }
+.src { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.use { font-size: 13.5px; color: var(--muted); margin: 0; }
+.chip { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; border: 1px solid transparent; }
+.chip.live { background: var(--mint-soft); color: var(--mint-ink); }
+.chip.sample { background: var(--warn-soft); color: var(--warn); }
+.chip.loading { border-color: var(--line); color: var(--muted); }
+.result { background: var(--bg); border-radius: 8px; padding: 14px; min-height: 92px; min-width: 0; overflow-wrap: anywhere; }
+.big { font-family: var(--display); font-size: 34px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13.5px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 13.5px; max-height: 168px; overflow: auto; font-variant-numeric: tabular-nums; }
+.list li { display: flex; gap: 10px; } .list .d { font-family: var(--mono); color: var(--muted); font-size: 12.5px; min-width: 52px; }
+.quote { font-size: 15px; font-style: italic; margin: 0; } .quote-by { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.grade { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
+.g1 { background: #d6ecff; color: #0b4a85; } .g2 { background: var(--mint-soft); color: var(--mint-ink); } .g3 { background: var(--warn-soft); color: var(--warn); } .g4 { background: #fde2e0; color: var(--bad); }
+.dogimg { width: 100%; max-height: 180px; object-fit: cover; border-radius: 6px; display: block; }
+.raw { font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; max-height: 180px; overflow: auto; margin: 8px 0 0; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 7px; padding: 7px 12px; font-size: 13.5px; font-weight: 500; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.primary:hover { opacity: .88; }
+.linkbtn { background: none; border: 0; color: var(--muted); font-size: 12.5px; padding: 0; text-decoration: underline; }
+.conv { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 13.5px; flex-wrap: wrap; }
+.conv input { width: 110px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; font-variant-numeric: tabular-nums; }
+
+/* Catalog */
+.tools { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+.search { width: 100%; padding: 11px 14px; font: inherit; font-size: 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+select { padding: 10px 12px; font: inherit; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); max-width: 100%; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; margin-bottom: 14px; }
+.filters label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.filters .count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.catbar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; }
+.catbar button { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 99px; padding: 4px 11px; font-size: 13px; }
+.catbar button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.rows { display: grid; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; padding: 12px 2px; border-bottom: 1px solid var(--line); align-items: center; }
+.row-main { min-width: 0; display: grid; gap: 2px; }
+.row-name { font-weight: 600; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.row-name a { color: var(--ink); text-decoration: none; } .row-name a:hover { text-decoration: underline; }
+.row-desc { color: var(--muted); font-size: 13.5px; }
+.badges { display: flex; flex-wrap: wrap; gap: 5px; }
+.b { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 4px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.b.ok { background: var(--mint-soft); color: var(--mint-ink); border-color: transparent; }
+.b.key { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.more { margin-top: 16px; display: flex; justify-content: center; }
+.empty { padding: 30px 0; color: var(--muted); text-align: center; }
+
+/* How-to */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; counter-reset: s; }
+.step { border-top: 2px solid var(--ink); padding-top: 12px; display: grid; gap: 4px; }
+.step b { font-family: var(--display); font-size: 17px; }
+.step span { color: var(--muted); font-size: 14px; }
+.foot { font-size: 12.5px; color: var(--muted); }
+
+/* Prompt sheet */
+.sheet-bg { position: fixed; inset: 0; background: rgba(5, 15, 12, .55); display: grid; place-items: end center; z-index: 50; padding: 16px; padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
+.sheet { background: var(--surface); color: var(--ink); width: min(680px, 100%); border-radius: 12px; padding: 18px; display: grid; gap: 12px; max-height: 88vh; }
+.sheet h3 { font-size: 18px; }
+.sheet textarea { width: 100%; min-height: 260px; font-family: var(--mono); font-size: 13px; line-height: 1.55; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); resize: vertical; }
+.sheet .msg { font-size: 13px; color: var(--mint-ink); min-height: 1.4em; }
+@media (min-width: 700px) { .sheet-bg { place-items: center; } }
+@media (max-width: 560px) { .tools { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } .demos { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .result { transition: background .2s; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">public-apis 목록 · 한국어판</div>
+    <h1>공짜로 쓰는 <span class="hl">API 2,360개</span>,<br>골라서 바로 붙이기</h1>
+    <p>API는 다른 서비스의 기능을 빌려 쓰는 창구예요. 날씨, 환율, 공휴일 같은 정보를 내 홈페이지에 띄울 수 있죠. 여기서 먼저 눌러 보고, 마음에 들면 <b>Claude 프롬프트 복사</b>를 눌러 Claude에게 붙여넣으세요.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>바로 써보기 12개</h2>
+      <p>키(가입) 없이 바로 되는 것만 골랐어요. 가게 홈페이지, 블로그, 사내 화면에 바로 붙일 만한 것들이에요. <span class="chip sample">예시 데이터</span> 표시는 이 화면에서 실제 호출이 막혀 저장된 응답을 보여준다는 뜻이에요. 파일로 열면 <span class="chip live">실시간</span>으로 바뀝니다.</p>
+    </div>
+    <div class="demos" id="demos"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>전체 목록에서 찾기</h2>
+      <p>원하는 기능을 한글이나 영어로 검색하세요. 예: 날씨, 번역, 영화, food, crypto. 처음에는 가입 없이 쓰는 것만 보여줘요.</p>
+    </div>
+    <div class="tools">
+      <input class="search" id="q" type="search" placeholder="예: 날씨, 환율, 음식, 사진, 번역" autocomplete="off">
+      <select id="sort" aria-label="정렬">
+        <option value="cat">분야순</option>
+        <option value="name">이름순</option>
+      </select>
+    </div>
+    <div class="filters">
+      <label><input type="checkbox" id="fNoKey" checked> 가입·키 없이</label>
+      <label><input type="checkbox" id="fCors"> 브라우저에서 바로 호출 가능</label>
+      <label><input type="checkbox" id="fHttps" checked> 보안 연결(HTTPS)</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="catbar" id="catbar" role="toolbar" aria-label="분야"></div>
+    <div class="rows" id="rows"></div>
+    <div class="more"><button class="btn" id="moreBtn">더 보기</button></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Claude에게 붙이는 3단계</h2></div>
+    <div class="steps">
+      <div class="step"><b>1. 고르기</b><span>위에서 눌러 보고 쓸 만한 API를 고릅니다. "가입·키 없이"가 제일 쉬워요.</span></div>
+      <div class="step"><b>2. 프롬프트 복사</b><span>"Claude 프롬프트 복사"를 누르면 API 주소, 조건, 요청사항이 다 들어간 글이 복사돼요.</span></div>
+      <div class="step"><b>3. 붙여넣기</b><span>Claude 대화창에 붙여넣고 "우리 카페 홈페이지에" 처럼 한 줄만 덧붙이세요. HTML 파일이 바로 나옵니다.</span></div>
+    </div>
+  </section>
+
+  <p class="foot">목록 출처: github.com/public-apis/public-apis (MIT). 각 API의 무료 한도와 약관은 문서 주소에서 확인하세요. "브라우저에서 바로 호출"은 목록 작성자가 표시한 값이라 실제와 다를 수 있어요.</p>
+</div>
+
+<div class="sheet-bg" id="sheetBg" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">Claude 프롬프트</h3>
+    <textarea id="sheetText" spellcheck="false"></textarea>
+    <div class="msg" id="sheetMsg"></div>
+    <div class="actions">
+      <button class="btn primary" id="sheetCopy">복사하기</button>
+      <button class="btn" id="sheetClose">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const APIS = __APIS__;
+const CAT_KO = {"Animals":"동물","Anime":"애니메이션","Anti-Malware":"악성코드 검사","Art & Design":"예술·디자인","Authentication & Authorization":"로그인·인증","Blockchain":"블록체인","Books":"책","Business":"비즈니스","Calendar":"달력·공휴일","Cloud Storage & File Sharing":"클라우드 저장","Continuous Integration":"개발 자동화","Cryptocurrency":"가상화폐","Currency Exchange":"환율","Data Validation":"데이터 검증","Development":"개발 도구","Dictionaries":"사전","Documents & Productivity":"문서·생산성","Email":"이메일","Entertainment":"엔터테인먼트","Environment":"환경·대기","Events":"이벤트","Finance":"금융·주식","Food & Drink":"음식·음료","Games & Comics":"게임·만화","Geocoding":"주소·지도","Government":"정부·공공","Health":"건강","Jobs":"채용","Machine Learning":"AI·머신러닝","Music":"음악","News":"뉴스","Open Data":"공공데이터","Open Source Projects":"오픈소스","Patent":"특허","Personality":"명언·성격","Phone":"전화번호","Photography":"사진","Programming":"프로그래밍","Science & Math":"과학·수학","Security":"보안","Shopping":"쇼핑","Social":"소셜","Sports & Fitness":"스포츠·운동","Test Data":"테스트 데이터","Text Analysis":"글 분석","Tracking":"배송 추적","Transportation":"교통","URL Shorteners":"링크 줄이기","Vehicle":"자동차","Video":"영상·영화","Weather":"날씨"};
+// 한글 검색어 → 영어 키워드
+const KO_WORDS = {"날씨":"weather forecast","기온":"weather temperature","미세먼지":"air quality pollution","환율":"currency exchange","돈":"currency money","주식":"stock finance","코인":"crypto bitcoin","비트코인":"bitcoin crypto","공휴일":"holiday","휴일":"holiday","달력":"calendar","음식":"food recipe","요리":"recipe cooking","레시피":"recipe","술":"beer wine cocktail","맥주":"beer","커피":"coffee","와인":"wine","사진":"photo image","이미지":"image photo","그림":"art image","영화":"movie film","드라마":"tv show","음악":"music","노래":"music song lyrics","가사":"lyrics","책":"book","뉴스":"news","번역":"translate translation","사전":"dictionary","단어":"word dictionary","명언":"quote","격언":"quote advice","조언":"advice","농담":"joke","유머":"joke","강아지":"dog","개":"dog","고양이":"cat","동물":"animal","지도":"map geocoding","주소":"address geocoding","위치":"location ip geo","나라":"country","국가":"country","도시":"city","교통":"transport transit","지하철":"subway metro transit","버스":"bus transit","항공":"flight airline","비행기":"flight aircraft","자동차":"car vehicle","배송":"tracking shipment","택배":"tracking parcel","운동":"fitness sport","축구":"football soccer","야구":"baseball","게임":"game","포켓몬":"pokemon","애니":"anime","만화":"comic manga","건강":"health","병원":"health hospital","약":"drug medicine","코로나":"covid","채용":"job","일자리":"job","이메일":"email","메일":"email","전화":"phone","문자":"sms","qr":"qr code","큐알":"qr code","바코드":"barcode","링크":"url shortener","단축":"url shortener","가짜":"fake mock test","테스트":"test fake","더미":"dummy fake","ai":"ai machine learning","인공지능":"ai machine learning","얼굴":"face","감정":"sentiment emotion","글":"text","요약":"summarize","우주":"space nasa","나사":"nasa","과학":"science","수학":"math","지진":"earthquake","환경":"environment","쇼핑":"shopping product","상품":"product","정부":"government","공공":"open data government","보안":"security","비밀번호":"password","시간":"time timezone","시간대":"timezone","별자리":"horoscope zodiac","운세":"horoscope","이름":"name gender","성별":"gender","나이":"age","색":"color","색상":"color","폰트":"font","아이콘":"icon","이모지":"emoji","파일":"file","pdf":"pdf","엑셀":"spreadsheet excel","캘린더":"calendar","유튜브":"youtube","트위터":"twitter","레딧":"reddit","깃허브":"github"};
+
+/* ---------- 바로 써보기 데모 ---------- */
+const WMO = {0:"맑음",1:"대체로 맑음",2:"구름 조금",3:"흐림",45:"안개",48:"안개",51:"약한 이슬비",53:"이슬비",55:"강한 이슬비",61:"약한 비",63:"비",65:"강한 비",71:"약한 눈",73:"눈",75:"많은 눈",80:"소나기",81:"소나기",82:"강한 소나기",95:"뇌우"};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = (n, d = 0) => Number(n).toLocaleString("ko-KR", { maximumFractionDigits: d, minimumFractionDigits: d });
+const YEAR = new Date().getFullYear();
+function pmGrade(v, kind) { const t = kind === "pm10" ? [30, 80, 150] : [15, 35, 75]; const n = ["좋음","보통","나쁨","매우 나쁨"]; const i = v <= t[0] ? 0 : v <= t[1] ? 1 : v <= t[2] ? 2 : 3; return `<span class="grade g${i+1}">${n[i]}</span>`; }
+
+const DEMOS = [
+  { id: "weather", title: "서울 지금 날씨", src: "Open-Meteo", use: "가게 홈페이지 상단에 오늘 날씨 띄우기",
+    url: "https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.978&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia%2FSeoul",
+    sample: {"latitude":37.55,"longitude":127.0,"timezone":"Asia/Seoul","current":{"time":"2026-11-12T14:00","temperature_2m":11.4,"relative_humidity_2m":52,"weather_code":2,"wind_speed_10m":7.9}},
+    render: j => { const c = j.current; return `<div class="big">${num(c.temperature_2m,1)}°C</div><dl class="kv"><dt>하늘</dt><dd>${WMO[c.weather_code] ?? "코드 " + c.weather_code}</dd><dt>습도</dt><dd>${c.relative_humidity_2m}%</dd><dt>바람</dt><dd>${num(c.wind_speed_10m,1)} km/h</dd><dt>기준</dt><dd>${esc(c.time.replace("T"," "))}</dd></dl>`; },
+    ask: "우리 가게 홈페이지 맨 위에 서울의 지금 기온, 하늘 상태(한국어), 습도를 작은 띠로 보여줘. 날씨 코드는 한국어로 바꿔줘." },
+  { id: "air", title: "미세먼지", src: "Open-Meteo Air Quality", use: "매장 안내판에 오늘 미세먼지 등급 표시",
+    url: "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=37.5665&longitude=126.978&current=pm10,pm2_5&timezone=Asia%2FSeoul",
+    sample: {"current":{"time":"2026-11-12T14:00","pm10":38.2,"pm2_5":21.6}},
+    render: j => { const c = j.current; return `<dl class="kv" style="font-size:15px"><dt>미세먼지</dt><dd><b>${num(c.pm10,0)}</b> ㎍/㎥ ${pmGrade(c.pm10,"pm10")}</dd><dt>초미세먼지</dt><dd><b>${num(c.pm2_5,0)}</b> ㎍/㎥ ${pmGrade(c.pm2_5,"pm25")}</dd><dt>기준</dt><dd>${esc(c.time.replace("T"," "))}</dd></dl>`; },
+    ask: "서울의 미세먼지(PM10)와 초미세먼지(PM2.5)를 한국 환경부 기준(좋음/보통/나쁨/매우 나쁨) 색깔 배지로 보여주는 안내판을 만들어줘." },
+  { id: "fx", title: "달러·엔·유로 환율", src: "ExchangeRate-API (open)", use: "해외 손님용 가격표를 달러로 자동 환산",
+    url: "https://open.er-api.com/v6/latest/USD",
+    sample: {"result":"success","base_code":"USD","time_last_update_utc":"Thu, 12 Nov 2026 00:02:31 +0000","rates":{"KRW":1384.52,"JPY":151.83,"EUR":0.9214,"CNY":7.188}},
+    render: j => { const r = j.rates, krw = r.KRW; return `<div class="big">1달러 = ${num(krw,1)}원</div><dl class="kv"><dt>100엔</dt><dd>${num(krw / r.JPY * 100,1)}원</dd><dt>1유로</dt><dd>${num(krw / r.EUR,1)}원</dd><dt>1위안</dt><dd>${num(krw / r.CNY,1)}원</dd></dl><div class="conv"><input id="convIn" type="number" value="5500" min="0" aria-label="원화 금액"> 원 = <b id="convOut">$${(5500 / krw).toFixed(2)}</b></div>`; },
+    after: j => { const i = document.getElementById("convIn"), o = document.getElementById("convOut"); if (i) i.oninput = () => o.textContent = "$" + ((+i.value || 0) / j.rates.KRW).toFixed(2); },
+    ask: "카페 메뉴판의 원화 가격 옆에 오늘 환율로 계산한 달러·엔 가격을 작게 같이 보여줘. 메뉴는 아메리카노 4,500원, 라떼 5,500원, 케이크 6,500원으로 예시를 넣어줘." },
+  { id: "holiday", title: `${YEAR}년 한국 공휴일`, src: "Nager.Date", use: "예약 페이지에서 공휴일 자동 표시·휴무 안내",
+    url: `https://date.nager.at/api/v3/PublicHolidays/${YEAR}/KR`,
+    sample: [["01-01","신정"],["02-16","설날"],["02-17","설날"],["02-18","설날"],["03-01","삼일절"],["05-05","어린이날"],["05-24","부처님오신날"],["06-06","현충일"],["08-15","광복절"],["09-24","추석"],["09-25","추석"],["09-26","추석"],["10-03","개천절"],["10-09","한글날"],["12-25","크리스마스"]].map(([d,n]) => ({date:`${YEAR}-${d}`,localName:n,name:n})),
+    render: j => { const today = new Date().toISOString().slice(0,10); const next = j.find(h => h.date >= today); return `${next ? `<div style="margin-bottom:8px">다음 공휴일 <b>${esc(next.localName)}</b> · ${esc(next.date)}</div>` : ""}<ul class="list">${j.map(h => `<li><span class="d">${esc(h.date.slice(5))}</span>${esc(h.localName)}</li>`).join("")}</ul>`; },
+    ask: "예약 달력을 만들어줘. 올해 한국 공휴일은 빨간색으로 표시하고, 공휴일에는 '휴무' 라벨을 붙여줘. 맨 위에 '다음 공휴일까지 D-몇일'도 보여줘." },
+  { id: "coin", title: "비트코인·이더리움 시세", src: "CoinGecko", use: "블로그 사이드바에 코인 시세 위젯",
+    url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=krw,usd",
+    sample: {"bitcoin":{"krw":142350000,"usd":102800},"ethereum":{"krw":4985000,"usd":3600}},
+    render: j => `<div class="big">${num(j.bitcoin.krw/10000,0)}만원</div><dl class="kv"><dt>비트코인</dt><dd>$${num(j.bitcoin.usd)}</dd><dt>이더리움</dt><dd>${num(j.ethereum.krw)}원 · $${num(j.ethereum.usd)}</dd></dl>`,
+    ask: "블로그 옆에 붙일 비트코인·이더리움 시세 위젯을 만들어줘. 원화와 달러를 같이 보여주고 1분마다 새로고침해줘." },
+  { id: "country", title: "나라 정보", src: "REST Countries", use: "여행·유학 상담 페이지에 국가 기본정보",
+    url: "https://restcountries.com/v3.1/alpha/kr?fields=name,capital,population,currencies,languages,flag,timezones",
+    sample: {"name":{"common":"South Korea","official":"Republic of Korea"},"capital":["Seoul"],"population":51780579,"currencies":{"KRW":{"name":"South Korean won","symbol":"₩"}},"languages":{"kor":"Korean"},"flag":"🇰🇷","timezones":["UTC+09:00"]},
+    render: j => { const d = Array.isArray(j) ? j[0] : j; return `<div class="big">${esc(d.flag || "")} ${esc(d.name.common)}</div><dl class="kv"><dt>수도</dt><dd>${esc((d.capital||[]).join(", "))}</dd><dt>인구</dt><dd>${num(d.population)}명</dd><dt>통화</dt><dd>${esc(Object.keys(d.currencies||{}).join(", "))}</dd><dt>시간대</dt><dd>${esc((d.timezones||[]).join(", "))}</dd></dl>`; },
+    ask: "나라 이름을 고르면 수도, 인구, 통화, 언어, 국기를 카드로 보여주는 유학 상담용 페이지를 만들어줘. 미국, 캐나다, 호주, 일본, 영국을 버튼으로 넣어줘." },
+  { id: "dog", title: "랜덤 강아지 사진", src: "Dog CEO", use: "애견카페 홈페이지에 매번 바뀌는 사진",
+    url: "https://dog.ceo/api/breeds/image/random",
+    sample: {"message":"https://images.dog.ceo/breeds/retriever-golden/n02099601_3004.jpg","status":"success"},
+    render: j => { const breed = (j.message.split("/breeds/")[1] || "").split("/")[0]; return `<img class="dogimg" src="${esc(j.message)}" alt="강아지 사진" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'src',textContent:'이 화면에서는 외부 사진이 막혀 주소만 보여요: ' + this.src}))"><div class="src" style="margin-top:6px">품종: ${esc(breed)}</div>`; },
+    ask: "애견카페 홈페이지에 들어올 때마다 다른 강아지 사진이 나오는 칸을 만들어줘. '다른 사진 보기' 버튼도 달아줘." },
+  { id: "quote", title: "오늘의 명언", src: "DummyJSON", use: "메인 화면이나 영수증 하단 한 줄 문구",
+    url: "https://dummyjson.com/quotes/random",
+    sample: {"id":12,"quote":"The only way to do great work is to love what you do.","author":"Steve Jobs"},
+    render: j => `<p class="quote">“${esc(j.quote)}”</p><div class="quote-by">— ${esc(j.author)}</div>`,
+    ask: "홈페이지 메인에 매일 바뀌는 영어 명언 한 줄과 그 아래 한국어 뜻풀이를 보여줘. 뜻풀이는 네가 미리 써두는 방식 말고, 화면에 '번역 보기' 버튼만 달아줘." },
+  { id: "advice", title: "한 줄 조언", src: "Advice Slip", use: "뉴스레터·SNS 글감 뽑기",
+    url: "https://api.adviceslip.com/advice",
+    sample: {"slip":{"id":71,"advice":"Don't compare yourself to others."}},
+    render: j => `<p class="quote">“${esc(j.slip.advice)}”</p><div class="quote-by">조언 #${j.slip.id}</div>`,
+    ask: "버튼을 누를 때마다 영어 조언 한 줄을 뽑아주는 'SNS 글감 뽑기' 페이지를 만들어줘. 뽑은 문구는 목록으로 쌓이고 복사 버튼이 있어야 해." },
+  { id: "cat", title: "고양이 상식", src: "Cat Facts", use: "반려동물 블로그 하단 '오늘의 상식'",
+    url: "https://catfact.ninja/fact",
+    sample: {"fact":"Cats sleep for about 70% of their lives.","length":40},
+    render: j => `<p class="quote" style="font-style:normal">${esc(j.fact)}</p><div class="quote-by">${j.length}자</div>`,
+    ask: "반려동물 블로그 글 맨 아래에 '오늘의 고양이 상식' 상자를 넣어줘. 새로고침할 때마다 바뀌게." },
+  { id: "user", title: "가짜 손님 데이터", src: "RandomUser", use: "회원 목록·후기 화면 시안 만들 때 채우기",
+    url: "https://randomuser.me/api/?results=3&nat=us,gb,fr&inc=name,email,location,nat",
+    sample: {"results":[{"name":{"first":"Emma","last":"Wilson"},"email":"emma.wilson@example.com","location":{"city":"Leeds","country":"United Kingdom"},"nat":"GB"},{"name":{"first":"Lucas","last":"Martin"},"email":"lucas.martin@example.com","location":{"city":"Lyon","country":"France"},"nat":"FR"},{"name":{"first":"Olivia","last":"Brown"},"email":"olivia.brown@example.com","location":{"city":"Austin","country":"United States"},"nat":"US"}]},
+    render: j => `<ul class="list">${j.results.map(u => `<li><span class="d">${esc(u.nat)}</span>${esc(u.name.first)} ${esc(u.name.last)} · ${esc(u.location.city)}</li>`).join("")}</ul><div class="src" style="margin-top:6px">실제 사람이 아닌 가짜 데이터예요</div>`,
+    ask: "회원 관리 화면 시안을 만들어줘. 가짜 회원 10명을 불러와서 이름, 이메일, 도시를 표로 보여주고 이름으로 검색되게 해줘." },
+  { id: "ip", title: "접속 위치 알아보기", src: "ipapi.co", use: "방문자 나라에 맞춰 언어·통화 바꾸기",
+    url: "https://ipapi.co/json/",
+    sample: {"ip":"203.0.113.24","city":"Seoul","region":"Seoul","country_name":"South Korea","country_code":"KR","timezone":"Asia/Seoul","currency":"KRW","languages":"ko-KR,en"},
+    render: j => `<div class="big">${esc(j.city)}, ${esc(j.country_code)}</div><dl class="kv"><dt>나라</dt><dd>${esc(j.country_name)}</dd><dt>시간대</dt><dd>${esc(j.timezone)}</dd><dt>통화</dt><dd>${esc(j.currency)}</dd></dl>`,
+    ask: "방문자의 나라를 알아내서, 한국이면 한국어·원화로, 그 밖이면 영어·달러로 안내 문구와 가격을 바꿔 보여주는 페이지를 만들어줘." },
+];
+
+function demoPrompt(d) {
+  return `아래 무료 API로 기능을 하나 만들어줘.
+
+[API]
+- 이름: ${d.src}
+- 호출 주소: ${d.url}
+- 가입·API 키: 필요 없음
+- 응답 예시(JSON):
+${JSON.stringify(d.sample, null, 2).slice(0, 900)}
+
+[만들 것]
+${d.ask}
+
+[조건]
+1. HTML 파일 하나로 만들어줘. 복사해서 저장하고 더블클릭하면 바로 작동하게.
+2. 화면은 한국어로, 휴대폰에서도 보기 좋게.
+3. 불러오기 실패하면 이유를 한국어로 보여주고 '다시 시도' 버튼을 달아줘.
+4. 나는 코딩을 몰라. 마지막에 사용법을 3줄로 설명해줘.`;
+}
+
+function setChip(el, kind) { el.className = "chip " + kind; el.textContent = kind === "live" ? "실시간" : kind === "sample" ? "예시 데이터" : "불러오는 중"; }
+
+function drawDemo(d, data, kind) {
+  const card = document.getElementById("demo-" + d.id);
+  const res = card.querySelector(".result");
+  try { res.innerHTML = d.render(data); d.after && d.after(data); }
+  catch (e) { res.innerHTML = `<div class="src">응답 모양이 예상과 달라요.</div>`; }
+  const raw = document.createElement("pre"); raw.className = "raw"; raw.hidden = true; raw.textContent = JSON.stringify(data, null, 2).slice(0, 3000);
+  const t = document.createElement("button"); t.className = "linkbtn"; t.textContent = "원본 응답 보기"; t.style.marginTop = "8px";
+  t.onclick = () => { raw.hidden = !raw.hidden; t.textContent = raw.hidden ? "원본 응답 보기" : "원본 응답 숨기기"; };
+  res.append(t, raw);
+  setChip(card.querySelector(".chip"), kind);
+}
+
+async function runDemo(d) {
+  const card = document.getElementById("demo-" + d.id);
+  setChip(card.querySelector(".chip"), "loading");
+  try {
+    const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 7000);
+    const r = await fetch(d.url, { signal: ctrl.signal, cache: "no-store" }); clearTimeout(timer);
+    if (!r.ok) throw new Error(r.status);
+    drawDemo(d, await r.json(), "live");
+  } catch (e) { drawDemo(d, d.sample, "sample"); }
+}
+
+const demosEl = document.getElementById("demos");
+demosEl.innerHTML = DEMOS.map(d => `
+  <article class="demo" id="demo-${d.id}">
+    <div class="demo-top"><div><h3>${esc(d.title)}</h3><div class="src">${esc(d.src)}</div></div><span class="chip sample">예시 데이터</span></div>
+    <p class="use">쓰임새: ${esc(d.use)}</p>
+    <div class="result"></div>
+    <div class="actions">
+      <button class="btn" data-run="${d.id}">다시 불러오기</button>
+      <button class="btn primary" data-prompt="${d.id}">Claude 프롬프트 복사</button>
+    </div>
+  </article>`).join("");
+DEMOS.forEach(d => drawDemo(d, d.sample, "sample"));
+DEMOS.forEach(runDemo);
+demosEl.addEventListener("click", e => {
+  const run = e.target.closest("[data-run]"), p = e.target.closest("[data-prompt]");
+  if (run) runDemo(DEMOS.find(d => d.id === run.dataset.run));
+  if (p) { const d = DEMOS.find(x => x.id === p.dataset.prompt); openSheet(d.title, demoPrompt(d)); }
+});
+
+/* ---------- 전체 목록 ---------- */
+// APIS 행: [이름, 문서주소, 설명, 분야, 인증(빈칸=없음), https, cors]
+const state = { q: "", cat: "", noKey: true, cors: false, https: true, sort: "cat", shown: 40 };
+const cats = [...new Set(APIS.map(a => a[3]))];
+const noKeyCount = APIS.filter(a => !a[4]).length;
+const easyCount = APIS.filter(a => !a[4] && a[6] === "Yes").length;
+document.getElementById("stats").innerHTML = `<span><b>${num(APIS.length)}</b> 전체</span><span><b>${num(noKeyCount)}</b> 가입·키 없이</span><span><b>${num(easyCount)}</b> 브라우저에서 바로</span><span><b>${cats.length}</b> 분야</span>`;
+
+const catbar = document.getElementById("catbar");
+catbar.innerHTML = `<button aria-pressed="true" data-cat="">전체</button>` + cats.map(c => `<button aria-pressed="false" data-cat="${esc(c)}">${esc(CAT_KO[c] || c)}</button>`).join("");
+catbar.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.cat = b.dataset.cat; state.shown = 40; catbar.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); render(); });
+
+function terms(q) {
+  q = q.trim().toLowerCase(); if (!q) return [];
+  return q.split(/\s+/).map(w => { const extra = Object.entries(KO_WORDS).filter(([k]) => w.includes(k) || k.includes(w) && w.length >= 2).map(([, v]) => v).join(" "); return [w, ...extra.split(/\s+/).filter(Boolean)]; });
+}
+function filtered() {
+  const ts = terms(state.q);
+  let out = APIS.filter(a => (!state.noKey || !a[4]) && (!state.cors || a[6] === "Yes") && (!state.https || a[5]) && (!state.cat || a[3] === state.cat));
+  if (ts.length) out = out.filter(a => { const hay = (a[0] + " " + a[2] + " " + a[3] + " " + (CAT_KO[a[3]] || "")).toLowerCase(); return ts.every(group => group.some(t => hay.includes(t))); });
+  if (state.sort === "name") out = [...out].sort((x, y) => x[0].localeCompare(y[0]));
+  else if (ts.length) { const score = a => { const head = (a[0] + " " + a[3] + " " + (CAT_KO[a[3]] || "")).toLowerCase(); return ts.reduce((s, g) => s + (g.some(t => head.includes(t)) ? 2 : 0), 0) + (a[6] === "Yes" ? 1 : 0); }; out = out.map(a => [score(a), a]).sort((x, y) => y[0] - x[0]).map(x => x[1]); }
+  return out;
+}
+function corsLabel(c) { return c === "Yes" ? `<span class="b ok">브라우저 바로 ✓</span>` : c === "No" ? `<span class="b">서버 필요</span>` : `<span class="b">호출방식 미확인</span>`; }
+function render() {
+  const list = filtered(); const rows = document.getElementById("rows");
+  document.getElementById("count").textContent = `${num(list.length)}개`;
+  rows.innerHTML = list.length ? list.slice(0, state.shown).map(a => {
+    const i = APIS.indexOf(a);
+    return `<div class="row"><div class="row-main"><div class="row-name"><a href="${esc(a[1])}" target="_blank" rel="noopener">${esc(a[0])}</a><span class="b">${esc(CAT_KO[a[3]] || a[3])}</span></div><div class="row-desc">${esc(a[2])}</div><div class="badges">${a[4] ? `<span class="b key">키 필요 · ${esc(a[4])}</span>` : `<span class="b ok">가입 없이</span>`}${corsLabel(a[6])}</div></div><button class="btn" data-api="${i}">Claude 프롬프트 복사</button></div>`;
+  }).join("") : `<div class="empty">맞는 API가 없어요. 필터를 풀거나 영어로 검색해 보세요.</div>`;
+  document.getElementById("moreBtn").hidden = list.length <= state.shown;
+}
+function apiPrompt(a) {
+  const auth = a[4] ? `필요함 (${a[4]}). 키 발급 방법을 단계별로 알려주고, 코드에는 키를 넣는 자리를 눈에 띄게 표시해줘.` : "필요 없음";
+  const cors = a[6] === "Yes" ? "가능" : a[6] === "No" ? "불가 (브라우저에서 바로 부르면 막힘). 비개발자가 따라 할 수 있는 가장 쉬운 우회 방법을 골라줘." : "확인 안 됨. 직접 확인하고 막히면 쉬운 우회 방법을 알려줘.";
+  return `아래 무료 API로 기능을 하나 만들어줘.
+
+[API]
+- 이름: ${a[0]}
+- 설명: ${a[2]}
+- 분야: ${CAT_KO[a[3]] || a[3]}
+- 문서 주소: ${a[1]}
+- 가입·API 키: ${auth}
+- 브라우저에서 바로 호출(CORS): ${cors}
+
+[만들 것]
+(여기에 한 줄로 적기. 예: 우리 카페 홈페이지에 이 기능을 붙여줘)
+
+[조건]
+1. 먼저 문서를 확인하고, 이 API로 할 수 있는 가장 쓸모 있는 기능 1개를 골라줘.
+2. HTML 파일 하나로 만들어줘. 복사해서 저장하고 더블클릭하면 바로 작동하게.
+3. 화면은 한국어로, 휴대폰에서도 보기 좋게.
+4. 불러오기 실패하면 이유를 한국어로 보여주고 '다시 시도' 버튼을 달아줘.
+5. 나는 코딩을 몰라. 마지막에 사용법을 3줄로 설명해줘.`;
+}
+document.getElementById("rows").addEventListener("click", e => { const b = e.target.closest("[data-api]"); if (b) { const a = APIS[+b.dataset.api]; openSheet(a[0], apiPrompt(a)); } });
+let qt; document.getElementById("q").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(() => { state.q = e.target.value; state.shown = 40; render(); }, 120); });
+document.getElementById("sort").addEventListener("change", e => { state.sort = e.target.value; render(); });
+[["fNoKey","noKey"],["fCors","cors"],["fHttps","https"]].forEach(([id, k]) => document.getElementById(id).addEventListener("change", e => { state[k] = e.target.checked; state.shown = 40; render(); }));
+document.getElementById("moreBtn").addEventListener("click", () => { state.shown += 60; render(); });
+render();
+
+/* ---------- 프롬프트 시트 ---------- */
+const bg = document.getElementById("sheetBg"), ta = document.getElementById("sheetText"), msg = document.getElementById("sheetMsg");
+function openSheet(title, text) { document.getElementById("sheetTitle").textContent = `Claude 프롬프트 · ${title}`; ta.value = text; msg.textContent = ""; bg.hidden = false; copyNow(); }
+function copyNow() {
+  const fallback = () => { ta.focus(); ta.select(); msg.textContent = "글이 선택됐어요. Ctrl+C (휴대폰은 길게 눌러 복사) 하세요."; };
+  try { navigator.clipboard.writeText(ta.value).then(() => msg.textContent = "복사됐어요. Claude 대화창에 붙여넣으세요.", fallback); } catch (e) { fallback(); }
+}
+document.getElementById("sheetCopy").onclick = copyNow;
+document.getElementById("sheetClose").onclick = () => bg.hidden = true;
+bg.addEventListener("click", e => { if (e.target === bg) bg.hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") bg.hidden = true; });
+</script>
