@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>한 획에 담은 마음</title>
+<style>
+  @font-face { font-family: "Gowun"; src: url("fonts/GowunBatang-Bold.ttf"); }
+  @font-face { font-family: "Pen"; src: url("fonts/NanumPenScript-Regular.ttf"); }
+  @font-face { font-family: "Serif"; src: url("fonts/InstrumentSerif-Italic.ttf"); }
+  @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansKR-Medium.ttf"); }
+  :root { --bg: #17120c; --fg: #fbf3e2; --ac: #d9b26a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Gowun", serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); background: #000; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; font-size: 15px; padding: 8px 16px; border: 0; border-radius: 999px; cursor: pointer; background: #33291c; color: var(--fg); }
+  button.on { background: var(--ac); color: #000; }
+  body.render { padding: 0; display: block; }
+  body.render .bar { display: none; }
+  body.render canvas { max-width: none; max-height: none; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="play">▶ 재생</button>
+  <button data-ar="9x16" class="on">세로 9:16</button>
+  <button data-ar="16x9">가로 16:9</button>
+</div>
+<audio id="music" src="out/music.wav" preload="auto"></audio>
+<script>
+/* =====================================================================
+   한 획에 담은 마음 — 캘리그라피 8점 + 마무리 문장, 41.25초 (글씨 1점 = 3.75초 = 음악 1마디)
+   어두운 먹빛 배경 위로 종이가 떠오르고, 먹이 번지듯 글씨가 드러남
+   ===================================================================== */
+const GD = "#d9b26a", CR = "#fbf3e2", BG = "#17120c";
+const SH = 3.75, N = 8, DUR = 41.25, FIN = SH * 9;
+const KR = "Gowun", PEN = "Pen", SF = "Serif", PX = "Plex";
+const params = new URLSearchParams(location.search);
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let W, H, U, P;
+function setSize(ar) { [W, H] = ar === "16x9" ? [1920, 1080] : [1080, 1920]; cv.width = W; cv.height = H; U = Math.min(W, H) / 100; P = H > W; }
+setSize(params.get("ar") || "9x16");
+if (params.has("render")) document.body.classList.add("render");
+
+const IMG = {};
+const loadImg = n => new Promise(r => { const i = new Image(); i.onload = () => { IMG[n] = i; r(); }; i.src = `assets/${n}.jpg`; });
+
+/* ---------- 글씨 8점 (감정 흐름: 견딤 → 꿈 → 감사 → 사랑 → 행복 → 동행 → 한마음 → 새해) ---------- */
+const SCENES = [
+  { img: "c11", chip: "도종환 「담쟁이」 중에서", l1: "담쟁이는 서두르지 않고", l2: "앞으로 나아간다" },
+  { img: "c17", chip: "강원석 「꿈꾸는 너에게」 중에서", l1: "그 꿈은 사라진 게 아니야", l2: "단지 잊고 있었을 뿐이야" },
+  { img: "c15", chip: "감사", l1: "별빛에 감사하는 자에게", l2: "지지 않는 은혜빛을" },
+  { img: "c13", chip: "사랑", l1: "사랑을 하고 있는 사람은", l2: "늙지도 않고 행복하다" },
+  { img: "c12", chip: "행복", l1: "행복한 사람이 되면", l2: "그대에게 제일 먼저 자랑할게요" },
+  { img: "c14", chip: "동행", l1: "너랑 함께 가면", l2: "험한 길도 즐겁다" },
+  { img: "c18", chip: "同心同德 · 한마음", l1: "같은 목표를 위해", l2: "하나 된 마음" },
+  { img: "c16", chip: "2027 새해 인사", l1: "소중한 인연에 감사하며", l2: "행복한 2027년 되세요" },
+];
+const imgsReady = Promise.all(SCENES.map(s => loadImg(s.img)));
+
+/* ---------- 이징 ---------- */
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const inOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* ---------- 글자 ---------- */
+function measure(s, size, font) { ctx.font = `${size}px ${font}`; return ctx.measureText(s).width; }
+function text(s, x, y, size, o = {}) {
+  const { color = CR, font = KR, align = "center", alpha = 1, sp = 0, glow = 0.35 } = o;
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.font = `${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.letterSpacing = `${sp * size}px`;
+  ctx.shadowColor = "rgba(0,0,0,0.75)"; ctx.shadowBlur = size * glow; ctx.shadowOffsetY = size * 0.04;
+  ctx.fillStyle = color; ctx.fillText(s, x, y); ctx.restore();
+}
+function writeIn(s, x, y, size, t, t0, o = {}) {
+  const chars = [...s], per = o.per || 0.045, font = o.font || KR;
+  const total = measure(s, size, font);
+  let px = x - total / 2;
+  chars.forEach((c, i) => {
+    const k = outCubic(prog(t, t0 + i * per, t0 + i * per + 0.5));
+    const w = measure(c, size, font);
+    if (k > 0 && c !== " ") { ctx.save(); ctx.filter = k < 0.97 ? `blur(${(1 - k) * 7}px)` : "none"; text(c, px + w / 2, y - (1 - k) * size * 0.2, size, { ...o, alpha: k * (o.alpha ?? 1) }); ctx.restore(); }
+    px += w;
+  });
+}
+function pill(s, x, y, size, a) {
+  if (a <= 0) return;
+  const w = measure(s, size, PX) + size * 1.6, h = size * 2;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2); ctx.strokeStyle = GD; ctx.lineWidth = U * 0.22; ctx.stroke();
+  ctx.fillStyle = "rgba(217,178,106,0.1)"; ctx.fill(); ctx.restore();
+  text(s, x, y + size * 0.04, size, { font: PX, color: GD, alpha: a, glow: 0 });
+}
+
+/* ---------- 배경 · 금빛 먼지 · 그레인 ---------- */
+function background(t) {
+  const g = ctx.createRadialGradient(W / 2, H * 0.42, 0, W / 2, H * 0.42, Math.hypot(W, H) * 0.62);
+  g.addColorStop(0, "#3a2d1c"); g.addColorStop(0.55, "#211912"); g.addColorStop(1, "#0d0a07");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 은은하게 움직이는 빛
+  const lx = W * (0.5 + 0.25 * Math.sin(t * 0.21)), ly = H * (0.3 + 0.1 * Math.cos(t * 0.17));
+  const l = ctx.createRadialGradient(lx, ly, 0, lx, ly, Math.min(W, H) * 0.7);
+  l.addColorStop(0, "rgba(255,210,140,0.12)"); l.addColorStop(1, "rgba(255,210,140,0)");
+  ctx.fillStyle = l; ctx.fillRect(0, 0, W, H);
+}
+function dust(t, n) {
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < n; i++) {
+    const sp = 0.012 + rand(i + 3) * 0.025;
+    const y = H * 1.05 - ((rand(i + 30) + t * sp) % 1) * H * 1.1;
+    const x = rand(i) * W + Math.sin(t * (0.3 + rand(i + 7) * 0.5) + i) * U * 3;
+    const r = U * (0.25 + rand(i + 11) * (i % 7 === 0 ? 1.6 : 0.6));
+    const a = (0.25 + 0.5 * rand(i + 5)) * (0.6 + 0.4 * Math.sin(t * 1.5 + i));
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+    g.addColorStop(0, `rgba(255,214,140,${a})`); g.addColorStop(1, "rgba(255,214,140,0)");
+    ctx.fillStyle = g; ctx.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
+  }
+  ctx.restore();
+}
+const grain = document.createElement("canvas"); grain.width = grain.height = 256;
+{ const g = grain.getContext("2d"), d = g.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = rand(i) * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 12; } g.putImageData(d, 0, 0); }
+function drawGrain(f) { ctx.save(); ctx.fillStyle = ctx.createPattern(grain, "repeat"); ctx.translate(-(rand(f) * 256) | 0, -(rand(f + 9) * 256) | 0); ctx.fillRect(0, 0, W + 256, H + 256); ctx.restore(); }
+function vignette() {
+  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.hypot(W, H) * 0.6);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.5)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
+/* ---------- 작품 카드: 먹이 번지듯 드러남 ---------- */
+const off = document.createElement("canvas"), og = off.getContext("2d");
+function artwork(i, t, a) {
+  const sc = SCENES[i], img = IMG[sc.img], s0 = (i + 1) * SH;
+  const box = P ? { x: 90, y: 270, w: 900, h: 1060 } : { x: 110, y: 100, w: 880, h: 880 };
+  const k = Math.min(box.w / img.width, box.h / img.height);
+  const w = img.width * k, h = img.height * k;
+  const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
+  const appear = outCubic(prog(t, s0 - 0.2, s0 + 0.9));
+  const zoom = lerp(0.94, 1, appear) * lerp(1, 1.035, prog(t, s0, s0 + SH + 0.8));
+  const rev = inOut(prog(t, s0 - 0.1, s0 + 1.5));
+  // 오프스크린에 그림 + 대각선 부드러운 와이프
+  off.width = Math.ceil(w); off.height = Math.ceil(h);
+  og.globalCompositeOperation = "source-over"; og.drawImage(img, 0, 0, w, h);
+  og.globalCompositeOperation = "destination-in";
+  const L = w + h, p = lerp(-0.25, 1.05, rev) * L;
+  const gr = og.createLinearGradient(0, 0, w, h);
+  gr.addColorStop(clamp((p - 0.25 * L) / L), "rgba(0,0,0,1)"); gr.addColorStop(clamp(p / L), "rgba(0,0,0,0)");
+  og.fillStyle = gr; og.fillRect(0, 0, w, h);
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.translate(cx, cy + (1 - appear) * U * 3); ctx.scale(zoom, zoom); ctx.translate(-w / 2, -h / 2);
+  // 종이 (먼저 떠오름)
+  ctx.save(); ctx.globalAlpha *= appear; ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = U * 6; ctx.shadowOffsetY = U * 2;
+  ctx.fillStyle = sc.img === "c18" ? "#0b0b0b" : "#f6efe2"; ctx.fillRect(-U * 1.4, -U * 1.4, w + U * 2.8, h + U * 2.8); ctx.restore();
+  ctx.drawImage(off, 0, 0);
+  // 금빛 가는 테두리
+  ctx.strokeStyle = `rgba(217,178,106,${0.7 * appear})`; ctx.lineWidth = U * 0.18; ctx.strokeRect(-U * 2.4, -U * 2.4, w + U * 4.8, h + U * 4.8);
+  ctx.restore();
+}
+
+function caption(i, t, a) {
+  const sc = SCENES[i], s0 = (i + 1) * SH;
+  const out = a * (1 - prog(t, s0 + SH - 0.4, s0 + SH - 0.02));
+  const tx = P ? W / 2 : W * 0.765;
+  const chipY = P ? 150 : 300, y1 = P ? 1480 : 470, size = P ? 64 : 58, gap = size * 1.55;
+  pill(sc.chip, tx, chipY, P ? 30 : 28, out * outCubic(prog(t, s0 + 0.1, s0 + 0.7)));
+  const fit = (s, base) => Math.min(base, (P ? 960 : 760) / measure(s, base, KR) * base);
+  writeIn(sc.l1, tx, y1, fit(sc.l1, size), t, s0 + 0.6, { alpha: out });
+  writeIn(sc.l2, tx, y1 + gap, fit(sc.l2, size), t, s0 + 1.1, { alpha: out, color: GD });
+  const ca = out * prog(t, s0 + 1.8, s0 + 2.4);
+  text(`${String(i + 1).padStart(2, "0")}  /  08`, tx, P ? 1720 : 760, P ? 30 : 28, { font: SF, color: CR, alpha: ca * 0.7, sp: 0.2 });
+  text("글씨 · 문대현 (MOON.D.H)", tx, P ? 1780 : 820, P ? 28 : 26, { font: PX, color: CR, alpha: ca * 0.6, glow: 0 });
+}
+
+/* ---------- 인트로 / 마무리 ---------- */
+function intro(t) {
+  const a = 1 - prog(t, SH - 0.5, SH - 0.05);
+  if (a <= 0) return;
+  const cy = H * (P ? 0.45 : 0.46);
+  const lk = inOut(prog(t, 0.3, 1.6));
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = GD;
+  ctx.fillRect(W / 2 - U * 14 * lk, cy - U * (P ? 9 : 13), U * 28 * lk, U * 0.22);
+  ctx.fillRect(W / 2 - U * 14 * lk, cy + U * (P ? 11 : 15), U * 28 * lk, U * 0.22); ctx.restore();
+  text("MOON.D.H CALLIGRAPHY", W / 2, cy - U * (P ? 14 : 19), U * (P ? 3.2 : 3), { font: SF, color: GD, alpha: a * prog(t, 0.4, 1.2), sp: 0.25 });
+  writeIn("한 획에 담은 마음", W / 2, cy, U * (P ? 12 : 13), t, 0.5, { font: PEN, alpha: a, per: 0.09 });
+  text("붓끝으로 건네는 여덟 개의 문장", W / 2, cy + U * (P ? 17 : 22), U * (P ? 3.6 : 3.6), { color: CR, alpha: a * prog(t, 1.6, 2.4) * 0.85 });
+}
+function finale(t) {
+  const s0 = FIN, a = prog(t, s0 - 0.1, s0 + 0.7);
+  if (a <= 0) return;
+  const cy = H * (P ? 0.4 : 0.38), size = U * (P ? 11 : 11);
+  // 아래에서 위로 올라오는 금빛 길
+  const rk = inOut(prog(t, s0 + 0.2, s0 + 2.6));
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = GD; ctx.lineWidth = U * 0.3; ctx.setLineDash([U * 1.2, U * 1.4]);
+  ctx.beginPath(); const y0 = H * (P ? 0.76 : 0.76), y1 = cy + size * 1.9;
+  for (let s = 0; s <= rk; s += 0.01) { const y = lerp(y0, y1, s), x = W / 2 + Math.sin(s * 5.5) * U * 5 * (1 - s); s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+  ctx.stroke(); ctx.setLineDash([]);
+  if (rk >= 1) { const g = ctx.createRadialGradient(W / 2, y1, 0, W / 2, y1, U * 4); g.addColorStop(0, "rgba(255,220,150,0.9)"); g.addColorStop(1, "rgba(255,220,150,0)"); ctx.fillStyle = g; ctx.fillRect(W / 2 - U * 4, y1 - U * 4, U * 8, U * 8); }
+  ctx.restore();
+  text("축복의 통로 블레스 본부", W / 2, cy - size * 2.1, U * (P ? 4 : 3.8), { color: GD, alpha: a * prog(t, s0 + 0.4, s0 + 1.2), sp: 0.12 });
+  writeIn("우리가 가면,", W / 2, cy - size * 0.55, size, t, s0 + 0.9, { per: 0.1 });
+  writeIn("길이 됩니다.", W / 2, cy + size * 0.75, size, t, s0 + 1.9, { per: 0.1, color: GD });
+  const fa = prog(t, s0 + 3.4, s0 + 4.2);
+  const fy = P ? H * 0.82 : H * 0.86;
+  ctx.save(); ctx.globalAlpha = fa; ctx.fillStyle = "rgba(251,243,226,0.35)"; ctx.fillRect(W / 2 - U * 16, fy - U * 4, U * 32, 2); ctx.restore();
+  text("블레스인사이트 | 조홍철 본부장", W / 2, fy, U * (P ? 3.6 : 3.2), { font: PX, color: CR, alpha: fa });
+  text("BLESS INSIGHT", W / 2, fy + U * (P ? 4.5 : 4.5), U * (P ? 2.8 : 2.6), { font: SF, color: GD, alpha: fa * 0.9, sp: 0.3 });
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = "none";
+  background(t);
+  dust(t, P ? 46 : 54);
+  intro(t);
+  const i = Math.floor(t / SH) - 1;
+  if (i >= 0 && i < N) {
+    const s0 = (i + 1) * SH;
+    if (i > 0 && t - s0 < 0.7) artwork(i - 1, t, 1 - prog(t, s0 - 0.05, s0 + 0.6));
+    artwork(i, t, 1);
+    caption(i, t, 1);
+  }
+  if (i === N) artwork(N - 1, t, 1 - prog(t, FIN - 0.05, FIN + 0.7));
+  // 마지막 글씨 → 마무리 사이 부드러운 전환
+  finale(t);
+  vignette();
+  drawGrain(Math.floor(t * 30));
+  const f = Math.max(1 - prog(t, 0, 0.7), prog(t, DUR - 1.2, DUR));
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.renderFrame = renderFrame;
+window.ready = Promise.all([imgsReady, ...[KR, PEN, SF, PX].map(f => document.fonts.load(`10px ${f}`))]).then(() => document.fonts.ready);
+
+const audio = document.getElementById("music");
+let playing = false, start = 0;
+function loop() { if (!playing) return; let t = (performance.now() - start) / 1000; if (t >= DUR) { playing = false; t = DUR - 0.001; } renderFrame(t); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { playing = true; start = performance.now(); audio.currentTime = 0; audio.play().catch(() => {}); loop(); };
+document.querySelectorAll("[data-ar]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-ar]").forEach(x => x.classList.toggle("on", x === b)); setSize(b.dataset.ar); renderFrame(playing ? (performance.now() - start) / 1000 : 2.5);
+});
+window.ready.then(() => renderFrame(2.5));
+</script>
+</body>
+</html>
